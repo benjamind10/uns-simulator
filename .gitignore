@@ -48,12 +48,6 @@ tmp/
 .DS_Store
 Thumbs.db
 
-# Docker
-docker-compose.override.yml
-**/Dockerfile*
-**/docker-compose*.yml
-.docker/
-*.tar
 
 # MongoDB local data (if any)
 data/

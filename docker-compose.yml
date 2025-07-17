@@ -1,0 +1,42 @@
+services:
+  frontend:
+    build: ./client
+    ports:
+      - '3000:80'
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_URL=http://localhost:5000
+      - VITE_MQTTBROKER=ws://localhost:1884
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+
+  backend:
+    build: ./server
+    ports:
+      - '5000:5000'
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/unsdb
+      - MQTT_URL=mqtt://mqtt:1883
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+
+  mongo:
+    image: mongo:6
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+
+  mqtt:
+    image: eclipse-mosquitto
+    ports:
+      - '1883:1883'
+      - '1884:9001' # WebSocket port for MQTT
+    volumes:
+      - ./mqtt-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+volumes:
+  mongo-data:
