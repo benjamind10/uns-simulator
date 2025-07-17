@@ -1,4 +1,3 @@
-// src/types/user.d.ts
 export interface IMQTTConfig {
   name: string;
   ip: string;

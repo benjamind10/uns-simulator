@@ -1,4 +1,3 @@
-// src/models/MQTTConfig.ts
 import mongoose from 'mongoose';
 
 export const mqttConfigSchema = new mongoose.Schema({

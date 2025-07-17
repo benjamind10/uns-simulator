@@ -1,4 +1,3 @@
-// src/models/User.ts
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import { mqttConfigSchema } from './MQTTConfig';
