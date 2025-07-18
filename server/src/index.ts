@@ -5,14 +5,14 @@ import dotenv from 'dotenv';
 import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
 import { userTypeDefs } from './graphql/schemas/user.schema';
 import { userResolvers } from './graphql/resolvers/user.resolver';
+import { brokerTypeDefs } from './graphql/schemas/broker.schema';
+import { brokerResolvers } from './graphql/resolvers/broker.resolver';
 
 // Load environment variables
 dotenv.config();
 
-
-export const typeDefs = mergeTypeDefs([userTypeDefs]);
-export const resolvers = mergeResolvers([userResolvers]);
-
+export const typeDefs = mergeTypeDefs([userTypeDefs, brokerTypeDefs]);
+export const resolvers = mergeResolvers([userResolvers, brokerResolvers]);
 
 // Create Apollo Server instance
 const server = new ApolloServer({ typeDefs, resolvers });
