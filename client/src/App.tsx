@@ -1,13 +1,13 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-// import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
+import Navbar from './components/Navbar';
 // // import Dashboard from './pages/Dashboard'
 // import ExplorerPage from './pages/ExplorerPage';
 
 function App() {
   return (
     <Router>
-      {/* <Navbar /> */}
+      <Navbar />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         {/* <Route path="/dashboard" element={<Dashboard />} /> */}

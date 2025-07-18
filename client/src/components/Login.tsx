@@ -15,7 +15,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
   const result = await loginUser(email, password);
   if (result) {
-    localStorage.setItem('authToken', result.token);
+    sessionStorage.setItem('authToken', result.token);
     console.log('Logged in user:', result.user);
     onLogin?.();
   } else {
