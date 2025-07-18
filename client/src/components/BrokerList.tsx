@@ -5,21 +5,27 @@ interface BrokerListProps {
 }
 
 export default function BrokerList({ brokers }: BrokerListProps) {
-  if (brokers.length === 0) return <p>No brokers configured yet.</p>;
+  if (brokers.length === 0) {
+    return (
+      <p className="text-gray-500 dark:text-gray-400">
+        No brokers configured yet.
+      </p>
+    );
+  }
 
   return (
     <ul className="space-y-2">
-      {brokers.map((b) => (
+      {brokers.map((broker) => (
         <li
-          key={b._id}
-          className="p-4 border border-gray-300 rounded dark:border-gray-700 dark:text-white"
+          key={broker._id}
+          className="p-4 bg-white dark:bg-gray-800 rounded shadow flex flex-col"
         >
-          <div className="font-bold">{b.name}</div>
-          <div>
-            {b.url}:{b.port}
-          </div>
-          <div>Client ID: {b.clientId}</div>
-          {b.username && <div>Username: {b.username}</div>}
+          <span className="font-bold text-gray-800 dark:text-white">
+            {broker.name}
+          </span>
+          <span className="text-sm text-gray-500 dark:text-gray-300">
+            {broker.url}:{broker.port} — {broker.clientId}
+          </span>
         </li>
       ))}
     </ul>

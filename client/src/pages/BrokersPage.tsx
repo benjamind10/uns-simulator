@@ -38,18 +38,26 @@ export default function BrokersPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 px-4">
-      <h1 className="text-3xl font-bold mb-6">MQTT Broker Configuration</h1>
+    <div
+      className="min-h-screen bg-white text-gray-800 
+             dark:bg-gray-900 dark:text-gray-100 
+             px-4 pt-10 transition-colors duration-300"
+    >
+      <div className="max-w-3xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6">MQTT Broker Configuration</h1>
 
-      {loading && <p className="text-gray-500">Loading brokers...</p>}
-      {error && <p className="text-red-500">{error}</p>}
+        {loading && <p className="text-gray-400">Loading brokers...</p>}
+        {error && <p className="text-red-500">{error}</p>}
 
-      {!loading && (
-        <>
-          <BrokerForm onAdd={handleAddBroker} />
-          <BrokerList brokers={brokers} />
-        </>
-      )}
+        {!loading && (
+          <>
+            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 px-4 text-white">
+              <BrokerForm onAdd={handleAddBroker} />
+            </div>
+            <BrokerList brokers={brokers} />
+          </>
+        )}
+      </div>
     </div>
   );
 }

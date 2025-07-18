@@ -1,7 +1,10 @@
 import User from '../models/User';
 import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
+dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET!;
 
 export const userResolvers = {
   Query: {
@@ -22,7 +25,9 @@ export const userResolvers = {
       const isMatch = await user.comparePassword(password);
       if (!isMatch) throw new Error('Invalid credentials');
 
-      const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '1d' });
+      const token = jwt.sign({ userId: user.id }, JWT_SECRET, {
+        expiresIn: '1d',
+      });
 
       return {
         token,
