@@ -1,31 +1,18 @@
-import { useEffect, useState } from 'react';
 import Login from '../components/Login';
+import { useAuth } from '../hooks/useAuth';
 
 export default function LandingPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    const token = sessionStorage.getItem('authToken');
-    if (token) {
-      setIsLoggedIn(true);
-    }
-  }, []);
-
-  console.log(isLoggedIn);
-
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-  };
+  const { isLoggedIn } = useAuth();
 
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center 
-                    bg-white dark:bg-gray-900 
-                    text-gray-800 dark:text-gray-100 
-                    transition-colors duration-300 px-4 relative"
+                 bg-white dark:bg-gray-900 
+                 text-gray-800 dark:text-gray-100 
+                 transition-colors duration-300 px-4"
     >
       {!isLoggedIn ? (
-        <Login onLogin={handleLogin} />
+        <Login />
       ) : (
         <h1 className="text-5xl font-bold mb-4 text-center">
           Welcome to the UNS Simulator!

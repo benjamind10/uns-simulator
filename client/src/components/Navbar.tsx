@@ -1,72 +1,151 @@
-
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Sun, Moon } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate, NavLink } from 'react-router-dom';
+import { Sun, Moon, Menu, X } from 'lucide-react';
 import { useDarkMode } from '../hooks/useDarkMode';
+import { useAuth } from '../hooks/useAuth';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [darkMode, toggleDarkMode] = useDarkMode();
+  const { isLoggedIn, logout } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = sessionStorage.getItem('authToken');
-    setIsLoggedIn(!!token);
-  }, []);
-
   const handleLogout = () => {
-    sessionStorage.removeItem('authToken');
-    setIsLoggedIn(false);
+    logout();
     navigate('/');
+    setMenuOpen(false);
   };
 
+  const closeMenu = () => setMenuOpen(false);
+
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow-md px-4 py-3 flex justify-between items-center transition-colors">
-      <div className="text-xl font-bold text-blue-600 dark:text-white">UNS Simulator</div>
-
-      <div className="flex items-center gap-4">
-        <button
-          onClick={toggleDarkMode}
-          className="text-gray-700 dark:text-gray-200 hover:scale-110 transition"
-          aria-label="Toggle Theme"
+    <nav className="bg-white dark:bg-gray-900 shadow-md px-4 py-3 transition-colors">
+      <div className="flex justify-between items-center">
+        <NavLink
+          to="/"
+          className="text-xl font-bold text-blue-600 dark:text-white hover:underline"
         >
-          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
+          UNS Simulator
+        </NavLink>
 
-        <div className="md:hidden">
-          <button onClick={() => setMenuOpen(!menuOpen)} className="text-gray-700 dark:text-gray-200 focus:outline-none">
-            ☰
+        <div className="flex items-center gap-4 md:hidden">
+          <button
+            onClick={toggleDarkMode}
+            className="text-gray-700 dark:text-gray-200 hover:scale-110 transition"
+            aria-label="Toggle Theme"
+          >
+            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="text-gray-700 dark:text-gray-200"
+          >
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
-      </div>
 
-      <div className={`md:flex md:items-center ${menuOpen ? 'block' : 'hidden'} mt-3 md:mt-0`}>
-        <ul className="md:flex md:space-x-6 space-y-2 md:space-y-0">
+        <ul className="hidden md:flex md:items-center md:space-x-6 text-gray-700 dark:text-gray-200">
+          <NavLink
+            to="/explorer"
+            className={({ isActive }) =>
+              isActive ? 'font-semibold text-blue-500' : ''
+            }
+          >
+            Explorer
+          </NavLink>
+          <NavLink
+            to="/simulator"
+            className={({ isActive }) =>
+              isActive ? 'font-semibold text-blue-500' : ''
+            }
+          >
+            Simulator
+          </NavLink>
+          <NavLink
+            to="/brokers"
+            className={({ isActive }) =>
+              isActive ? 'font-semibold text-blue-500' : ''
+            }
+          >
+            Brokers
+          </NavLink>
+
+          <button
+            onClick={toggleDarkMode}
+            className="text-gray-700 dark:text-gray-200 hover:scale-110 transition"
+            aria-label="Toggle Theme"
+          >
+            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
+
           {isLoggedIn ? (
-            <>
-              <li className="text-gray-700 dark:text-gray-200">Welcome!</li>
-              <li>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                >
-                  Logout
-                </button>
-              </li>
-            </>
+            <button
+              onClick={handleLogout}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+            >
+              Logout
+            </button>
           ) : (
-            <li>
-              <button
-                onClick={() => navigate('/')}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Login
-              </button>
-            </li>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+            >
+              Login
+            </button>
           )}
         </ul>
       </div>
+
+      {/* Mobile menu */}
+      {menuOpen && (
+        <div className="md:hidden mt-3 space-y-3 text-gray-700 dark:text-gray-200">
+          <NavLink
+            to="/explorer"
+            onClick={closeMenu}
+            className={({ isActive }) =>
+              `block ${isActive ? 'font-semibold text-blue-500' : ''}`
+            }
+          >
+            Explorer
+          </NavLink>
+          <NavLink
+            to="/simulator"
+            onClick={closeMenu}
+            className={({ isActive }) =>
+              `block ${isActive ? 'font-semibold text-blue-500' : ''}`
+            }
+          >
+            Simulator
+          </NavLink>
+          <NavLink
+            to="/brokers"
+            onClick={closeMenu}
+            className={({ isActive }) =>
+              `block ${isActive ? 'font-semibold text-blue-500' : ''}`
+            }
+          >
+            Brokers
+          </NavLink>
+          {isLoggedIn ? (
+            <button
+              onClick={handleLogout}
+              className="block w-full text-left bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+            >
+              Logout
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                navigate('/');
+                closeMenu();
+              }}
+              className="block w-full text-left bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Login
+            </button>
+          )}
+        </div>
+      )}
     </nav>
   );
 }

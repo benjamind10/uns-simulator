@@ -21,12 +21,12 @@ const server = new ApolloServer({ typeDefs, resolvers });
 const startServer = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI || '', {
-      dbName: 'uns-simulator',
+      dbName: process.env.DB_NAME || 'unsdb',
     });
 
     console.log('✅ Connected to MongoDB');
 
-    const { url } = await server.listen({ port: 4000 });
+    const { url } = await server.listen({ port: process.env.PORT || 4000 });
     console.log(`🚀 Server ready at ${url}`);
   } catch (err) {
     console.error('❌ Failed to start server:', err);
