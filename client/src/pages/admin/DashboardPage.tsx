@@ -1,8 +1,9 @@
+import { useEffect } from 'react';
 import { Server, Book, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteBrokerAsync } from '../../store/brokersSlice';
+import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokersSlice';
 import type { AppDispatch, RootState } from '../../store/store';
 
 import StatCard from '../../components/StatCard';
@@ -12,6 +13,11 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { brokers, loading } = useSelector((state: RootState) => state.brokers);
+
+  // Add useEffect to fetch brokers on mount
+  useEffect(() => {
+    dispatch(fetchBrokersAsync());
+  }, [dispatch]);
 
   /* ---------------  stat cards --------------- */
   const stats = [

@@ -13,8 +13,6 @@ import DashboardPage from './pages/admin/DashboardPage';
 export default function App() {
   return (
     <Provider store={store}>
-      {/* <AuthProvider> */}
-      {/* <BrokersProvider> */}
       <BrowserRouter>
         <Routes>
           {/* ---------- PUBLIC ROUTES ---------- */}
@@ -32,8 +30,6 @@ export default function App() {
           </Route>
         </Routes>
       </BrowserRouter>
-      {/* </BrokersProvider> */}
-      {/* </AuthProvider> */}
     </Provider>
   );
 }

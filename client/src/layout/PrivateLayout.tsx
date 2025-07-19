@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import {
   Server,
   Terminal,
@@ -7,14 +7,27 @@ import {
   FileJson,
   LogOut,
 } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutAsync, selectUser } from '../store/authSlice';
 import { useDarkMode } from '../hooks/useDarkMode';
+import type { AppDispatch } from '../store/store';
 import clsx from 'clsx';
 import Toast from '../components/Toast';
 
 export default function PrivateLayout() {
   const [darkMode, toggleDarkMode] = useDarkMode();
-  const { user, logout } = useAuth();
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const user = useSelector(selectUser);
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutAsync()).unwrap();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   return (
     <>
@@ -58,7 +71,7 @@ export default function PrivateLayout() {
                 <div className="flex flex-col">
                   <span className="text-sm font-medium">{user?.email}</span>
                   <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="text-xs text-gray-500 hover:text-red-500 flex items-center gap-1"
                   >
                     <LogOut size={12} />

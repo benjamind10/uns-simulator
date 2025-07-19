@@ -35,8 +35,10 @@ const brokersSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      // Fetch brokers cases
       .addCase(fetchBrokersAsync.pending, (state) => {
         state.loading = true;
+        state.error = null;
       })
       .addCase(fetchBrokersAsync.fulfilled, (state, action) => {
         state.loading = false;
@@ -46,8 +48,18 @@ const brokersSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Failed to fetch brokers';
       })
+      // Delete broker cases
+      .addCase(deleteBrokerAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(deleteBrokerAsync.fulfilled, (state, action) => {
+        state.loading = false;
         state.brokers = state.brokers.filter((b) => b.id !== action.payload);
+      })
+      .addCase(deleteBrokerAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to delete broker';
       });
   },
 });
