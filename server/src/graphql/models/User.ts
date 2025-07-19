@@ -1,6 +1,5 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 import bcrypt from 'bcrypt';
-import { IBroker } from './Broker'; // make sure this path is correct
 
 export interface IUser extends Document {
   username: string;

@@ -1,26 +1,33 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+
+import PublicLayout from './layout/PublicLayout';
+import AdminLayout from './layout/AdminLayout';
 
 import LandingPage from './pages/LandingPage';
-import Navbar from './components/Navbar';
-import { AuthProvider } from './context/AuthContext';
 import BrokersPage from './pages/BrokersPage';
-// // import Dashboard from './pages/Dashboard'
-// import ExplorerPage from './pages/ExplorerPage';
+// import UsersPage  from './pages/UsersPage';
+// import Dashboard  from './pages/Dashboard';
 
-function App() {
+export default function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Navbar />
+      <BrowserRouter>
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/brokers" element={<BrokersPage />} />
-          {/* <Route path="/dashboard" element={<Dashboard />} /> */}
-          {/* <Route path="/explorer" element={<ExplorerPage />} /> */}
+          {/* ---------- PUBLIC ROUTES ---------- */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<LandingPage />} />
+            {/* add more marketing / help pages here */}
+          </Route>
+
+          {/* ---------- ADMIN ROUTES ---------- */}
+          <Route element={<AdminLayout />}>
+            {/* <Route index element={<Dashboard />} /> */}
+            <Route path="brokers" element={<BrokersPage />} />
+            {/* <Route path="users"   element={<UsersPage />} /> */}
+          </Route>
         </Routes>
-      </Router>
+      </BrowserRouter>
     </AuthProvider>
   );
 }
-
-export default App;

@@ -1,5 +1,5 @@
 export interface IBroker {
-  _id: string;
+  id: string;
   name: string;
   url: string;
   port: number;

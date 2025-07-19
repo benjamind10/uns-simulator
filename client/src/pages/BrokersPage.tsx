@@ -38,11 +38,7 @@ export default function BrokersPage() {
   };
 
   return (
-    <div
-      className="min-h-screen bg-white text-gray-800 
-             dark:bg-gray-900 dark:text-gray-100 
-             px-4 pt-10 transition-colors duration-300"
-    >
+    <div className="min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100 px-4 pt-10 transition-colors duration-300">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">MQTT Broker Configuration</h1>
 
@@ -51,10 +47,13 @@ export default function BrokersPage() {
 
         {!loading && (
           <>
-            <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 px-4 text-white">
+            <div className="bg-white text-gray-900 dark:bg-gray-900 dark:text-white px-4 py-6 rounded-lg shadow-md">
               <BrokerForm onAdd={handleAddBroker} />
             </div>
-            <BrokerList brokers={brokers} />
+
+            <div className="mt-8">
+              <BrokerList brokers={brokers} />
+            </div>
           </>
         )}
       </div>

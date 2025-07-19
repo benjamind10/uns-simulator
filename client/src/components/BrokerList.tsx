@@ -17,7 +17,7 @@ export default function BrokerList({ brokers }: BrokerListProps) {
     <ul className="space-y-2">
       {brokers.map((broker) => (
         <li
-          key={broker._id}
+          key={broker.id}
           className="p-4 bg-white dark:bg-gray-800 rounded shadow flex flex-col"
         >
           <span className="font-bold text-gray-800 dark:text-white">
