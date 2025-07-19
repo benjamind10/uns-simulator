@@ -26,7 +26,18 @@ export const brokerTypeDefs = gql`
     password: String
   }
 
+  input UpdateBrokerInput {
+    name: String
+    url: String
+    port: Int
+    clientId: String
+    username: String
+    password: String
+  }
+
   type Mutation {
     createBroker(input: CreateBrokerInput!): Broker!
+    deleteBroker(id: ID!): Boolean!
+    updateBroker(id: ID!, input: UpdateBrokerInput!): Broker!
   }
 `;

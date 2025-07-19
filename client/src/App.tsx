@@ -4,8 +4,8 @@ import { AuthProvider } from './context/AuthContext';
 import PublicLayout from './layout/PublicLayout';
 import AdminLayout from './layout/AdminLayout';
 
-import LandingPage from './pages/LandingPage';
-import BrokersPage from './pages/BrokersPage';
+import LandingPage from './pages/public/LandingPage';
+import BrokersPage from './pages/admin/BrokersPage';
 // import UsersPage  from './pages/UsersPage';
 // import Dashboard  from './pages/Dashboard';
 

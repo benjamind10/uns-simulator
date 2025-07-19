@@ -1,5 +1,5 @@
-import Login from '../components/Login';
-import { useAuth } from '../hooks/useAuth';
+import Login from '../../components/Login';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function LandingPage() {
   const { isLoggedIn } = useAuth();

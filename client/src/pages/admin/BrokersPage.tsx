@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { fetchBrokers, createBroker } from '../api/brokers';
-import type { IBroker } from '../types';
-import BrokerForm from '../components/BrokerForm';
-import BrokerList from '../components/BrokerList';
+import { fetchBrokers, createBroker } from '../../api/brokers';
+import type { IBroker } from '../../types';
+import BrokerForm from '../../components/BrokerForm';
+import BrokerList from '../../components/BrokerList';
 
 export default function BrokersPage() {
   const [brokers, setBrokers] = useState<IBroker[]>([]);

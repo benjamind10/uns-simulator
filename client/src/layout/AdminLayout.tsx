@@ -1,25 +1,38 @@
 // src/layout/AdminLayout.tsx
-import { useState } from 'react';
-import { Outlet, NavLink } from 'react-router-dom';
-import { Menu, X, Home, Users, Server, Settings } from 'lucide-react';
+import { useState, Fragment } from 'react';
+import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
+import { Menu, X, Home, User, Server, Settings, Sun, Moon } from 'lucide-react';
 import clsx from 'clsx';
+import { useDarkMode } from '../hooks/useDarkMode';
 
 export default function AdminLayout() {
   const [open, setOpen] = useState(true); // side-nav expanded?
+  const location = useLocation();
+  const [darkMode, toggleDarkMode] = useDarkMode(); // custom hook
+
+  /* Build breadcrumb from path segments */
+  const crumbs = location.pathname
+    .split('/')
+    .filter(Boolean) // remove empty
+    .map((seg, idx, arr) => ({
+      label: seg.charAt(0).toUpperCase() + seg.slice(1),
+      to: '/' + arr.slice(0, idx + 1).join('/'),
+      last: idx === arr.length - 1,
+    }));
 
   return (
     <div className="flex h-screen w-screen overflow-hidden text-gray-800 dark:text-gray-100">
-      {/* ─────────────── SIDE NAV ─────────────── */}
+      {/* ───────────── SIDE NAV ───────────── */}
       <aside
         className={clsx(
-          'bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-all duration-200',
+          'bg-gray-100 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-all',
           open ? 'w-56' : 'w-16'
         )}
       >
+        {/* burger / close */}
         <button
           onClick={() => setOpen(!open)}
           className="p-3 text-gray-600 dark:text-gray-300 focus:outline-none"
-          aria-label="Toggle sidebar"
         >
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
@@ -43,15 +56,51 @@ export default function AdminLayout() {
         </nav>
       </aside>
 
-      {/* ─────────────── MAIN AREA ─────────────── */}
+      {/* ───────────── MAIN ───────────── */}
       <div className="flex flex-1 flex-col overflow-y-auto bg-gray-50 dark:bg-gray-900">
         {/* Top Bar */}
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur px-4 shadow-sm">
-          <h1 className="text-lg font-semibold">UNS Admin</h1>
+        <header className="sticky top-0 z-10 h-14 flex items-center justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur px-4 shadow-sm">
+          {/* Breadcrumb */}
+          <nav
+            aria-label="Breadcrumb"
+            className="flex items-center gap-2 text-sm"
+          >
+            <Link
+              to="/"
+              className="hover:underline text-gray-600 dark:text-gray-300"
+            >
+              Dashboard
+            </Link>
+            {crumbs.map(({ label, to, last }) => (
+              <Fragment key={to}>
+                <span>/</span>
+                {last ? (
+                  <span className="font-medium">{label}</span>
+                ) : (
+                  <Link
+                    to={to}
+                    className="hover:underline text-gray-600 dark:text-gray-300"
+                  >
+                    {label}
+                  </Link>
+                )}
+              </Fragment>
+            ))}
+          </nav>
 
+          {/* Right-side buttons */}
           <div className="flex items-center gap-4">
-            {/* TODO: Dark-mode toggle */}
-            {/* TODO: Profile dropdown */}
+            {/* dark-mode toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+              aria-label="Toggle theme"
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            {/* Placeholder: profile dropdown */}
+            {/* <ProfileMenu /> */}
           </div>
         </header>
 
@@ -64,10 +113,10 @@ export default function AdminLayout() {
   );
 }
 
-/* ---------- helper nav config ---------- */
+/* -------- navigation items -------- */
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: Home },
-  { to: '/users', label: 'Users', icon: Users },
+  { to: '/admin', label: 'Dashboard', icon: Home },
+  { to: '/Profile', label: 'Profile', icon: User },
   { to: '/brokers', label: 'Brokers', icon: Server },
   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const;

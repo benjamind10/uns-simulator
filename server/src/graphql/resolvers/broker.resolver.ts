@@ -71,5 +71,64 @@ export const brokerResolvers = {
 
       return broker;
     },
+
+    // Delete a broker
+    deleteBroker: async (
+      _parent: any,
+      { id }: { id: string },
+      context: Context
+    ): Promise<boolean> => {
+      if (!context.user) throw new Error('Unauthorized');
+
+      const broker = await Broker.findById(id);
+      if (!broker) throw new Error('Broker not found');
+
+      const userIds = (broker.users as Types.ObjectId[]).map((u) =>
+        u.toString()
+      );
+      if (!userIds.includes(context.user._id)) {
+        throw new Error('Forbidden');
+      }
+
+      // Remove broker from user's list
+      await User.findByIdAndUpdate(context.user._id, {
+        $pull: { brokers: broker._id },
+      });
+
+      // Delete the broker
+      await Broker.findByIdAndDelete(id);
+
+      return true;
+    },
+
+    // Update a broker
+    updateBroker: async (
+      _parent: any,
+      { id, input }: { id: string; input: Partial<CreateBrokerInput> },
+      context: Context
+    ): Promise<IBroker> => {
+      if (!context.user) throw new Error('Unauthorized');
+
+      const broker = await Broker.findById(id);
+      if (!broker) throw new Error('Broker not found');
+
+      const userIds = (broker.users as Types.ObjectId[]).map((u) =>
+        u.toString()
+      );
+      if (!userIds.includes(context.user._id)) {
+        throw new Error('Forbidden');
+      }
+
+      // Update the broker
+      const updatedBroker = await Broker.findByIdAndUpdate(
+        id,
+        { $set: input },
+        { new: true }
+      );
+
+      if (!updatedBroker) throw new Error('Failed to update broker');
+
+      return updatedBroker;
+    },
   },
 };
