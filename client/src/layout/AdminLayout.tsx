@@ -1,7 +1,6 @@
-// src/layout/AdminLayout.tsx
 import { useState, Fragment } from 'react';
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
-import { Menu, X, Home, User, Server, Settings, Sun, Moon } from 'lucide-react';
+import { Menu, X, Home, User, Server, Sun, Moon } from 'lucide-react';
 import clsx from 'clsx';
 import { useDarkMode } from '../hooks/useDarkMode';
 
@@ -118,5 +117,5 @@ const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
   { to: '/Profile', label: 'Profile', icon: User },
   { to: '/brokers', label: 'Brokers', icon: Server },
-  { to: '/settings', label: 'Settings', icon: Settings },
+  //   { to: '/settings', label: 'Settings', icon: Settings },
 ] as const;
