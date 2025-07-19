@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Server, Users, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 import StatCard from '../../components/StatCard';
 import BrokerCard from '../../components/BrokersCard';
@@ -8,6 +9,8 @@ import { fetchBrokers, deleteBroker } from '../../api/brokers';
 import type { IBroker } from '../../types';
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
+
   /* ---------------  stat cards --------------- */
   const stats = [
     {
@@ -42,23 +45,18 @@ export default function DashboardPage() {
       const success = await deleteBroker(id);
       if (success) {
         setBrokers((prev) => prev.filter((b) => b.id !== id));
-        toast.success('Broker deleted successfully');
+        toast.success('Broker deleted successfully', {
+          duration: 3000,
+          position: 'bottom-right',
+        });
       } else {
         toast.error('Failed to delete broker');
       }
     } catch (error) {
       console.error('Error deleting broker:', error);
-      if (
-        typeof error === 'object' &&
-        error !== null &&
-        'message' in error &&
-        typeof (error as { message: string }).message === 'string' &&
-        (error as { message: string }).message.includes('Authentication')
-      ) {
-        // Redirect to login or refresh token
+      if (error instanceof Error && error.message.includes('Authentication')) {
         toast.error('Session expired. Please log in again.');
-        // Optional: redirect to login
-        // navigate('/login');
+        navigate('/login');
       } else {
         toast.error('Failed to delete broker');
       }
