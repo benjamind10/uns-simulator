@@ -1,4 +1,9 @@
-import { Dialog } from '@headlessui/react';
+import {
+  Description,
+  Dialog,
+  DialogPanel,
+  DialogTitle,
+} from '@headlessui/react';
 import { AlertTriangle } from 'lucide-react';
 
 interface ConfirmDialogProps {
@@ -21,16 +26,16 @@ export default function ConfirmDialog({
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
 
       <div className="fixed inset-0 flex items-center justify-center p-4">
-        <Dialog.Panel className="mx-auto max-w-sm rounded-lg bg-white dark:bg-gray-800 p-6">
+        <DialogPanel className="mx-auto max-w-sm rounded-lg bg-white dark:bg-gray-800 p-6">
           <div className="flex gap-4">
             <AlertTriangle className="h-6 w-6 text-red-500" />
             <div>
-              <Dialog.Title className="text-lg font-medium text-gray-900 dark:text-white">
+              <DialogTitle className="text-lg font-medium text-gray-900 dark:text-white">
                 {title}
-              </Dialog.Title>
-              <Dialog.Description className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              </DialogTitle>
+              <Description className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 {message}
-              </Dialog.Description>
+              </Description>
             </div>
           </div>
 
@@ -48,7 +53,7 @@ export default function ConfirmDialog({
               Delete
             </button>
           </div>
-        </Dialog.Panel>
+        </DialogPanel>
       </div>
     </Dialog>
   );

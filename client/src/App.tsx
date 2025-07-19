@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { BrokersProvider } from './contexts/BrokersContext';
 
 import PublicLayout from './layout/PublicLayout';
 import AdminLayout from './layout/AdminLayout';
@@ -12,23 +13,25 @@ import DashboardPage from './pages/admin/DashboardPage';
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* ---------- PUBLIC ROUTES ---------- */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<LandingPage />} />
-            {/* add more marketing / help pages here */}
-          </Route>
+      <BrokersProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* ---------- PUBLIC ROUTES ---------- */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<LandingPage />} />
+              {/* add more marketing / help pages here */}
+            </Route>
 
-          {/* ---------- ADMIN ROUTES ---------- */}
-          <Route element={<AdminLayout />}>
-            {/* <Route index element={<Dashboard />} /> */}
-            <Route path="brokers" element={<BrokersPage />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            {/* <Route path="users"   element={<UsersPage />} /> */}
-          </Route>
-        </Routes>
-      </BrowserRouter>
+            {/* ---------- ADMIN ROUTES ---------- */}
+            <Route element={<AdminLayout />}>
+              {/* <Route index element={<Dashboard />} /> */}
+              <Route path="brokers" element={<BrokersPage />} />
+              <Route path="dashboard" element={<DashboardPage />} />
+              {/* <Route path="users"   element={<UsersPage />} /> */}
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </BrokersProvider>
     </AuthProvider>
   );
 }

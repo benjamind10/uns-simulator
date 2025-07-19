@@ -115,4 +115,4 @@ const NAV_ITEMS = [
     icon: Settings,
     to: '/settings',
   },
-];
+] as const;

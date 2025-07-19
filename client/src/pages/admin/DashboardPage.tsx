@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react';
 import { Server, Book, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
 import StatCard from '../../components/StatCard';
 import BrokerCard from '../../components/BrokersCard';
-import { fetchBrokers, deleteBroker } from '../../api/brokers';
-import type { IBroker } from '../../types';
+import { useBrokers } from '../../contexts/BrokersContext';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { brokers, loading, deleteBroker: deleteBrokerContext } = useBrokers();
 
   /* ---------------  stat cards --------------- */
   const stats = [
@@ -30,28 +29,13 @@ export default function DashboardPage() {
     },
   ];
 
-  /* ---------------  brokers section --------------- */
-  const [brokers, setBrokers] = useState<IBroker[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchBrokers()
-      .then(setBrokers)
-      .finally(() => setLoading(false));
-  }, []);
-
   const handleDelete = async (id: string) => {
     try {
-      const success = await deleteBroker(id);
-      if (success) {
-        setBrokers((prev) => prev.filter((b) => b.id !== id));
-        toast.success('Broker deleted successfully', {
-          duration: 3000,
-          position: 'bottom-right',
-        });
-      } else {
-        toast.error('Failed to delete broker');
-      }
+      await deleteBrokerContext(id);
+      toast.success('Broker deleted successfully', {
+        duration: 3000,
+        position: 'bottom-right',
+      });
     } catch (error) {
       console.error('Error deleting broker:', error);
       if (error instanceof Error && error.message.includes('Authentication')) {
