@@ -1,21 +1,30 @@
 import { useState } from 'react';
 import { loginUser } from '../api/auth';
 import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = await loginUser(email, password);
-    if (result) {
-      sessionStorage.setItem('authToken', result.token);
-      login(); // <-- update global state
-    } else {
-      setError('Invalid credentials');
+    try {
+      const result = await loginUser(email, password);
+      if (result) {
+        // Pass both token and user to the login function
+        login(result.token, result.user);
+        // Redirect to dashboard after successful login
+        navigate('/dashboard');
+      } else {
+        setError('Invalid credentials');
+      }
+    } catch (err) {
+      setError('Login failed. Please try again.');
+      console.error('Login error:', err);
     }
   };
 
@@ -27,7 +36,7 @@ export default function Login() {
       <h2 className="text-2xl font-bold mb-6 text-center text-white">Login</h2>
       {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
       <input
-        type="text"
+        type="email" // Changed to email type
         placeholder="E-mail"
         value={email}
         onChange={(e) => setEmail(e.target.value)}

@@ -11,34 +11,6 @@ import { useAuth } from '../hooks/useAuth';
 import { useDarkMode } from '../hooks/useDarkMode';
 import clsx from 'clsx';
 
-const NAV_ITEMS = [
-  {
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    to: '/dashboard',
-  },
-  {
-    label: 'MQTT Explorer',
-    icon: Terminal,
-    to: '/mqtt-explorer',
-  },
-  {
-    label: 'Schema Builder',
-    icon: FileJson,
-    to: '/schema-builder',
-  },
-  {
-    label: 'Simulator',
-    icon: Server,
-    to: '/simulator',
-  },
-  {
-    label: 'Settings',
-    icon: Settings,
-    to: '/settings',
-  },
-];
-
 export default function PrivateLayout() {
   const [darkMode, toggleDarkMode] = useDarkMode();
   const { user, logout } = useAuth();
@@ -112,3 +84,31 @@ export default function PrivateLayout() {
     </div>
   );
 }
+
+const NAV_ITEMS = [
+  {
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    to: '/dashboard',
+  },
+  {
+    label: 'MQTT Explorer',
+    icon: Terminal,
+    to: '/mqtt-explorer',
+  },
+  {
+    label: 'Schema Builder',
+    icon: FileJson,
+    to: '/schema-builder',
+  },
+  {
+    label: 'Simulator',
+    icon: Server,
+    to: '/simulator',
+  },
+  {
+    label: 'Settings',
+    icon: Settings,
+    to: '/settings',
+  },
+];
