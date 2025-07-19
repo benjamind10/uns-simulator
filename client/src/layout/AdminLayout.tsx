@@ -115,7 +115,7 @@ export default function AdminLayout() {
 
 /* -------- navigation items -------- */
 const NAV = [
-  { to: '/admin', label: 'Dashboard', icon: Home },
+  { to: '/dashboard', label: 'Dashboard', icon: Home },
   { to: '/Profile', label: 'Profile', icon: User },
   { to: '/brokers', label: 'Brokers', icon: Server },
   { to: '/settings', label: 'Settings', icon: Settings },

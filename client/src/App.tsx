@@ -6,8 +6,8 @@ import AdminLayout from './layout/AdminLayout';
 
 import LandingPage from './pages/public/LandingPage';
 import BrokersPage from './pages/admin/BrokersPage';
+import DashboardPage from './pages/admin/DashboardPage';
 // import UsersPage  from './pages/UsersPage';
-// import Dashboard  from './pages/Dashboard';
 
 export default function App() {
   return (
@@ -24,6 +24,7 @@ export default function App() {
           <Route element={<AdminLayout />}>
             {/* <Route index element={<Dashboard />} /> */}
             <Route path="brokers" element={<BrokersPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
             {/* <Route path="users"   element={<UsersPage />} /> */}
           </Route>
         </Routes>

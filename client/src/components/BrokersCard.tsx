@@ -1,0 +1,65 @@
+import type { IBroker } from '../types';
+import { Edit, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+
+interface BrokerCardProps {
+  broker: IBroker;
+  onEdit?: (b: IBroker) => void;
+  onDelete?: (id: string) => void;
+  status?: 'online' | 'offline'; // optional live status
+}
+
+export default function BrokerCard({
+  broker,
+  status = 'offline',
+  onEdit,
+  onDelete,
+}: BrokerCardProps) {
+  const statusInfo = {
+    online: { label: 'Online', color: 'text-green-600', Icon: CheckCircle2 },
+    offline: { label: 'Offline', color: 'text-red-600', Icon: XCircle },
+  }[status];
+
+  return (
+    <div className="rounded-lg bg-white dark:bg-gray-800 shadow p-5 flex flex-col gap-3">
+      {/* header row */}
+      <div className="flex items-start justify-between">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+          {broker.name}
+        </h3>
+
+        {/* status pill */}
+        <span
+          className={`inline-flex items-center gap-1 text-xs font-medium ${statusInfo.color}`}
+        >
+          <statusInfo.Icon size={14} /> {statusInfo.label}
+        </span>
+      </div>
+
+      {/* connection details */}
+      <div className="text-sm text-gray-600 dark:text-gray-300">
+        <p>
+          <span className="font-medium">URL:</span> {broker.url}:{broker.port}
+        </p>
+        <p>
+          <span className="font-medium">Client ID:</span> {broker.clientId}
+        </p>
+      </div>
+
+      {/* actions */}
+      <div className="mt-auto flex gap-3">
+        <button
+          onClick={() => onEdit?.(broker)}
+          className="flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400 text-sm"
+        >
+          <Edit size={16} /> Edit
+        </button>
+        <button
+          onClick={() => onDelete?.(broker.id)}
+          className="flex items-center gap-1 text-red-600 hover:underline dark:text-red-400 text-sm"
+        >
+          <Trash2 size={16} /> Delete
+        </button>
+      </div>
+    </div>
+  );
+}
