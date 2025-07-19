@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Server, Users, Activity } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 import StatCard from '../../components/StatCard';
 import BrokerCard from '../../components/BrokersCard';
-import { fetchBrokers } from '../../api/brokers';
+import { fetchBrokers, deleteBroker } from '../../api/brokers';
 import type { IBroker } from '../../types';
 
 export default function DashboardPage() {
@@ -36,6 +37,34 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const handleDelete = async (id: string) => {
+    try {
+      const success = await deleteBroker(id);
+      if (success) {
+        setBrokers((prev) => prev.filter((b) => b.id !== id));
+        toast.success('Broker deleted successfully');
+      } else {
+        toast.error('Failed to delete broker');
+      }
+    } catch (error) {
+      console.error('Error deleting broker:', error);
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'message' in error &&
+        typeof (error as { message: string }).message === 'string' &&
+        (error as { message: string }).message.includes('Authentication')
+      ) {
+        // Redirect to login or refresh token
+        toast.error('Session expired. Please log in again.');
+        // Optional: redirect to login
+        // navigate('/login');
+      } else {
+        toast.error('Failed to delete broker');
+      }
+    }
+  };
+
   return (
     <div className="space-y-10">
       {/* --- stat cards row --- */}
@@ -60,7 +89,12 @@ export default function DashboardPage() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {brokers.map((b) => (
-              <BrokerCard key={b.id} broker={b} status="online" />
+              <BrokerCard
+                key={b.id}
+                broker={b}
+                status="online"
+                onDelete={handleDelete}
+              />
             ))}
           </div>
         )}

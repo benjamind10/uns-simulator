@@ -16,9 +16,14 @@ if (!endpoint) {
 // Initialize a client with token from session storage
 const getClient = () => {
   const token = sessionStorage.getItem('authToken');
+
+  if (!token) {
+    throw new Error('No authentication token found');
+  }
+
   return new GraphQLClient(endpoint, {
     headers: {
-      Authorization: token ? `Bearer ${token}` : '',
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
   });
@@ -84,14 +89,43 @@ export async function createBroker(input: CreateBrokerInput): Promise<IBroker> {
 export async function deleteBroker(id: string): Promise<boolean> {
   const client = getClient();
   try {
+    // Debug logs
+    console.log('Delete Request:', {
+      id,
+      token: sessionStorage.getItem('authToken')?.substring(0, 20) + '...',
+      endpoint: import.meta.env.VITE_API_URL,
+    });
+
     const variables = { id };
     const data: DeleteBrokerResponse = await client.request(
       DELETE_BROKER,
       variables
     );
+
+    // Debug response
+    console.log('Delete Response:', data);
+
     return data.deleteBroker;
   } catch (err) {
-    console.error('Error deleting broker:', err);
+    // Log the full error
+    if (err && typeof err === 'object') {
+      console.error('Delete Error Details:', {
+        message:
+          typeof err === 'object' && err !== null && 'message' in err
+            ? (err as { message?: string }).message
+            : undefined,
+        response:
+          typeof err === 'object' && err !== null && 'response' in err
+            ? (err as { response?: unknown }).response
+            : undefined,
+        request:
+          typeof err === 'object' && err !== null && 'request' in err
+            ? (err as { request?: unknown }).request
+            : undefined,
+      });
+    } else {
+      console.error('Delete Error Details:', err);
+    }
     throw err;
   }
 }

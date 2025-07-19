@@ -2,10 +2,10 @@
 FROM node:20 AS builder
 
 WORKDIR /app
-COPY package.json yarn.lock ./
-RUN yarn install
+COPY package.json package-lock.json ./
+RUN npm install
 COPY . .
-RUN yarn build
+RUN npm run build
 
 # Stage 2: Serve with a static file server (nginx or similar)
 FROM nginx:stable-alpine

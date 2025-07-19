@@ -73,20 +73,26 @@ export const brokerResolvers = {
     },
 
     // Delete a broker
-    deleteBroker: async (
-      _parent: any,
-      { id }: { id: string },
-      context: Context
-    ): Promise<boolean> => {
+    deleteBroker: async (_: any, { id }: { id: string }, context: Context) => {
       if (!context.user) throw new Error('Unauthorized');
 
       const broker = await Broker.findById(id);
       if (!broker) throw new Error('Broker not found');
 
+      // Convert both to strings for comparison
       const userIds = (broker.users as Types.ObjectId[]).map((u) =>
         u.toString()
       );
-      if (!userIds.includes(context.user._id)) {
+      const contextUserId = context.user._id.toString();
+
+      console.log('Checking access:', {
+        brokerId: id,
+        userId: contextUserId,
+        allowedUsers: userIds,
+        matches: userIds.includes(contextUserId),
+      });
+
+      if (!userIds.includes(contextUserId)) {
         throw new Error('Forbidden');
       }
 

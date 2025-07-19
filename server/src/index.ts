@@ -40,6 +40,10 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: getContext,
+  cors: {
+    origin: 'http://localhost:5173', // your Vite dev URL
+    credentials: false, // true if you will send cookies
+  },
 });
 
 // Connect to MongoDB and start the server
