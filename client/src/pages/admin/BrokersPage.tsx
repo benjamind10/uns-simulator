@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchBrokers, createBroker } from '../../api/brokers';
+import { toast } from 'react-hot-toast';
+import { fetchBrokers, createBroker, deleteBroker } from '../../api/brokers';
 import type { IBroker } from '../../types';
 import BrokerForm from '../../components/BrokerForm';
 import BrokerList from '../../components/BrokerList';
@@ -33,8 +34,34 @@ export default function BrokersPage() {
     username?: string;
     password?: string;
   }) => {
-    const newBroker = await createBroker(broker);
-    setBrokers((prev) => [...prev, newBroker]);
+    try {
+      const newBroker = await createBroker(broker);
+      setBrokers((prev) => [...prev, newBroker]);
+      toast.success('Broker added successfully');
+    } catch (err) {
+      toast.error('Failed to add broker');
+      console.error(err);
+    }
+  };
+
+  const handleEditBroker = (broker: IBroker) => {
+    // For now, just show a toast - we'll implement edit later
+    toast(`Editing broker: ${broker.name}`);
+  };
+
+  const handleDeleteBroker = async (id: string) => {
+    try {
+      const success = await deleteBroker(id);
+      if (success) {
+        setBrokers((prev) => prev.filter((b) => b.id !== id));
+        toast.success('Broker deleted successfully');
+      } else {
+        toast.error('Failed to delete broker');
+      }
+    } catch (err) {
+      toast.error('Failed to delete broker');
+      console.error(err);
+    }
   };
 
   return (
@@ -52,7 +79,11 @@ export default function BrokersPage() {
             </div>
 
             <div className="mt-8">
-              <BrokerList brokers={brokers} />
+              <BrokerList
+                brokers={brokers}
+                onEdit={handleEditBroker}
+                onDelete={handleDeleteBroker}
+              />
             </div>
           </>
         )}

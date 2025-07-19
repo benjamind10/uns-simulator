@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Server, Users, Activity } from 'lucide-react';
+import { Server, Book, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,9 +19,9 @@ export default function DashboardPage() {
       icon: <Server size={20} className="text-blue-500" />,
     },
     {
-      title: 'Total Users',
+      title: 'Total Sim Schemas',
       value: 42,
-      icon: <Users size={20} className="text-green-500" />,
+      icon: <Book size={20} className="text-green-500" />,
     },
     {
       title: 'Sim Runs Today',
