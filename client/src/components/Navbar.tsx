@@ -1,19 +1,28 @@
 import { useState } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { Sun, Moon, Menu, X } from 'lucide-react';
 import { useDarkMode } from '../hooks/useDarkMode';
-import { useAuth } from '../hooks/useAuth';
+import { logoutAsync, selectIsAuthenticated } from '../store/authSlice';
+import type { AppDispatch } from '../store/store';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, toggleDarkMode] = useDarkMode();
-  const { isLoggedIn, logout } = useAuth();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-    setMenuOpen(false);
+  // Get auth state from Redux
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutAsync()).unwrap();
+      navigate('/');
+      setMenuOpen(false);
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const closeMenu = () => setMenuOpen(false);
@@ -53,22 +62,28 @@ export default function Navbar() {
           >
             Explorer
           </NavLink>
-          <NavLink
-            to="/simulator"
-            className={({ isActive }) =>
-              isActive ? 'font-semibold text-blue-500' : ''
-            }
-          >
-            Simulator
-          </NavLink>
-          <NavLink
-            to="/brokers"
-            className={({ isActive }) =>
-              isActive ? 'font-semibold text-blue-500' : ''
-            }
-          >
-            Brokers
-          </NavLink>
+
+          {/* Only show these links if authenticated */}
+          {isAuthenticated && (
+            <>
+              <NavLink
+                to="/simulator"
+                className={({ isActive }) =>
+                  isActive ? 'font-semibold text-blue-500' : ''
+                }
+              >
+                Simulator
+              </NavLink>
+              <NavLink
+                to="/brokers"
+                className={({ isActive }) =>
+                  isActive ? 'font-semibold text-blue-500' : ''
+                }
+              >
+                Brokers
+              </NavLink>
+            </>
+          )}
 
           <button
             onClick={toggleDarkMode}
@@ -78,7 +93,7 @@ export default function Navbar() {
             {darkMode ? <Sun size={20} /> : <Moon size={20} />}
           </button>
 
-          {isLoggedIn ? (
+          {isAuthenticated ? (
             <button
               onClick={handleLogout}
               className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
@@ -108,25 +123,32 @@ export default function Navbar() {
           >
             Explorer
           </NavLink>
-          <NavLink
-            to="/simulator"
-            onClick={closeMenu}
-            className={({ isActive }) =>
-              `block ${isActive ? 'font-semibold text-blue-500' : ''}`
-            }
-          >
-            Simulator
-          </NavLink>
-          <NavLink
-            to="/brokers"
-            onClick={closeMenu}
-            className={({ isActive }) =>
-              `block ${isActive ? 'font-semibold text-blue-500' : ''}`
-            }
-          >
-            Brokers
-          </NavLink>
-          {isLoggedIn ? (
+
+          {/* Only show these links if authenticated */}
+          {isAuthenticated && (
+            <>
+              <NavLink
+                to="/simulator"
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `block ${isActive ? 'font-semibold text-blue-500' : ''}`
+                }
+              >
+                Simulator
+              </NavLink>
+              <NavLink
+                to="/brokers"
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `block ${isActive ? 'font-semibold text-blue-500' : ''}`
+                }
+              >
+                Brokers
+              </NavLink>
+            </>
+          )}
+
+          {isAuthenticated ? (
             <button
               onClick={handleLogout}
               className="block w-full text-left bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"

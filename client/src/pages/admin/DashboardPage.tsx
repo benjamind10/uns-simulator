@@ -1,20 +1,23 @@
 import { Server, Book, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { deleteBrokerAsync } from '../../store/brokersSlice';
+import type { AppDispatch, RootState } from '../../store/store';
 
 import StatCard from '../../components/StatCard';
 import BrokerCard from '../../components/BrokersCard';
-import { useBrokers } from '../../contexts/BrokersContext';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { brokers, loading, deleteBroker: deleteBrokerContext } = useBrokers();
+  const dispatch = useDispatch<AppDispatch>();
+  const { brokers, loading } = useSelector((state: RootState) => state.brokers);
 
   /* ---------------  stat cards --------------- */
   const stats = [
     {
       title: 'Brokers Online',
-      value: 3,
+      value: brokers.length,
       icon: <Server size={20} className="text-blue-500" />,
     },
     {
@@ -31,7 +34,7 @@ export default function DashboardPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteBrokerContext(id);
+      await dispatch(deleteBrokerAsync(id)).unwrap();
       toast.success('Broker deleted successfully', {
         duration: 3000,
         position: 'bottom-right',

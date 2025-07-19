@@ -1,18 +1,23 @@
 import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
-import { useBrokers } from '../../contexts/BrokersContext';
+import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokersSlice';
 import { createBroker } from '../../api/brokers';
 import BrokerForm from '../../components/BrokerForm';
 import BrokerList from '../../components/BrokerList';
+import type { AppDispatch, RootState } from '../../store/store';
 import type { IBroker } from '../../types';
 
 export default function BrokersPage() {
-  const { brokers, loading, error, deleteBroker, refreshBrokers } =
-    useBrokers();
+  const dispatch = useDispatch<AppDispatch>();
+  const { brokers, loading, error } = useSelector(
+    (state: RootState) => state.brokers
+  );
 
+  // Fetch brokers on mount
   useEffect(() => {
-    refreshBrokers();
-  }, [refreshBrokers]);
+    dispatch(fetchBrokersAsync());
+  }, [dispatch]);
 
   const handleAddBroker = async (broker: {
     name: string;
@@ -24,7 +29,8 @@ export default function BrokersPage() {
   }) => {
     try {
       await createBroker(broker);
-      refreshBrokers(); // Refresh the list after adding
+      // Refresh the list after adding
+      dispatch(fetchBrokersAsync());
       toast.success('Broker added successfully');
     } catch (err) {
       toast.error('Failed to add broker');
@@ -35,6 +41,16 @@ export default function BrokersPage() {
   const handleEditBroker = (broker: IBroker) => {
     // For now, just show a toast - we'll implement edit later
     toast(`Editing broker: ${broker.name}`);
+  };
+
+  const handleDeleteBroker = async (id: string) => {
+    try {
+      await dispatch(deleteBrokerAsync(id)).unwrap();
+      toast.success('Broker deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete broker');
+      console.error(error);
+    }
   };
 
   return (
@@ -55,7 +71,7 @@ export default function BrokersPage() {
             <BrokerList
               brokers={brokers}
               onEdit={handleEditBroker}
-              onDelete={deleteBroker}
+              onDelete={handleDeleteBroker}
             />
           )}
         </div>

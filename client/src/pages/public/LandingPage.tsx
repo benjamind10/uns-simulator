@@ -1,8 +1,9 @@
+import { useSelector } from 'react-redux';
 import Login from '../../components/Login';
-import { useAuth } from '../../hooks/useAuth';
+import { selectIsAuthenticated } from '../../store/authSlice';
 
 export default function LandingPage() {
-  const { isLoggedIn } = useAuth();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
   return (
     <div
@@ -11,7 +12,7 @@ export default function LandingPage() {
                  text-gray-800 dark:text-gray-100 
                  transition-colors duration-300 px-4"
     >
-      {!isLoggedIn ? (
+      {!isAuthenticated ? (
         <Login />
       ) : (
         <h1 className="text-5xl font-bold mb-4 text-center">
