@@ -13,6 +13,7 @@ export interface SchemaNode {
 }
 
 export interface SchemaNodeState {
+  schemas: Record<string, SchemaNode>;
   nodes: SchemaNode[];
   loading: boolean;
   error: string | null;

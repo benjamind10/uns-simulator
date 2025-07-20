@@ -13,14 +13,28 @@ import { userTypeDefs } from './graphql/schemas/user.schema';
 import { userResolvers } from './graphql/resolvers/user.resolver';
 import { brokerTypeDefs } from './graphql/schemas/broker.schema';
 import { brokerResolvers } from './graphql/resolvers/broker.resolver';
+import { schemaNodeTypeDefs } from './graphql/schemas/schemaNode.schema';
+import { schemaNodeResolvers } from './graphql/resolvers/schemaNode.resolver';
+import { schemaTypeDefs } from './graphql/schemas/schema.schema';
+import { schemaResolvers } from './graphql/resolvers/schema.resolver';
 import User from './graphql/models/User';
 
 // Load environment variables
 dotenv.config();
 
 // Merge all schema parts
-export const typeDefs = mergeTypeDefs([userTypeDefs, brokerTypeDefs]);
-export const resolvers = mergeResolvers([userResolvers, brokerResolvers]);
+export const typeDefs = mergeTypeDefs([
+  userTypeDefs,
+  brokerTypeDefs,
+  schemaNodeTypeDefs,
+  schemaTypeDefs,
+]);
+export const resolvers = mergeResolvers([
+  userResolvers,
+  brokerResolvers,
+  schemaNodeResolvers,
+  schemaResolvers,
+]);
 
 // Apollo context for auth
 const getContext = async ({ req }: { req: any }) => {
@@ -44,6 +58,7 @@ const getContext = async ({ req }: { req: any }) => {
 const allowedOrigins = [
   'http://localhost:5173', // Vite dev server
   'http://localhost:3000', // Production/Nginx
+  'https://studio.apollographql.com',
   process.env.CLIENT_URL, // From env
 ].filter(Boolean);
 

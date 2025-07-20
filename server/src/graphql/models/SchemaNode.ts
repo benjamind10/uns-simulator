@@ -1,12 +1,14 @@
-import mongoose, { Document, Schema, Model } from 'mongoose';
+import mongoose, { Document, Schema, Model, Types } from 'mongoose';
 
 export type SchemaNodeKind = 'group' | 'metric';
 export type SchemaNodeDataType = 'Int' | 'Float' | 'Bool' | 'String';
 
-export interface ISchemaNode extends Document {
+export interface ISchemaNode {
+  _id?: Types.ObjectId;
   name: string;
   kind: SchemaNodeKind;
   parent: ISchemaNode['_id'] | null;
+  schema: Types.ObjectId;
   path: string;
   order: number;
   dataType?: SchemaNodeDataType;
@@ -18,25 +20,25 @@ export interface ISchemaNode extends Document {
 
 const SchemaNodeSchema: Schema<ISchemaNode> = new mongoose.Schema(
   {
-    // Common
-    name: { type: String, required: true }, // e.g. "Line 24"
+    name: { type: String, required: true },
     kind: { type: String, enum: ['group', 'metric'], required: true },
     parent: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'SchemaNode',
       default: null,
     },
-
-    // Materialised path helps fast tree queries & unique constraints
-    path: { type: String, required: true, index: true }, // "/Fiberon/1NL/PE/Line 24"
-
-    // Ordering among siblings (drag-and-drop)
+    schema: {
+      // <-- Add this block
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Schema',
+      required: true,
+      index: true,
+    },
+    path: { type: String, required: true, index: true },
     order: { type: Number, default: 0 },
-
-    // Metric-specific fields (only used when kind === 'metric')
     dataType: { type: String, enum: ['Int', 'Float', 'Bool', 'String'] },
-    unit: { type: String }, // %, °C, etc.
-    engineering: { type: Object }, // any custom meta
+    unit: { type: String },
+    engineering: { type: Object },
   },
   { timestamps: true }
 );
@@ -44,9 +46,6 @@ const SchemaNodeSchema: Schema<ISchemaNode> = new mongoose.Schema(
 // Ensure path uniqueness
 SchemaNodeSchema.index({ path: 1 }, { unique: true });
 
-const SchemaNode: Model<ISchemaNode> = mongoose.model<ISchemaNode>(
-  'SchemaNode',
-  SchemaNodeSchema
-);
+const SchemaNode = mongoose.model('SchemaNode', SchemaNodeSchema);
 
 export default SchemaNode;

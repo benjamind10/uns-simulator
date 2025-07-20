@@ -12,6 +12,7 @@ const initialState: SchemaNodeState = {
   nodes: [],
   loading: false,
   error: null,
+  schemas: {},
 };
 
 const schemaNodeSlice = createSlice({

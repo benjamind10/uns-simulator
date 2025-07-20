@@ -15,14 +15,6 @@ export const schemaNodeTypeDefs = gql`
     updatedAt: String!
   }
 
-  scalar JSON
-
-  type Query {
-    schemaNodes: [SchemaNode!]!
-    schemaNode(id: ID!): SchemaNode
-    schemaNodesByParent(parentId: ID!): [SchemaNode!]!
-  }
-
   input SchemaNodeInput {
     name: String!
     kind: String!
@@ -34,9 +26,17 @@ export const schemaNodeTypeDefs = gql`
     engineering: JSON
   }
 
+  scalar JSON
+
+  type Query {
+    schemaNodes: [SchemaNode!]!
+    schemaNode(id: ID!): SchemaNode
+    schemaNodesByParent(parentId: ID!): [SchemaNode!]!
+  }
+
   type Mutation {
     createSchemaNode(input: SchemaNodeInput!): SchemaNode!
     updateSchemaNode(id: ID!, input: SchemaNodeInput!): SchemaNode!
-    deleteSchemaNode(id: ID!): SchemaNode
+    deleteSchemaNode(id: ID!): Boolean!
   }
 `;
