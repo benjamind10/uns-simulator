@@ -1,4 +1,9 @@
-import { ApolloServer } from 'apollo-server';
+import { ApolloServer } from 'apollo-server-express';
+import express from 'express';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import cors from 'cors';
+import compression from 'compression';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
@@ -39,28 +44,55 @@ const getContext = async ({ req }: { req: any }) => {
 const allowedOrigins = [
   'http://localhost:5173', // Vite dev server
   'http://localhost:3000', // Production/Nginx
-  process.env.CLIENT_URL, // Optional: Add from env if needed
-].filter(Boolean); // Remove any undefined values
+  process.env.CLIENT_URL, // From env
+].filter(Boolean);
 
-// Create Apollo Server instance
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  context: getContext,
-  cors: {
+// Create Express app
+const app = express();
+
+// Security middleware
+app.use(
+  helmet({
+    contentSecurityPolicy:
+      process.env.NODE_ENV === 'production' ? undefined : false,
+    crossOriginEmbedderPolicy: process.env.NODE_ENV === 'production',
+  })
+);
+
+// Enable gzip compression
+app.use(compression());
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+});
+app.use(limiter);
+
+// CORS configuration
+app.use(
+  cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, etc)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         console.warn(`⚠️ Blocked request from unauthorized origin: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
-    credentials: true, // Enable if you need to handle cookies/auth
-  },
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+// Create Apollo Server instance
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  context: getContext,
 });
 
 // Connect to MongoDB and start the server
@@ -69,14 +101,31 @@ const startServer = async () => {
     await mongoose.connect(process.env.MONGO_URI || '', {
       dbName: process.env.DB_NAME || 'unsdb',
     });
-
     console.log('✅ Connected to MongoDB');
 
-    const { url } = await server.listen({ port: process.env.PORT || 4000 });
-    console.log(`🚀 Server ready at ${url}`);
+    await server.start();
+    server.applyMiddleware({
+      app,
+      cors: false, // We're handling CORS with the express middleware
+    });
+
+    const port = process.env.PORT || 4000;
+    app.listen(port, () => {
+      console.log(
+        `🚀 Server ready at http://localhost:${port}${server.graphqlPath}`
+      );
+    });
   } catch (err) {
     console.error('❌ Failed to start server:', err);
+    process.exit(1);
   }
 };
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  await mongoose.connection.close();
+  process.exit(0);
+});
 
 startServer();

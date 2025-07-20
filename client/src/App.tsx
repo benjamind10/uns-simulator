@@ -8,6 +8,8 @@ import AdminLayout from './layout/AdminLayout';
 import LandingPage from './pages/public/LandingPage';
 import BrokersPage from './pages/admin/BrokersPage';
 import DashboardPage from './pages/admin/DashboardPage';
+import PrivateLayout from './layout/PrivateLayout';
+import MqttExplorerPage from './pages/private/MqttExplorerPage';
 // import UsersPage  from './pages/UsersPage';
 
 export default function App() {
@@ -28,6 +30,9 @@ export default function App() {
             <Route path="brokers/edit/:brokerId" element={<BrokersPage />} />
             <Route path="dashboard" element={<DashboardPage />} />
             {/* <Route path="users"   element={<UsersPage />} /> */}
+          </Route>
+          <Route element={<PrivateLayout />}>
+            <Route path="explorer" element={<MqttExplorerPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

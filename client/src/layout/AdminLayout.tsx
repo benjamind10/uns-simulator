@@ -1,6 +1,6 @@
 import { useState, Fragment } from 'react';
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
-import { Menu, X, Home, User, Server, Sun, Moon } from 'lucide-react';
+import { Menu, X, Home, User, Server, Sun, Moon, FileCode } from 'lucide-react';
 import clsx from 'clsx';
 
 import { useDarkMode } from '../hooks/useDarkMode';
@@ -64,13 +64,23 @@ export default function AdminLayout() {
         <div className="flex flex-1 flex-col overflow-y-auto bg-gray-50 dark:bg-gray-900">
           {/* Top Bar */}
           <header className="sticky top-0 z-10 h-14 flex items-center justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur px-4 shadow-sm">
-            {/* Breadcrumb */}
+            {/* Breadcrumb & Home Button */}
             <nav
               aria-label="Breadcrumb"
               className="flex items-center gap-2 text-sm"
             >
+              {/* Home Button */}
               <Link
                 to="/"
+                className="hover:underline text-blue-600 dark:text-blue-400 font-semibold mr-2"
+                title="Go to Home"
+              >
+                Home
+              </Link>
+              <span className="text-gray-400">|</span>
+              {/* Admin Breadcrumb */}
+              <Link
+                to="/dashboard"
                 className="hover:underline text-gray-600 dark:text-gray-300"
               >
                 Admin
@@ -123,5 +133,5 @@ const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
   { to: '/Profile', label: 'Profile', icon: User },
   { to: '/brokers', label: 'Brokers', icon: Server },
-  //   { to: '/settings', label: 'Settings', icon: Settings },
+  { to: '/schemas', label: 'Schemas', icon: FileCode },
 ] as const;
