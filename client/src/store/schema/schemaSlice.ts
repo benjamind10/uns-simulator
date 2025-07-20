@@ -33,12 +33,14 @@ export interface SchemaState {
   schemas: Schema[];
   loading: boolean;
   error: string | null;
+  selectedSchemaId: string | null; // Add this line
 }
 
 const initialState: SchemaState = {
   schemas: [],
   loading: false,
   error: null,
+  selectedSchemaId: null, // Add this line
 };
 
 const schemaSlice = createSlice({
@@ -47,6 +49,9 @@ const schemaSlice = createSlice({
   reducers: {
     clearSchemaError: (state) => {
       state.error = null;
+    },
+    setSelectedSchemaId: (state, action) => {
+      state.selectedSchemaId = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -80,10 +85,12 @@ const schemaSlice = createSlice({
   },
 });
 
-export const { clearSchemaError } = schemaSlice.actions;
+export const { clearSchemaError, setSelectedSchemaId } = schemaSlice.actions;
 
 export const selectSchemas = (state: RootState) => state.schema.schemas;
 export const selectSchemaLoading = (state: RootState) => state.schema.loading;
 export const selectSchemaError = (state: RootState) => state.schema.error;
+export const selectSelectedSchemaId = (state: RootState) =>
+  state.schema.selectedSchemaId;
 
 export const schemaReducer = schemaSlice.reducer;

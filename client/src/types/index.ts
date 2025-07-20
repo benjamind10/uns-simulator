@@ -6,5 +6,5 @@ export interface IBroker {
   clientId: string;
   username?: string;
   password?: string;
-  createdAt: string;
+  createdAt?: string;
 }

@@ -2,15 +2,13 @@ import { configureStore } from '@reduxjs/toolkit';
 
 import { authReducer } from './auth';
 import { brokersReducer } from './brokers';
-import { schemaNodeReducer } from './schemaNode/schemaNodeSlice';
-import { schemaReducer } from './schema/schemaSlice'; // <-- Correct import
+import { schemaReducer } from './schema/schemaSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     brokers: brokersReducer,
-    schemaNode: schemaNodeReducer,
-    schema: schemaReducer, // <-- Use correct reducer
+    schema: schemaReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

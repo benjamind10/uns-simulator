@@ -1,24 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import type { AppDispatch } from '../../store/store';
+import type { AppDispatch } from '../store/store';
 import {
   fetchSchemasAsync,
   createSchemaAsync,
   deleteSchemaAsync,
-} from '../../store/schema/schemaThunk';
+} from '../store/schema/schemaThunk';
 import {
   selectSchemas,
   selectSchemaLoading,
-} from '../../store/schema/schemaSlice';
+} from '../store/schema/schemaSlice';
 import { toast } from 'react-hot-toast';
+
+interface SchemaManagerProps {
+  selectedSchemaId: string | null;
+  setSelectedSchemaId: React.Dispatch<React.SetStateAction<string | null>>;
+}
 
 export default function SchemaManager({
   selectedSchemaId,
   setSelectedSchemaId,
-}: {
-  selectedSchemaId: string | null;
-  setSelectedSchemaId: (id: string | null) => void;
-}) {
+}: SchemaManagerProps) {
   const dispatch = useDispatch<AppDispatch>();
   const schemas = useSelector(selectSchemas);
   const loading = useSelector(selectSchemaLoading);
@@ -52,14 +54,14 @@ export default function SchemaManager({
 
   return (
     <div className="mb-8">
-      <h2 className="font-bold text-xl mb-2">Schemas</h2>
-      <div className="flex gap-4 items-end mb-4">
+      <h2 className="font-bold text-xl mb-4">Schemas</h2>
+      <div className="flex gap-2 items-end mb-6">
         <input
           type="text"
           placeholder="Schema name"
           value={form.name}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          className="p-2 border rounded"
+          className="p-2 border rounded w-48"
         />
         <input
           type="text"
@@ -68,40 +70,42 @@ export default function SchemaManager({
           onChange={(e) =>
             setForm((f) => ({ ...f, description: e.target.value }))
           }
-          className="p-2 border rounded"
+          className="p-2 border rounded w-64"
         />
         <button
-          type="button"
           onClick={handleCreate}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          disabled={loading}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
-          Add Schema
+          Create Schema
         </button>
       </div>
-      <div className="flex items-center gap-4 mb-4">
-        <label className="font-medium">Select Schema:</label>
+
+      {loading && <div className="mb-4 text-gray-400">Loading...</div>}
+
+      <div className="flex items-center gap-4 mb-6">
+        <label htmlFor="schema-select" className="font-medium">
+          Select Schema:
+        </label>
         <select
+          id="schema-select"
           value={selectedSchemaId || ''}
-          onChange={(e) => setSelectedSchemaId(e.target.value)}
-          className="p-2 border rounded bg-gray-50 dark:bg-gray-900"
+          onChange={(e) => setSelectedSchemaId(e.target.value || null)}
+          className="p-2 border rounded w-64 bg-white dark:bg-gray-800"
         >
-          <option value="" disabled>
-            -- Choose a schema --
-          </option>
+          <option value="">-- Choose a schema --</option>
           {schemas.map((schema) => (
             <option key={schema.id} value={schema.id}>
-              {schema.name}
+              {schema.name}{' '}
+              {schema.description ? `- ${schema.description}` : ''}
             </option>
           ))}
         </select>
         {selectedSchemaId && (
           <button
-            type="button"
             onClick={() => handleDelete(selectedSchemaId)}
-            className="ml-2 text-red-500 hover:underline"
+            className="text-red-500 hover:text-red-700 px-2 py-1 border rounded"
           >
-            Delete
+            Delete Selected
           </button>
         )}
       </div>

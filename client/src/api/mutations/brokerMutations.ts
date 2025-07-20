@@ -44,9 +44,7 @@ export const GET_BROKER = gql`
 
 export const DELETE_BROKER = gql`
   mutation DeleteBroker($id: ID!) {
-    deleteBroker(id: $id) {
-      id
-    }
+    deleteBroker(id: $id)
   }
 `;
 

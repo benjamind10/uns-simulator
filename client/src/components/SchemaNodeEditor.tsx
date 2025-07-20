@@ -76,7 +76,12 @@ export interface SchemaNode {
 const generateTempId = () =>
   `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
+// Add props interface
+interface SchemaNodeEditorProps {
+  schemaId: string;
+}
+
+export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   const dispatch = useDispatch<AppDispatch>();
   const schemas = useSelector(selectSchemas);
   const schema = schemas.find((s) => s.id === schemaId);
@@ -218,7 +223,7 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
         saveNodesToSchemaAsync({
           schemaId,
           nodes: tempNodes.map((node) => ({
-            id: node.id, // Include id as required by ISchemaNode
+            id: node.id,
             name: node.name,
             kind: node.kind,
             parent: node.parent,
@@ -236,7 +241,7 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
       setForm({ name: '', kind: 'group', dataType: '', unit: '' });
 
       // Refresh schemas to get updated nodes
-      await dispatch(fetchSchemasAsync()); // Add await here
+      await dispatch(fetchSchemasAsync());
 
       toast.success('All nodes saved to database!');
     } catch (err) {
@@ -248,7 +253,10 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
   return (
     <div className="flex gap-4">
       {/* Left: Current Asset Tree */}
-      <div className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-4">
+      <div
+        className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-4"
+        style={{ maxHeight: '500px', overflow: 'auto' }}
+      >
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-bold text-lg">Current Asset Tree</h2>
           <span className="text-sm text-gray-500">
@@ -271,7 +279,10 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
       </div>
 
       {/* Middle: Future Asset Tree */}
-      <div className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-4">
+      <div
+        className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-4"
+        style={{ height: '500px', overflow: 'auto' }}
+      >
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-bold text-lg">Future Asset Tree</h2>
           <span className="text-sm text-gray-500">{tempNodes.length} temp</span>
@@ -335,8 +346,7 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
                 <label className="block text-sm font-medium mb-1">
                   Data Type
                 </label>
-                <input
-                  type="text"
+                <select
                   value={form.dataType}
                   onChange={(e) =>
                     setForm((f) => ({
@@ -350,8 +360,13 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
                     }))
                   }
                   className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-900"
-                  placeholder="Float, Int, Bool, String"
-                />
+                >
+                  <option value="">Select type</option>
+                  <option value="Int">Int</option>
+                  <option value="Float">Float</option>
+                  <option value="Bool">Bool</option>
+                  <option value="String">String</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Unit</label>

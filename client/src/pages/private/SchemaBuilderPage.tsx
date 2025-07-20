@@ -1,20 +1,24 @@
-import { useState } from 'react';
-import SchemaManager from './SchemaManager';
+import { useSelector, useDispatch } from 'react-redux';
+import {
+  selectSelectedSchemaId,
+  setSelectedSchemaId,
+} from '../../store/schema/schemaSlice';
+import SchemaManager from '../../components/SchemaManager';
 import SchemaNodeEditor from '../../components/SchemaNodeEditor';
 
 /* ------------------------------------------------------------------
  * MAIN PAGE COMPONENT
  * -----------------------------------------------------------------*/
 export default function SchemaBuilderPage() {
-  // You can lift state up here if needed for both components
-  const [selectedSchemaId, setSelectedSchemaId] = useState<string | null>(null);
+  const dispatch = useDispatch();
+  const selectedSchemaId = useSelector(selectSelectedSchemaId);
 
   return (
     <div className="flex flex-col max-w-6xl mx-auto py-10 gap-8">
       {/* Schema CRUD section */}
       <SchemaManager
         selectedSchemaId={selectedSchemaId}
-        setSelectedSchemaId={setSelectedSchemaId}
+        setSelectedSchemaId={(id) => dispatch(setSelectedSchemaId(id))}
       />
 
       {/* Schema Nodes section */}
