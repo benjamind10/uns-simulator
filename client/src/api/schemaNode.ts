@@ -8,7 +8,7 @@ import {
   FETCH_SCHEMA_NODES,
   FETCH_SCHEMA_NODE,
   FETCH_SCHEMA_NODES_BY_PARENT,
-} from './mutations/schemaNode.Mutations';
+} from './mutations/schemaNode.mutations';
 
 /* ------------------------------------------------------------------ */
 /*  GraphQL client helper                                             */
