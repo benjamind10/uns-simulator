@@ -8,11 +8,13 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { logoutAsync, selectUser } from '../store/auth';
-import { useDarkMode } from '../hooks/useDarkMode';
-import type { AppDispatch } from '../store/store';
 import clsx from 'clsx';
+
+import { useDarkMode } from '../hooks/useDarkMode';
+import { logoutAsync, selectUser } from '../store/auth';
 import Toast from '../components/Toast';
+
+import type { AppDispatch } from '../store/store';
 
 export default function PrivateLayout() {
   const [darkMode, toggleDarkMode] = useDarkMode();

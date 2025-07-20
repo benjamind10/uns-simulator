@@ -11,10 +11,3 @@ export interface AuthState {
   loading: boolean;
   error: string | null;
 }
-
-export const initialState: AuthState = {
-  user: JSON.parse(sessionStorage.getItem('authUser') || 'null'),
-  token: sessionStorage.getItem('authToken'),
-  loading: false,
-  error: null,
-};
