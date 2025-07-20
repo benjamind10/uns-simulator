@@ -5,7 +5,6 @@ import { useLocation } from 'react-router-dom';
 
 import BrokerForm from '../../components/BrokerForm';
 import BrokerList from '../../components/BrokerList';
-import type { AppDispatch, RootState } from '../../store/store';
 import {
   createBrokerAsync,
   deleteBrokerAsync,
@@ -13,6 +12,7 @@ import {
   updateBrokerAsync,
 } from '../../store/brokers';
 
+import type { AppDispatch, RootState } from '../../store/store';
 import type { IBroker } from '../../types';
 
 export default function BrokersPage() {
