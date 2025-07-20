@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokersSlice';
 import type { AppDispatch, RootState } from '../../store/store';
+import type { IBroker } from '../../types';
 
 import StatCard from '../../components/StatCard';
 import BrokerCard from '../../components/BrokersCard';
@@ -56,6 +57,10 @@ export default function DashboardPage() {
     }
   };
 
+  const handleEdit = (broker: IBroker) => {
+    navigate('/brokers', { state: { editBroker: broker } });
+  };
+
   return (
     <div className="space-y-10">
       {/* --- stat cards row --- */}
@@ -85,6 +90,7 @@ export default function DashboardPage() {
                 broker={b}
                 status="online"
                 onDelete={handleDelete}
+                onEdit={() => handleEdit(b)}
               />
             ))}
           </div>

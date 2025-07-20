@@ -1,23 +1,38 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokersSlice';
-import { createBroker } from '../../api/brokers';
+import { createBroker, updateBroker } from '../../api/brokers';
 import BrokerForm from '../../components/BrokerForm';
 import BrokerList from '../../components/BrokerList';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { IBroker } from '../../types';
+import { useLocation } from 'react-router-dom';
 
 export default function BrokersPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { brokers, loading, error } = useSelector(
     (state: RootState) => state.brokers
   );
+  const [editingBroker, setEditingBroker] = useState<IBroker | null>(null);
+  const location = useLocation();
+  const editBroker = location.state?.editBroker;
 
   // Fetch brokers on mount
   useEffect(() => {
     dispatch(fetchBrokersAsync());
   }, [dispatch]);
+
+  // Set editing broker from navigation state
+  useEffect(() => {
+    if (editBroker) {
+      setEditingBroker(editBroker);
+      // Scroll form into view
+      document
+        .querySelector('.broker-form')
+        ?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [editBroker]);
 
   const handleAddBroker = async (broker: {
     name: string;
@@ -28,25 +43,53 @@ export default function BrokersPage() {
     password?: string;
   }) => {
     try {
-      await createBroker(broker);
-      // Refresh the list after adding
+      if (editingBroker) {
+        // Only send the fields that can be updated
+        const updateData = {
+          name: broker.name,
+          url: broker.url,
+          port: broker.port,
+          clientId: broker.clientId,
+          username: broker.username || '',
+          password: broker.password || '',
+        };
+
+        await updateBroker(editingBroker.id, updateData);
+        toast.success('Broker updated successfully');
+      } else {
+        await createBroker(broker);
+        toast.success('Broker added successfully');
+      }
+      // Refresh the list after adding/updating
       dispatch(fetchBrokersAsync());
-      toast.success('Broker added successfully');
+      setEditingBroker(null); // Reset edit state
     } catch (err) {
-      toast.error('Failed to add broker');
+      toast.error(
+        editingBroker ? 'Failed to update broker' : 'Failed to add broker'
+      );
       console.error(err);
     }
   };
 
   const handleEditBroker = (broker: IBroker) => {
-    // For now, just show a toast - we'll implement edit later
-    toast(`Editing broker: ${broker.name}`);
+    setEditingBroker(broker);
+    // Scroll form into view
+    document
+      .querySelector('.broker-form')
+      ?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingBroker(null);
   };
 
   const handleDeleteBroker = async (id: string) => {
     try {
       await dispatch(deleteBrokerAsync(id)).unwrap();
       toast.success('Broker deleted successfully');
+      if (editingBroker?.id === id) {
+        setEditingBroker(null);
+      }
     } catch (error) {
       toast.error('Failed to delete broker');
       console.error(error);
@@ -56,10 +99,16 @@ export default function BrokersPage() {
   return (
     <div className="min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100 px-4 pt-10 transition-colors duration-300">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">MQTT Broker Configuration</h1>
+        <h1 className="text-3xl font-bold mb-6">
+          {editingBroker ? 'Edit MQTT Broker' : 'Add MQTT Broker'}
+        </h1>
 
-        <div className="bg-white text-gray-900 dark:bg-gray-900 dark:text-white px-4 py-6 rounded-lg shadow-md">
-          <BrokerForm onAdd={handleAddBroker} />
+        <div className="broker-form bg-white text-gray-900 dark:bg-gray-900 dark:text-white px-4 py-6 rounded-lg shadow-md">
+          <BrokerForm
+            onSubmit={handleAddBroker}
+            initialData={editingBroker}
+            onCancel={handleCancelEdit}
+          />
         </div>
 
         <div className="mt-8">
