@@ -25,6 +25,7 @@ export default function App() {
           <Route element={<AdminLayout />}>
             {/* <Route index element={<Dashboard />} /> */}
             <Route path="brokers" element={<BrokersPage />} />
+            <Route path="brokers/edit/:brokerId" element={<BrokersPage />} />
             <Route path="dashboard" element={<DashboardPage />} />
             {/* <Route path="users"   element={<UsersPage />} /> */}
           </Route>
