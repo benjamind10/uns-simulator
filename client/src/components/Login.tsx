@@ -5,6 +5,10 @@ import { loginAsync } from '../store/auth';
 
 import type { AppDispatch, RootState } from '../store/store';
 
+import { loginAsync } from '../store/auth';
+
+import type { AppDispatch, RootState } from '../store/store';
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
