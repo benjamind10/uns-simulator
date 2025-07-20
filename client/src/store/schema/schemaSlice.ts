@@ -33,14 +33,14 @@ export interface SchemaState {
   schemas: Schema[];
   loading: boolean;
   error: string | null;
-  selectedSchemaId: string | null; // Add this line
+  selectedSchemaId: string | null;
 }
 
 const initialState: SchemaState = {
   schemas: [],
   loading: false,
   error: null,
-  selectedSchemaId: null, // Add this line
+  selectedSchemaId: null,
 };
 
 const schemaSlice = createSlice({

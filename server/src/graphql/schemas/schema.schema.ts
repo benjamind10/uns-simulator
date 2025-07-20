@@ -44,6 +44,8 @@ export const schemaTypeDefs = gql`
     name: String!
     description: String
     nodes: [SchemaNode!]!
+    brokerIds: [ID!] # <-- Add brokerIds field
+    users: [ID!]! # <-- Keep users array
     createdAt: String!
     updatedAt: String!
   }
@@ -52,6 +54,8 @@ export const schemaTypeDefs = gql`
     name: String!
     description: String
     nodes: [SchemaNodeInput!]
+    brokerIds: [ID!] # <-- Add brokerIds field
+    users: [ID!] # <-- Make users optional (remove !)
   }
 
   type Query {

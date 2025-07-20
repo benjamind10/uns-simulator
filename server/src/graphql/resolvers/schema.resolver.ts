@@ -6,9 +6,11 @@ interface Context {
 }
 
 interface SchemaInput {
+  users: string[];
   name: string;
   description?: string;
   nodes?: ISchemaNode[];
+  brokerIds?: string[];
 }
 
 interface SchemaNodeInput {
@@ -60,6 +62,11 @@ export const schemaResolvers = {
         name: input.name,
         description: input.description,
         nodes: input.nodes || [],
+        brokerIds: input.brokerIds || [],
+        users:
+          input.users && input.users.length > 0
+            ? input.users
+            : [context.user._id], // <-- Fix here
       });
       return await schema.save();
     },

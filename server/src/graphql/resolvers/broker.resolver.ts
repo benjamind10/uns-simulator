@@ -74,35 +74,20 @@ export const brokerResolvers = {
 
     // Delete a broker
     deleteBroker: async (_: any, { id }: { id: string }, context: Context) => {
-      if (!context.user) throw new Error('Unauthorized');
+      requireAuth(context);
 
       const broker = await Broker.findById(id);
-      if (!broker) throw new Error('Broker not found');
-
-      // Convert both to strings for comparison
-      const userIds = (broker.users as Types.ObjectId[]).map((u) =>
-        u.toString()
-      );
-      const contextUserId = context.user._id.toString();
-
-      console.log('Checking access:', {
-        brokerId: id,
-        userId: contextUserId,
-        allowedUsers: userIds,
-        matches: userIds.includes(contextUserId),
-      });
-
-      if (!userIds.includes(contextUserId)) {
-        throw new Error('Forbidden');
+      if (!broker) {
+        throw new Error('Broker not found');
       }
 
-      // Remove broker from user's list
-      await User.findByIdAndUpdate(context.user._id, {
-        $pull: { brokers: broker._id },
-      });
+      // If you need to clean up user references, do it here
+      // const userIds = (broker.users as Types.ObjectId[]).map((u) => u.toString());
 
-      // Delete the broker
       await Broker.findByIdAndDelete(id);
+
+      // Optionally, remove broker from users' brokers array
+      // await User.updateMany({ brokers: id }, { $pull: { brokers: id } });
 
       return true;
     },
@@ -149,3 +134,8 @@ export const brokerResolvers = {
     },
   },
 };
+function requireAuth(context: Context) {
+  if (!context.user || !context.user._id) {
+    throw new Error('Unauthorized');
+  }
+}
