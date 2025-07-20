@@ -1,5 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+
 import { loginUser } from '../../api/auth';
+
 import type { User } from './authTypes';
 
 // Helper function to persist auth data

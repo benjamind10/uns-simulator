@@ -1,11 +1,13 @@
 import { GraphQLClient } from 'graphql-request';
-import type { IBroker } from '../types';
+
 import {
   CREATE_BROKER,
   GET_BROKERS,
   DELETE_BROKER,
   UPDATE_BROKER,
 } from './mutations/brokerMutations';
+
+import type { IBroker } from '../types';
 
 const endpoint = import.meta.env.VITE_API_URL;
 
