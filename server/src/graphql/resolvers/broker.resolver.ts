@@ -118,10 +118,21 @@ export const brokerResolvers = {
       const broker = await Broker.findById(id);
       if (!broker) throw new Error('Broker not found');
 
+      // Convert both to strings for comparison, just like in deleteBroker
       const userIds = (broker.users as Types.ObjectId[]).map((u) =>
         u.toString()
       );
-      if (!userIds.includes(context.user._id)) {
+      const contextUserId = context.user._id.toString();
+
+      // Add the same debugging log as deleteBroker
+      console.log('Checking access:', {
+        brokerId: id,
+        userId: contextUserId,
+        allowedUsers: userIds,
+        matches: userIds.includes(contextUserId),
+      });
+
+      if (!userIds.includes(contextUserId)) {
         throw new Error('Forbidden');
       }
 
