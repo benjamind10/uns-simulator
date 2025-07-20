@@ -74,6 +74,14 @@ export default function Navbar() {
               >
                 Explorer
               </NavLink>
+              <NavLink
+                to="/schema-builder"
+                className={({ isActive }) =>
+                  isActive ? 'font-semibold text-blue-500' : ''
+                }
+              >
+                Schema Builder
+              </NavLink>
               <button
                 onClick={handleLogout}
                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
@@ -121,6 +129,15 @@ export default function Navbar() {
                 }
               >
                 Explorer
+              </NavLink>
+              <NavLink
+                to="/schema-builder"
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `block ${isActive ? 'font-semibold text-blue-500' : ''}`
+                }
+              >
+                Schema Builder
               </NavLink>
               <button
                 onClick={handleLogout}

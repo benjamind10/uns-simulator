@@ -21,7 +21,7 @@ export default function PublicLayout() {
 
       {/* (Optional) public footer */}
       <footer className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-        © {new Date().getFullYear()} UNS Simulator
+        © {new Date().getFullYear()} UNS Simulator by Shiva
       </footer>
     </div>
   );
