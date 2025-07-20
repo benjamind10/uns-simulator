@@ -3,7 +3,7 @@ import { Server, Book, Activity } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokersSlice';
+import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokers';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { IBroker } from '../../types';
 

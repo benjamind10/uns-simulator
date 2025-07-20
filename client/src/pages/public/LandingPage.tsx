@@ -1,6 +1,6 @@
 import { useSelector } from 'react-redux';
 import Login from '../../components/Login';
-import { selectIsAuthenticated } from '../../store/authSlice';
+import { selectIsAuthenticated } from '../../store/auth';
 
 export default function LandingPage() {
   const isAuthenticated = useSelector(selectIsAuthenticated);

@@ -8,7 +8,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { logoutAsync, selectUser } from '../store/authSlice';
+import { logoutAsync, selectUser } from '../store/auth';
 import { useDarkMode } from '../hooks/useDarkMode';
 import type { AppDispatch } from '../store/store';
 import clsx from 'clsx';

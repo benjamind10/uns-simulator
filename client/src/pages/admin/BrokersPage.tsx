@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
-import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokersSlice';
-import { createBroker, updateBroker } from '../../api/brokers';
 import BrokerForm from '../../components/BrokerForm';
 import BrokerList from '../../components/BrokerList';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { IBroker } from '../../types';
 import { useLocation } from 'react-router-dom';
+import {
+  createBrokerAsync,
+  deleteBrokerAsync,
+  fetchBrokersAsync,
+  updateBrokerAsync,
+} from '../../store/brokers';
 
 export default function BrokersPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -44,25 +48,19 @@ export default function BrokersPage() {
   }) => {
     try {
       if (editingBroker) {
-        // Only send the fields that can be updated
-        const updateData = {
-          name: broker.name,
-          url: broker.url,
-          port: broker.port,
-          clientId: broker.clientId,
-          username: broker.username || '',
-          password: broker.password || '',
-        };
-
-        await updateBroker(editingBroker.id, updateData);
+        await dispatch(
+          updateBrokerAsync({
+            id: editingBroker.id,
+            data: broker,
+          })
+        ).unwrap();
         toast.success('Broker updated successfully');
+        setEditingBroker(null);
       } else {
-        await createBroker(broker);
+        await dispatch(createBrokerAsync(broker)).unwrap();
         toast.success('Broker added successfully');
       }
-      // Refresh the list after adding/updating
-      dispatch(fetchBrokersAsync());
-      setEditingBroker(null); // Reset edit state
+      // No need to dispatch fetchBrokersAsync here as the state is already updated
     } catch (err) {
       toast.error(
         editingBroker ? 'Failed to update broker' : 'Failed to add broker'
@@ -112,10 +110,9 @@ export default function BrokersPage() {
         </div>
 
         <div className="mt-8">
+          {error && <p className="text-red-500 mb-4">{error}</p>}
           {loading ? (
             <p>Loading brokers...</p>
-          ) : error ? (
-            <p className="text-red-500">{error}</p>
           ) : (
             <BrokerList
               brokers={brokers}
