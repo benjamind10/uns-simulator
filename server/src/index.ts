@@ -35,14 +35,31 @@ const getContext = async ({ req }: { req: any }) => {
   }
 };
 
+// Add allowed origins based on environment
+const allowedOrigins = [
+  'http://localhost:5173', // Vite dev server
+  'http://localhost:3000', // Production/Nginx
+  process.env.CLIENT_URL, // Optional: Add from env if needed
+].filter(Boolean); // Remove any undefined values
+
 // Create Apollo Server instance
 const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: getContext,
   cors: {
-    origin: 'http://localhost:5173', // your Vite dev URL
-    credentials: false, // true if you will send cookies
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, etc)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(`⚠️ Blocked request from unauthorized origin: ${origin}`);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true, // Enable if you need to handle cookies/auth
   },
 });
 
