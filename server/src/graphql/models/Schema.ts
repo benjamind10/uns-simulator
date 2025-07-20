@@ -1,11 +1,54 @@
-import mongoose from 'mongoose';
+import mongoose, {
+  Document,
+  Schema as MongooseSchema,
+  Model,
+  Types,
+} from 'mongoose';
 
-const SchemaSchema = new mongoose.Schema({
+export type SchemaNodeKind = 'group' | 'metric';
+export type SchemaNodeDataType = 'Int' | 'Float' | 'Bool' | 'String';
+
+export interface ISchemaNode {
+  id: string;
+  name: string;
+  kind: SchemaNodeKind;
+  parent: string | null; // Reference to another node ID within the same schema
+  path: string;
+  order: number;
+  dataType?: SchemaNodeDataType;
+  unit?: string;
+  engineering?: Record<string, unknown>;
+}
+
+export interface ISchema extends Document {
+  name: string;
+  description?: string;
+  nodes: ISchemaNode[]; // Embedded array of nodes
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const SchemaNodeSubSchema = new MongooseSchema({
+  id: { type: String, required: true },
   name: { type: String, required: true },
-  description: String,
-  active: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now },
-  schemaNodes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SchemaNode' }],
+  kind: { type: String, enum: ['group', 'metric'], required: true },
+  parent: { type: String, default: null }, // Reference to another node ID
+  path: { type: String, required: true },
+  order: { type: Number, default: 0 },
+  dataType: { type: String, enum: ['Int', 'Float', 'Bool', 'String'] },
+  unit: { type: String },
+  engineering: { type: Object, default: {} },
 });
 
-export default mongoose.model('Schema', SchemaSchema);
+const SchemaSchema: MongooseSchema<ISchema> = new MongooseSchema(
+  {
+    name: { type: String, required: true },
+    description: { type: String },
+    nodes: [SchemaNodeSubSchema], // Embedded array
+  },
+  { timestamps: true }
+);
+
+const Schema: Model<ISchema> = mongoose.model<ISchema>('Schema', SchemaSchema);
+
+export default Schema;

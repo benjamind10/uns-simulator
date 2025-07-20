@@ -1,66 +1,56 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { fetchSchemaNodesByParent } from '../api/schemaNode'; // Add this import
-import { createSchemaNodeAsync } from '../store/schemaNode/schemaNodeThunk';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch } from '../store/store';
+import {
+  saveNodesToSchemaAsync,
+  fetchSchemasAsync,
+} from '../store/schema/schemaThunk';
+import { selectSchemas } from '../store/schema/schemaSlice';
 
-interface SchemaNode {
-  id: string;
-  name: string;
-  kind: string;
-  parent: string | null;
-  dataType?: string;
-  unit?: string;
-  children?: SchemaNode[];
-  isTemporary?: boolean; // Add flag to distinguish temp nodes
-}
-
-const generateTempId = () =>
-  `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-function TreeNode({
-  node,
-  onSelect,
-  onDelete,
-  selectedId,
-}: {
-  node: SchemaNode;
+// TreeNode component for rendering nodes in the tree
+interface TreeNodeProps {
+  node: SchemaNode & { children: SchemaNode[] };
   onSelect: (node: SchemaNode) => void;
   onDelete: (nodeId: string) => void;
   selectedId: string | null;
-}) {
+}
+
+function TreeNode({ node, onSelect, onDelete, selectedId }: TreeNodeProps) {
   return (
-    <div className="ml-4">
+    <div className="ml-4 mb-2">
       <div
-        className={`cursor-pointer py-1 px-2 rounded flex justify-between items-center group ${
+        className={`flex items-center gap-2 p-1 rounded cursor-pointer ${
           selectedId === node.id
-            ? 'bg-blue-100 dark:bg-blue-900 font-semibold'
+            ? 'bg-blue-100 dark:bg-blue-900'
             : 'hover:bg-gray-100 dark:hover:bg-gray-700'
         }`}
         onClick={() => onSelect(node)}
       >
-        <span className={node.isTemporary ? 'text-blue-600 italic' : ''}>
-          {node.name} {node.isTemporary && '(temp)'}
-        </span>
-        {/* Only show delete button for temporary nodes */}
+        <span className="font-medium">{node.name}</span>
+        <span className="text-xs text-gray-500">{node.kind}</span>
+        {node.isTemporary && (
+          <span className="text-xs text-orange-500">(temp)</span>
+        )}
         {node.isTemporary && (
           <button
             type="button"
+            className="ml-2 text-red-500 hover:text-red-700 text-xs"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(node.id);
             }}
-            className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-700 text-sm"
           >
-            ✕
+            Delete
           </button>
         )}
       </div>
-      {node.children && node.children.length > 0 && (
-        <div className="ml-4 border-l border-gray-300 dark:border-gray-700 pl-2">
-          {node.children.map((child: SchemaNode) => (
+      {node.children.length > 0 && (
+        <div className="ml-4">
+          {node.children.map((child) => (
             <TreeNode
               key={child.id}
-              node={child}
+              node={{ ...child, children: child.children ?? [] }}
               onSelect={onSelect}
               onDelete={onDelete}
               selectedId={selectedId}
@@ -72,14 +62,31 @@ function TreeNode({
   );
 }
 
+export interface SchemaNode {
+  id: string;
+  name: string;
+  kind: 'group' | 'metric';
+  parent: string | null;
+  dataType?: 'Int' | 'Float' | 'Bool' | 'String';
+  unit?: string;
+  children?: SchemaNode[];
+  isTemporary?: boolean;
+}
+
+const generateTempId = () =>
+  `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
 export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
-  const [savedNodes, setSavedNodes] = useState<SchemaNode[]>([]); // From database
-  const [tempNodes, setTempNodes] = useState<SchemaNode[]>([]); // Temporary nodes
+  const dispatch = useDispatch<AppDispatch>();
+  const schemas = useSelector(selectSchemas);
+  const schema = schemas.find((s) => s.id === schemaId);
+
+  const [tempNodes, setTempNodes] = useState<SchemaNode[]>([]);
   const [selectedNode, setSelectedNode] = useState<SchemaNode | null>(null);
   const [form, setForm] = useState<{
     name: string;
     kind: 'group' | 'metric';
-    dataType: string;
+    dataType: '' | 'Int' | 'Float' | 'Bool' | 'String';
     unit: string;
   }>({
     name: '',
@@ -88,27 +95,29 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
     unit: '',
   });
 
-  // Load saved nodes when schema changes
+  // Refresh schemas when schemaId changes
   useEffect(() => {
-    if (schemaId) {
-      fetchSchemaNodesByParent(schemaId) // This should fetch ALL nodes for the schema!
-        .then((nodes) => {
-          const schemaNodes = nodes.map((n) => ({
-            ...n,
-            parent: n.parent ?? null,
-            isTemporary: false,
-          }));
-          setSavedNodes(schemaNodes);
-        })
-        .catch(() => {
-          setSavedNodes([]);
-        });
-    }
+    dispatch(fetchSchemasAsync());
     setTempNodes([]);
     setSelectedNode(null);
-  }, [schemaId]);
+  }, [dispatch, schemaId]);
+
+  // Guard: If schema is not loaded, show a message
+  if (!schema) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500">
+        Select a schema to edit or wait for it to load.
+      </div>
+    );
+  }
 
   // Combine saved and temporary nodes
+  const savedNodes =
+    schema.nodes?.map((n) => ({
+      ...n,
+      parent: n.parent ?? null,
+      isTemporary: false,
+    })) ?? [];
   const allNodes = [...savedNodes, ...tempNodes];
 
   // Build tree from combined nodes
@@ -120,21 +129,20 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
       .filter((n) => n.parent === parentId)
       .map((n) => ({
         ...n,
-        children: buildTree(nodes, n.id),
+        children: buildTree(nodes, n.id) ?? [],
       }));
 
-  const currentTree = buildTree(savedNodes, null); // Current saved tree
-  const futureTree = buildTree(allNodes, null); // Future tree (saved + temp)
+  const currentTree = buildTree(savedNodes, null);
+  const futureTree = buildTree(allNodes, null);
 
   // Select node and fill form
   const handleSelect = (node: SchemaNode) => {
     setSelectedNode(node);
     setForm({
       name: node.name,
-      kind:
-        node.kind === 'group' || node.kind === 'metric' ? node.kind : 'group',
-      dataType: node.dataType || '',
-      unit: node.unit || '',
+      kind: node.kind,
+      dataType: node.dataType ?? '',
+      unit: node.unit ?? '',
     });
   };
 
@@ -148,7 +156,12 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
       name: form.name,
       kind: form.kind,
       parent: parentId,
-      dataType: form.kind === 'metric' ? form.dataType : undefined,
+      dataType:
+        form.kind === 'metric'
+          ? form.dataType === ''
+            ? undefined
+            : form.dataType
+          : undefined,
       unit: form.kind === 'metric' ? form.unit : undefined,
       isTemporary: true,
     };
@@ -193,37 +206,7 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
     toast.success('All temporary nodes cleared');
   };
 
-  const saveNodeRecursive = async (
-    node: SchemaNode & { children: SchemaNode[] },
-    parentId: string | null = null,
-    parentPath = ''
-  ) => {
-    const nodePath = parentPath
-      ? `${parentPath}/${node.name}`
-      : `/${node.name}`;
-    const input = {
-      name: node.name,
-      kind: node.kind as 'group' | 'metric',
-      parent: parentId,
-      schema: schemaId, // <-- Link to selected schema
-      path: nodePath,
-      order: 0,
-      dataType: node.kind === 'metric' ? node.dataType : undefined,
-      unit: node.kind === 'metric' ? node.unit : undefined,
-      engineering: {},
-    };
-    // Replace with your actual save function (API or Redux thunk)
-    createSchemaNodeAsync(input); // Or your API call
-    for (const child of node.children || []) {
-      await saveNodeRecursive(
-        { ...child, children: child.children ?? [] },
-        node.id,
-        nodePath
-      );
-    }
-  };
-
-  // Save all temporary nodes to database
+  // Save all temporary nodes to database (Redux)
   const handleSaveAll = async () => {
     if (tempNodes.length === 0) {
       toast.error('No temporary nodes to save');
@@ -231,24 +214,29 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
     }
 
     try {
-      const tempRootNodes = buildTree(tempNodes, null);
-      for (const root of tempRootNodes) {
-        await saveNodeRecursive(root, null, '');
-      }
+      await dispatch(
+        saveNodesToSchemaAsync({
+          schemaId,
+          nodes: tempNodes.map((node) => ({
+            id: node.id, // Include id as required by ISchemaNode
+            name: node.name,
+            kind: node.kind,
+            parent: node.parent,
+            path: node.parent ? `${node.parent}/${node.name}` : node.name,
+            order: 0,
+            dataType: node.dataType,
+            unit: node.unit,
+            engineering: {},
+          })),
+        })
+      ).unwrap();
 
       setTempNodes([]);
       setSelectedNode(null);
       setForm({ name: '', kind: 'group', dataType: '', unit: '' });
 
-      // Refresh saved nodes for the selected schema
-      const updatedNodes = await fetchSchemaNodesByParent(schemaId);
-      setSavedNodes(
-        updatedNodes.map((n) => ({
-          ...n,
-          parent: n.parent ?? null,
-          isTemporary: false,
-        }))
-      );
+      // Refresh schemas to get updated nodes
+      await dispatch(fetchSchemasAsync()); // Add await here
 
       toast.success('All nodes saved to database!');
     } catch (err) {
@@ -351,7 +339,15 @@ export default function SchemaNodeEditor({ schemaId }: { schemaId: string }) {
                   type="text"
                   value={form.dataType}
                   onChange={(e) =>
-                    setForm((f) => ({ ...f, dataType: e.target.value }))
+                    setForm((f) => ({
+                      ...f,
+                      dataType: e.target.value as
+                        | ''
+                        | 'Int'
+                        | 'Float'
+                        | 'Bool'
+                        | 'String',
+                    }))
                   }
                   className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-900"
                   placeholder="Float, Int, Bool, String"

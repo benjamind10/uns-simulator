@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import * as api from '../../api/schema';
+import type { ISchemaNode } from '../../api/schema';
 
 // Fetch all schemas
 export const fetchSchemasAsync = createAsyncThunk(
@@ -20,7 +21,7 @@ export const fetchSchemasAsync = createAsyncThunk(
 export const createSchemaAsync = createAsyncThunk(
   'schema/create',
   async (
-    input: { name: string; description?: string },
+    input: { name: string; description?: string; nodes?: ISchemaNode[] },
     { rejectWithValue }
   ) => {
     try {
@@ -41,7 +42,10 @@ export const updateSchemaAsync = createAsyncThunk(
     {
       id,
       input,
-    }: { id: string; input: { name: string; description?: string } },
+    }: {
+      id: string;
+      input: { name: string; description?: string; nodes?: ISchemaNode[] };
+    },
     { rejectWithValue }
   ) => {
     try {
@@ -67,6 +71,60 @@ export const deleteSchemaAsync = createAsyncThunk(
         return rejectWithValue(err.message || 'Failed to delete schema');
       }
       return rejectWithValue('Failed to delete schema');
+    }
+  }
+);
+
+// Save multiple nodes to a schema
+export const saveNodesToSchemaAsync = createAsyncThunk(
+  'schema/saveNodes',
+  async (
+    { schemaId, nodes }: { schemaId: string; nodes: ISchemaNode[] },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await api.saveNodesToSchema(schemaId, nodes);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return rejectWithValue(err.message || 'Failed to save nodes');
+      }
+      return rejectWithValue('Failed to save nodes');
+    }
+  }
+);
+
+// Add a single node to a schema
+export const addNodeToSchemaAsync = createAsyncThunk(
+  'schema/addNode',
+  async (
+    { schemaId, node }: { schemaId: string; node: ISchemaNode },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await api.addNodeToSchema(schemaId, node);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return rejectWithValue(err.message || 'Failed to add node');
+      }
+      return rejectWithValue('Failed to add node');
+    }
+  }
+);
+
+// Delete a node from a schema
+export const deleteNodeFromSchemaAsync = createAsyncThunk(
+  'schema/deleteNode',
+  async (
+    { schemaId, nodeId }: { schemaId: string; nodeId: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await api.deleteNodeFromSchema(schemaId, nodeId);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        return rejectWithValue(err.message || 'Failed to delete node');
+      }
+      return rejectWithValue('Failed to delete node');
     }
   }
 );

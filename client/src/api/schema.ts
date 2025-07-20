@@ -5,6 +5,9 @@ import {
   DELETE_SCHEMA,
   GET_SCHEMAS,
   GET_SCHEMA,
+  SAVE_NODES_TO_SCHEMA,
+  ADD_NODE_TO_SCHEMA,
+  DELETE_NODE_FROM_SCHEMA,
 } from './mutations/schema.mutations';
 
 const endpoint = import.meta.env.VITE_API_URL;
@@ -24,10 +27,25 @@ const getClient = () => {
   });
 };
 
+export type ISchemaNode = {
+  id: string;
+  name: string;
+  kind: 'group' | 'metric';
+  parent?: string | null;
+  path: string;
+  order?: number;
+  dataType?: 'Int' | 'Float' | 'Bool' | 'String';
+  unit?: string;
+  engineering?: Record<string, unknown>;
+};
+
 export type ISchema = {
   id: string;
   name: string;
   description?: string;
+  nodes: ISchemaNode[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 type SchemasResponse = {
@@ -41,6 +59,7 @@ type SchemaResponse = {
 type CreateSchemaInput = {
   name: string;
   description?: string;
+  nodes?: ISchemaNode[];
 };
 
 type CreateSchemaResponse = {
@@ -53,6 +72,18 @@ type UpdateSchemaResponse = {
 
 type DeleteSchemaResponse = {
   deleteSchema: boolean;
+};
+
+type SaveNodesToSchemaResponse = {
+  saveNodesToSchema: ISchema;
+};
+
+type AddNodeToSchemaResponse = {
+  addNodeToSchema: ISchema;
+};
+
+type DeleteNodeFromSchemaResponse = {
+  deleteNodeFromSchema: ISchema;
 };
 
 // Fetch all schemas
@@ -103,4 +134,46 @@ export async function deleteSchema(id: string): Promise<boolean> {
     variables
   );
   return data.deleteSchema;
+}
+
+// Save multiple nodes to a schema
+export async function saveNodesToSchema(
+  schemaId: string,
+  nodes: ISchemaNode[]
+): Promise<ISchema> {
+  const client = getClient();
+  const variables = { schemaId, nodes };
+  const data: SaveNodesToSchemaResponse = await client.request(
+    SAVE_NODES_TO_SCHEMA,
+    variables
+  );
+  return data.saveNodesToSchema;
+}
+
+// Add a single node to a schema
+export async function addNodeToSchema(
+  schemaId: string,
+  node: ISchemaNode
+): Promise<ISchema> {
+  const client = getClient();
+  const variables = { schemaId, node };
+  const data: AddNodeToSchemaResponse = await client.request(
+    ADD_NODE_TO_SCHEMA,
+    variables
+  );
+  return data.addNodeToSchema;
+}
+
+// Delete a node from a schema
+export async function deleteNodeFromSchema(
+  schemaId: string,
+  nodeId: string
+): Promise<ISchema> {
+  const client = getClient();
+  const variables = { schemaId, nodeId };
+  const data: DeleteNodeFromSchemaResponse = await client.request(
+    DELETE_NODE_FROM_SCHEMA,
+    variables
+  );
+  return data.deleteNodeFromSchema;
 }

@@ -6,6 +6,19 @@ export const CREATE_SCHEMA = gql`
       id
       name
       description
+      nodes {
+        id
+        name
+        kind
+        parent
+        path
+        order
+        dataType
+        unit
+        engineering
+      }
+      createdAt
+      updatedAt
     }
   }
 `;
@@ -16,6 +29,19 @@ export const UPDATE_SCHEMA = gql`
       id
       name
       description
+      nodes {
+        id
+        name
+        kind
+        parent
+        path
+        order
+        dataType
+        unit
+        engineering
+      }
+      createdAt
+      updatedAt
     }
   }
 `;
@@ -26,12 +52,95 @@ export const DELETE_SCHEMA = gql`
   }
 `;
 
+export const SAVE_NODES_TO_SCHEMA = gql`
+  mutation SaveNodesToSchema($schemaId: ID!, $nodes: [SchemaNodeInput!]!) {
+    saveNodesToSchema(schemaId: $schemaId, nodes: $nodes) {
+      id
+      name
+      description
+      nodes {
+        id
+        name
+        kind
+        parent
+        path
+        order
+        dataType
+        unit
+        engineering
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const ADD_NODE_TO_SCHEMA = gql`
+  mutation AddNodeToSchema($schemaId: ID!, $node: SchemaNodeInput!) {
+    addNodeToSchema(schemaId: $schemaId, node: $node) {
+      id
+      name
+      description
+      nodes {
+        id
+        name
+        kind
+        parent
+        path
+        order
+        dataType
+        unit
+        engineering
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const DELETE_NODE_FROM_SCHEMA = gql`
+  mutation DeleteNodeFromSchema($schemaId: ID!, $nodeId: ID!) {
+    deleteNodeFromSchema(schemaId: $schemaId, nodeId: $nodeId) {
+      id
+      name
+      description
+      nodes {
+        id
+        name
+        kind
+        parent
+        path
+        order
+        dataType
+        unit
+        engineering
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+// Queries
 export const GET_SCHEMAS = gql`
   query GetSchemas {
     schemas {
       id
       name
       description
+      nodes {
+        id
+        name
+        kind
+        parent
+        path
+        order
+        dataType
+        unit
+        engineering
+      }
+      createdAt
+      updatedAt
     }
   }
 `;
@@ -42,6 +151,19 @@ export const GET_SCHEMA = gql`
       id
       name
       description
+      nodes {
+        id
+        name
+        kind
+        parent
+        path
+        order
+        dataType
+        unit
+        engineering
+      }
+      createdAt
+      updatedAt
     }
   }
 `;

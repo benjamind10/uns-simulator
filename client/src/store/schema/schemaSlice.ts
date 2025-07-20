@@ -5,14 +5,32 @@ import {
   createSchemaAsync,
   updateSchemaAsync,
   deleteSchemaAsync,
+  saveNodesToSchemaAsync,
 } from './schemaThunk';
 
+// Define node type
+export interface SchemaNode {
+  id: string;
+  name: string;
+  kind: 'group' | 'metric';
+  parent?: string | null;
+  path: string;
+  order?: number;
+  dataType?: 'Int' | 'Float' | 'Bool' | 'String';
+  unit?: string;
+  engineering?: Record<string, unknown>;
+}
+
+// Schema type now includes nodes
+export interface Schema {
+  id: string;
+  name: string;
+  description?: string;
+  nodes: SchemaNode[];
+}
+
 export interface SchemaState {
-  schemas: Array<{
-    id: string;
-    name: string;
-    description?: string;
-  }>;
+  schemas: Schema[];
   loading: boolean;
   error: string | null;
 }
@@ -54,6 +72,10 @@ const schemaSlice = createSlice({
       })
       .addCase(deleteSchemaAsync.fulfilled, (state, action) => {
         state.schemas = state.schemas.filter((s) => s.id !== action.payload);
+      })
+      .addCase(saveNodesToSchemaAsync.fulfilled, (state, action) => {
+        const idx = state.schemas.findIndex((s) => s.id === action.payload.id);
+        if (idx !== -1) state.schemas[idx] = action.payload;
       });
   },
 });

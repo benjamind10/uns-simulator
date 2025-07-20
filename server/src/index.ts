@@ -13,8 +13,6 @@ import { userTypeDefs } from './graphql/schemas/user.schema';
 import { userResolvers } from './graphql/resolvers/user.resolver';
 import { brokerTypeDefs } from './graphql/schemas/broker.schema';
 import { brokerResolvers } from './graphql/resolvers/broker.resolver';
-import { schemaNodeTypeDefs } from './graphql/schemas/schemaNode.schema';
-import { schemaNodeResolvers } from './graphql/resolvers/schemaNode.resolver';
 import { schemaTypeDefs } from './graphql/schemas/schema.schema';
 import { schemaResolvers } from './graphql/resolvers/schema.resolver';
 import User from './graphql/models/User';
@@ -26,13 +24,11 @@ dotenv.config();
 export const typeDefs = mergeTypeDefs([
   userTypeDefs,
   brokerTypeDefs,
-  schemaNodeTypeDefs,
   schemaTypeDefs,
 ]);
 export const resolvers = mergeResolvers([
   userResolvers,
   brokerResolvers,
-  schemaNodeResolvers,
   schemaResolvers,
 ]);
 
