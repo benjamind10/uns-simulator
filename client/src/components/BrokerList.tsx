@@ -1,5 +1,6 @@
-import type { IBroker } from '../types';
 import { Edit, Trash2 } from 'lucide-react';
+
+import type { IBroker } from '../types';
 
 interface BrokerListProps {
   brokers: IBroker[];

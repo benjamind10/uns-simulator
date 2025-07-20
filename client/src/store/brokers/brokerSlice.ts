@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
+
 import { initialState } from './brokerTypes';
 import {
   fetchBrokersAsync,
@@ -6,6 +7,7 @@ import {
   updateBrokerAsync,
   createBrokerAsync,
 } from './brokerThunks';
+
 import type { RootState } from '../store';
 
 const brokersSlice = createSlice({
