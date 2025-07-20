@@ -59,7 +59,7 @@ export default function DashboardPage() {
   };
 
   const handleEdit = (broker: IBroker) => {
-    navigate('/brokers', { state: { editBroker: broker } });
+    navigate(`/brokers/edit/${broker.id}`);
   };
 
   return (

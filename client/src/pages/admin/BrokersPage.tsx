@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
-import { useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 import BrokerForm from '../../components/BrokerForm';
 import BrokerList from '../../components/BrokerList';
@@ -17,28 +17,37 @@ import type { IBroker } from '../../types';
 
 export default function BrokersPage() {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { brokers, loading, error } = useSelector(
     (state: RootState) => state.brokers
   );
   const [editingBroker, setEditingBroker] = useState<IBroker | null>(null);
-  const location = useLocation();
-  const editBroker = location.state?.editBroker;
+  const { brokerId } = useParams();
 
   // Fetch brokers on mount
   useEffect(() => {
     dispatch(fetchBrokersAsync());
   }, [dispatch]);
 
-  // Set editing broker from navigation state
+  // Handle URL-based editing
   useEffect(() => {
-    if (editBroker) {
-      setEditingBroker(editBroker);
-      // Scroll form into view
-      document
-        .querySelector('.broker-form')
-        ?.scrollIntoView({ behavior: 'smooth' });
+    if (brokerId) {
+      const brokerToEdit = brokers.find((b) => b.id === brokerId);
+      if (brokerToEdit) {
+        setEditingBroker(brokerToEdit);
+        document
+          .querySelector('.broker-form')
+          ?.scrollIntoView({ behavior: 'smooth' });
+      } else if (!loading) {
+        // If broker not found and not loading, redirect to main brokers page
+        navigate('/brokers');
+        toast.error('Broker not found');
+      }
+    } else {
+      // Reset editing state when not in edit mode
+      setEditingBroker(null);
     }
-  }, [editBroker]);
+  }, [brokerId, brokers, loading, navigate]);
 
   const handleAddBroker = async (broker: {
     name: string;
@@ -57,12 +66,11 @@ export default function BrokersPage() {
           })
         ).unwrap();
         toast.success('Broker updated successfully');
-        setEditingBroker(null);
+        navigate('/brokers'); // Return to main broker list after update
       } else {
         await dispatch(createBrokerAsync(broker)).unwrap();
         toast.success('Broker added successfully');
       }
-      // No need to dispatch fetchBrokersAsync here as the state is already updated
     } catch (err) {
       toast.error(
         editingBroker ? 'Failed to update broker' : 'Failed to add broker'
@@ -71,16 +79,8 @@ export default function BrokersPage() {
     }
   };
 
-  const handleEditBroker = (broker: IBroker) => {
-    setEditingBroker(broker);
-    // Scroll form into view
-    document
-      .querySelector('.broker-form')
-      ?.scrollIntoView({ behavior: 'smooth' });
-  };
-
   const handleCancelEdit = () => {
-    setEditingBroker(null);
+    navigate('/brokers'); // Return to main broker list on cancel
   };
 
   const handleDeleteBroker = async (id: string) => {
@@ -88,7 +88,7 @@ export default function BrokersPage() {
       await dispatch(deleteBrokerAsync(id)).unwrap();
       toast.success('Broker deleted successfully');
       if (editingBroker?.id === id) {
-        setEditingBroker(null);
+        navigate('/brokers'); // Return to main list if deleting currently edited broker
       }
     } catch (error) {
       toast.error('Failed to delete broker');
@@ -100,7 +100,7 @@ export default function BrokersPage() {
     <div className="min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100 px-4 pt-10 transition-colors duration-300">
       <div className="max-w-3xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">
-          {editingBroker ? 'Edit MQTT Broker' : 'Add MQTT Broker'}
+          {brokerId ? 'Edit MQTT Broker' : 'Add MQTT Broker'}
         </h1>
 
         <div className="broker-form bg-white text-gray-900 dark:bg-gray-900 dark:text-white px-4 py-6 rounded-lg shadow-md">
@@ -116,11 +116,7 @@ export default function BrokersPage() {
           {loading ? (
             <p>Loading brokers...</p>
           ) : (
-            <BrokerList
-              brokers={brokers}
-              onEdit={handleEditBroker}
-              onDelete={handleDeleteBroker}
-            />
+            <BrokerList brokers={brokers} onDelete={handleDeleteBroker} />
           )}
         </div>
       </div>
