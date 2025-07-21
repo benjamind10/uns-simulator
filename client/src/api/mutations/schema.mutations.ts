@@ -17,6 +17,7 @@ export const CREATE_SCHEMA = gql`
         unit
         engineering
       }
+      brokerIds
       users
       createdAt
       updatedAt
@@ -41,6 +42,7 @@ export const UPDATE_SCHEMA = gql`
         unit
         engineering
       }
+      brokerIds
       users
       createdAt
       updatedAt
@@ -71,6 +73,7 @@ export const SAVE_NODES_TO_SCHEMA = gql`
         unit
         engineering
       }
+      brokerIds
       users
       createdAt
       updatedAt
@@ -95,6 +98,7 @@ export const ADD_NODE_TO_SCHEMA = gql`
         unit
         engineering
       }
+      brokerIds
       users
       createdAt
       updatedAt
@@ -119,6 +123,7 @@ export const DELETE_NODE_FROM_SCHEMA = gql`
         unit
         engineering
       }
+      brokerIds
       users
       createdAt
       updatedAt
@@ -144,6 +149,7 @@ export const GET_SCHEMAS = gql`
         unit
         engineering
       }
+      brokerIds
       users
       createdAt
       updatedAt
@@ -168,6 +174,7 @@ export const GET_SCHEMA = gql`
         unit
         engineering
       }
+      brokerIds
       users
       createdAt
       updatedAt

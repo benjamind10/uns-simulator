@@ -36,7 +36,7 @@ export default function SchemaManager({
       const result = await dispatch(createSchemaAsync(form)).unwrap();
       toast.success('Schema created!');
       setForm({ name: '', description: '' });
-      setSelectedSchemaId(result.id);
+      setSelectedSchemaId(result.id ?? null); // <-- use id, not _id
     } catch {
       toast.error('Failed to create schema');
     }
@@ -95,8 +95,8 @@ export default function SchemaManager({
           <option value="">-- Choose a schema --</option>
           {schemas.map((schema) => (
             <option key={schema.id} value={schema.id}>
-              {schema.name}{' '}
-              {schema.description ? `- ${schema.description}` : ''}
+              {schema.name}
+              {schema.description ? ` - ${schema.description}` : ''}
             </option>
           ))}
         </select>

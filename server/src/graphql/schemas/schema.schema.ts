@@ -28,12 +28,11 @@ export const schemaTypeDefs = gql`
   }
 
   input SchemaNodeInput {
-    id: ID
     name: String!
     kind: SchemaNodeKind!
     parent: ID
     path: String!
-    order: Int
+    order: Int!
     dataType: SchemaNodeDataType
     unit: String
     engineering: JSON
@@ -44,8 +43,8 @@ export const schemaTypeDefs = gql`
     name: String!
     description: String
     nodes: [SchemaNode!]!
-    brokerIds: [ID!] # <-- Add brokerIds field
-    users: [ID!]! # <-- Keep users array
+    brokerIds: [ID!]
+    users: [ID!]
     createdAt: String!
     updatedAt: String!
   }
@@ -54,8 +53,8 @@ export const schemaTypeDefs = gql`
     name: String!
     description: String
     nodes: [SchemaNodeInput!]
-    brokerIds: [ID!] # <-- Add brokerIds field
-    users: [ID!] # <-- Make users optional (remove !)
+    brokerIds: [ID!]
+    users: [ID!]
   }
 
   type Query {

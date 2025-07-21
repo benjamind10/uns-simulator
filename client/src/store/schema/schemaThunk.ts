@@ -1,34 +1,55 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import * as api from '../../api/schema';
-import type { ISchemaNode } from '../../api/schema';
+import type { Schema, SchemaNode } from './schemaSlice';
+
+// Input types for mutations
+type SchemaNodeInput = Omit<SchemaNode, 'id'>;
+type SchemaInput = {
+  name: string;
+  description?: string;
+  nodes?: SchemaNodeInput[];
+  brokerIds?: string[];
+  users?: string[];
+};
 
 // Fetch all schemas
-export const fetchSchemasAsync = createAsyncThunk(
+export const fetchSchemasAsync = createAsyncThunk<Schema[]>(
   'schema/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
-      return await api.fetchSchemas();
-    } catch (err: unknown) {
+      const schemas = await api.fetchSchemas();
+      return schemas.map((schema) => ({
+        ...schema,
+        id: String(schema.id),
+      })) as Schema[];
+    } catch (err) {
       if (err instanceof Error) {
-        return rejectWithValue(err.message || 'Failed to fetch schemas');
+        return rejectWithValue(err.message);
       }
       return rejectWithValue('Failed to fetch schemas');
     }
   }
 );
 
-// Create a schema
-export const createSchemaAsync = createAsyncThunk(
+export const createSchemaAsync = createAsyncThunk<Schema, SchemaInput>(
   'schema/create',
-  async (
-    input: { name: string; description?: string; nodes?: ISchemaNode[] },
-    { rejectWithValue }
-  ) => {
+  async (input, { rejectWithValue }) => {
     try {
-      return await api.createSchema(input);
-    } catch (err: unknown) {
+      const normalizedInput = {
+        ...input,
+        nodes: input.nodes?.map((node) => ({
+          ...node,
+          parent: node.parent === undefined ? null : node.parent,
+        })),
+      };
+      const schema = await api.createSchema(normalizedInput);
+      return {
+        ...schema,
+        id: String(schema.id),
+      } as Schema;
+    } catch (err) {
       if (err instanceof Error) {
-        return rejectWithValue(err.message || 'Failed to create schema');
+        return rejectWithValue(err.message);
       }
       return rejectWithValue('Failed to create schema');
     }
@@ -36,95 +57,69 @@ export const createSchemaAsync = createAsyncThunk(
 );
 
 // Update a schema
-export const updateSchemaAsync = createAsyncThunk(
-  'schema/update',
-  async (
-    {
-      id,
-      input,
-    }: {
-      id: string;
-      input: { name: string; description?: string; nodes?: ISchemaNode[] };
-    },
-    { rejectWithValue }
-  ) => {
-    try {
-      return await api.updateSchema(id, input);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        return rejectWithValue(err.message || 'Failed to update schema');
-      }
-      return rejectWithValue('Failed to update schema');
+export const updateSchemaAsync = createAsyncThunk<
+  Schema,
+  { id: string; input: SchemaInput }
+>('schema/update', async ({ id, input }, { rejectWithValue }) => {
+  try {
+    const normalizedInput = {
+      ...input,
+      nodes: input.nodes?.map((node) => ({
+        ...node,
+        parent: node.parent === undefined ? null : node.parent,
+      })),
+    };
+    const schema = await api.updateSchema(id, normalizedInput);
+    return {
+      ...schema,
+      id: String(schema.id),
+    } as Schema;
+  } catch (err) {
+    if (err instanceof Error) {
+      return rejectWithValue(err.message);
     }
+    return rejectWithValue('Failed to update schema');
   }
-);
+});
 
 // Delete a schema
-export const deleteSchemaAsync = createAsyncThunk(
+export const deleteSchemaAsync = createAsyncThunk<string, string>(
   'schema/delete',
-  async (id: string, { rejectWithValue }) => {
+  async (id, { rejectWithValue }) => {
     try {
       await api.deleteSchema(id);
       return id;
-    } catch (err: unknown) {
+    } catch (err) {
       if (err instanceof Error) {
-        return rejectWithValue(err.message || 'Failed to delete schema');
+        return rejectWithValue(err.message);
       }
       return rejectWithValue('Failed to delete schema');
     }
   }
 );
 
-// Save multiple nodes to a schema
-export const saveNodesToSchemaAsync = createAsyncThunk(
-  'schema/saveNodes',
-  async (
-    { schemaId, nodes }: { schemaId: string; nodes: ISchemaNode[] },
-    { rejectWithValue }
-  ) => {
-    try {
-      return await api.saveNodesToSchema(schemaId, nodes);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        return rejectWithValue(err.message || 'Failed to save nodes');
-      }
-      return rejectWithValue('Failed to save nodes');
+// Save nodes to schema
+export const saveNodesToSchemaAsync = createAsyncThunk<
+  Schema,
+  { schemaId: string; nodes: SchemaNodeInput[] }
+>('schema/saveNodes', async ({ schemaId, nodes }, { rejectWithValue }) => {
+  try {
+    const nodesWithNormalizedParent = nodes.map((node) => ({
+      ...node,
+      parent: node.parent === undefined ? null : node.parent,
+    }));
+    const schema = await api.saveNodesToSchema(
+      schemaId,
+      nodesWithNormalizedParent
+    );
+    return {
+      ...schema,
+      id: String(schema.id),
+    } as Schema;
+  } catch (err) {
+    if (err instanceof Error) {
+      return rejectWithValue(err.message);
     }
+    return rejectWithValue('Failed to save nodes');
   }
-);
-
-// Add a single node to a schema
-export const addNodeToSchemaAsync = createAsyncThunk(
-  'schema/addNode',
-  async (
-    { schemaId, node }: { schemaId: string; node: ISchemaNode },
-    { rejectWithValue }
-  ) => {
-    try {
-      return await api.addNodeToSchema(schemaId, node);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        return rejectWithValue(err.message || 'Failed to add node');
-      }
-      return rejectWithValue('Failed to add node');
-    }
-  }
-);
-
-// Delete a node from a schema
-export const deleteNodeFromSchemaAsync = createAsyncThunk(
-  'schema/deleteNode',
-  async (
-    { schemaId, nodeId }: { schemaId: string; nodeId: string },
-    { rejectWithValue }
-  ) => {
-    try {
-      return await api.deleteNodeFromSchema(schemaId, nodeId);
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        return rejectWithValue(err.message || 'Failed to delete node');
-      }
-      return rejectWithValue('Failed to delete node');
-    }
-  }
-);
+});

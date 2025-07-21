@@ -2,32 +2,30 @@ import Schema, { ISchema, ISchemaNode } from '../models/Schema';
 import { Types } from 'mongoose';
 
 interface Context {
-  user?: any; // You can define a proper User type here
+  user?: any;
 }
 
 interface SchemaInput {
-  users: string[];
+  users?: string[];
   name: string;
   description?: string;
-  nodes?: ISchemaNode[];
+  nodes?: SchemaNodeInput[];
   brokerIds?: string[];
 }
 
 interface SchemaNodeInput {
   name: string;
   kind: 'group' | 'metric';
-  parent?: string;
+  parent?: string | null;
   path: string;
-  order?: number;
+  order: number;
   dataType?: 'Int' | 'Float' | 'Bool' | 'String';
   unit?: string;
   engineering?: Record<string, unknown>;
 }
 
 function requireAuth(context: Context): void {
-  if (!context.user) {
-    throw new Error('Authentication required');
-  }
+  if (!context.user) throw new Error('Authentication required');
 }
 
 export const schemaResolvers = {
@@ -40,7 +38,6 @@ export const schemaResolvers = {
       requireAuth(context);
       return await Schema.find();
     },
-
     schema: async (
       _: unknown,
       { id }: { id: string },
@@ -66,7 +63,7 @@ export const schemaResolvers = {
         users:
           input.users && input.users.length > 0
             ? input.users
-            : [context.user._id], // <-- Fix here
+            : [context.user._id],
       });
       return await schema.save();
     },
@@ -97,14 +94,13 @@ export const schemaResolvers = {
     ): Promise<ISchema | null> => {
       requireAuth(context);
 
-      const nodesWithIds = nodes.map((node: SchemaNodeInput) => ({
-        ...node,
-        _id: new Types.ObjectId(),
-      }));
+      // Clean the input nodes (remove id, isTemporary, etc.)
+      const nodesCleaned = nodes.map(({ ...rest }) => ({ ...rest }));
 
+      // APPEND to existing nodes instead of replacing
       const schema = await Schema.findByIdAndUpdate(
         schemaId,
-        { $push: { nodes: { $each: nodesWithIds } } },
+        { $push: { nodes: { $each: nodesCleaned } } }, // <-- Use $push with $each
         { new: true }
       );
 
@@ -118,14 +114,9 @@ export const schemaResolvers = {
     ): Promise<ISchema | null> => {
       requireAuth(context);
 
-      const nodeWithId = {
-        ...node,
-        _id: new Types.ObjectId(),
-      };
-
       const schema = await Schema.findByIdAndUpdate(
         schemaId,
-        { $push: { nodes: nodeWithId } },
+        { $push: { nodes: node } },
         { new: true }
       );
 
@@ -141,7 +132,7 @@ export const schemaResolvers = {
 
       const schema = await Schema.findByIdAndUpdate(
         schemaId,
-        { $pull: { nodes: { _id: nodeId } } }, // Use _id instead of id
+        { $pull: { nodes: { _id: nodeId } } },
         { new: true }
       );
 

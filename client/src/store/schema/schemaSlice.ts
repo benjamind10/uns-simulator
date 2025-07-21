@@ -8,25 +8,29 @@ import {
   saveNodesToSchemaAsync,
 } from './schemaThunk';
 
-// Define node type
+// Node type matches GraphQL SchemaNode
 export interface SchemaNode {
   id: string;
   name: string;
   kind: 'group' | 'metric';
   parent?: string | null;
   path: string;
-  order?: number;
+  order: number;
   dataType?: 'Int' | 'Float' | 'Bool' | 'String';
   unit?: string;
   engineering?: Record<string, unknown>;
 }
 
-// Schema type now includes nodes
+// Schema type matches GraphQL Schema
 export interface Schema {
   id: string;
   name: string;
   description?: string;
   nodes: SchemaNode[];
+  brokerIds?: string[];
+  users: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface SchemaState {

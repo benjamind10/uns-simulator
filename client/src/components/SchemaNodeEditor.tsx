@@ -7,6 +7,7 @@ import {
   fetchSchemasAsync,
 } from '../store/schema/schemaThunk';
 import { selectSchemas } from '../store/schema/schemaSlice';
+import type { ISchemaNode } from '../types';
 
 // TreeNode component for rendering nodes in the tree
 interface TreeNodeProps {
@@ -71,10 +72,9 @@ export interface SchemaNode {
   unit?: string;
   children?: SchemaNode[];
   isTemporary?: boolean;
+  path?: string;
+  order?: number; // <-- Added order property
 }
-
-const generateTempId = () =>
-  `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 // Add props interface
 interface SchemaNodeEditorProps {
@@ -120,10 +120,13 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   const savedNodes =
     schema.nodes?.map((n) => ({
       ...n,
-      parent: n.parent ?? null,
+      parent: !n.parent || n.parent === '' ? null : n.parent,
       isTemporary: false,
     })) ?? [];
-  const allNodes = [...savedNodes, ...tempNodes];
+
+  // Debug
+  console.log('Schema nodes from Redux:', schema.nodes);
+  console.log('Saved nodes after mapping:', savedNodes);
 
   // Build tree from combined nodes
   const buildTree = (
@@ -138,6 +141,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       }));
 
   const currentTree = buildTree(savedNodes, null);
+  const allNodes = [...savedNodes, ...tempNodes];
   const futureTree = buildTree(allNodes, null);
 
   // Select node and fill form
@@ -153,25 +157,20 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
 
   // Add new temporary node
   const handleAddNode = () => {
-    if (!form.name.trim()) return;
-
-    const parentId = selectedNode ? selectedNode.id : null;
-    const newNode: SchemaNode = {
-      id: generateTempId(),
+    const newNode: ISchemaNode = {
+      id: Date.now().toString(), // <-- Use temp ID for frontend tracking
       name: form.name,
       kind: form.kind,
-      parent: parentId,
-      dataType:
-        form.kind === 'metric'
-          ? form.dataType === ''
-            ? undefined
-            : form.dataType
-          : undefined,
-      unit: form.kind === 'metric' ? form.unit : undefined,
+      parent: selectedNode?.id || null,
+      path: selectedNode ? `${selectedNode.path}/${form.name}` : form.name,
+      order: 0,
+      dataType: form.dataType === '' ? undefined : form.dataType,
+      unit: form.unit,
+      engineering: {},
       isTemporary: true,
     };
 
-    setTempNodes((prev) => [...prev, newNode]);
+    setTempNodes([...tempNodes, newNode]);
     setForm({ name: '', kind: 'group', dataType: '', unit: '' });
     setSelectedNode(null);
     toast.success('Node added to temporary list');
@@ -222,16 +221,11 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       await dispatch(
         saveNodesToSchemaAsync({
           schemaId,
-          nodes: tempNodes.map((node) => ({
-            id: node.id,
-            name: node.name,
-            kind: node.kind,
-            parent: node.parent,
-            path: node.parent ? `${node.parent}/${node.name}` : node.name,
-            order: 0,
-            dataType: node.dataType,
-            unit: node.unit,
-            engineering: {},
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          nodes: tempNodes.map(({ id, isTemporary, children, ...node }) => ({
+            ...node,
+            order: typeof node.order === 'number' ? node.order : 0,
+            path: node.path ?? '',
           })),
         })
       ).unwrap();
