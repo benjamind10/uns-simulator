@@ -40,7 +40,7 @@ export default function BrokersPage() {
           ?.scrollIntoView({ behavior: 'smooth' });
       } else if (!loading) {
         // If broker not found and not loading, redirect to main brokers page
-        navigate('/brokers');
+        navigate('/dashboard/brokers');
         toast.error('Broker not found');
       }
     } else {
@@ -66,7 +66,7 @@ export default function BrokersPage() {
           })
         ).unwrap();
         toast.success('Broker updated successfully');
-        navigate('/brokers'); // Return to main broker list after update
+        navigate('/dashboard/brokers'); // Return to main broker list after update
       } else {
         await dispatch(createBrokerAsync(broker)).unwrap();
         toast.success('Broker added successfully');
@@ -80,7 +80,7 @@ export default function BrokersPage() {
   };
 
   const handleCancelEdit = () => {
-    navigate('/brokers'); // Return to main broker list on cancel
+    navigate('/dashboard/brokers'); // Return to main broker list on cancel
   };
 
   const handleDeleteBroker = async (id: string) => {
@@ -88,7 +88,7 @@ export default function BrokersPage() {
       await dispatch(deleteBrokerAsync(id)).unwrap();
       toast.success('Broker deleted successfully');
       if (editingBroker?.id === id) {
-        navigate('/brokers'); // Return to main list if deleting currently edited broker
+        navigate('/dashboard/brokers'); // Return to main list if deleting currently edited broker
       }
     } catch (error) {
       toast.error('Failed to delete broker');

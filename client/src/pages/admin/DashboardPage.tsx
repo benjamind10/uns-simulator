@@ -103,7 +103,7 @@ export default function DashboardPage() {
   };
 
   const handleEditBroker = (broker: IBroker) => {
-    navigate(`/brokers/edit/${broker.id}`);
+    navigate(`/dashboard/brokers/${broker.id}`);
   };
 
   const handleEditSchema = (schema: ISchema) => {
