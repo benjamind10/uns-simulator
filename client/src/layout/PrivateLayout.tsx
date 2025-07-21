@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import Toast from '../components/Toast';
+import Navbar from '../components/global/Navbar';
+import Toast from '../components/global/Toast';
 
 export default function PrivateLayout() {
   return (

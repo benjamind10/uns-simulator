@@ -5,7 +5,10 @@ export const userTypeDefs = gql`
     id: ID!
     username: String!
     email: String!
+    password: String!
     createdAt: String!
+    brokers: [Broker!]!
+    schemas: [Schema!]!
   }
 
   type AuthPayload {

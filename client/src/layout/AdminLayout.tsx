@@ -4,7 +4,7 @@ import { Menu, X, Home, User, Server, Sun, Moon, FileCode } from 'lucide-react';
 import clsx from 'clsx';
 
 import { useDarkMode } from '../hooks/useDarkMode';
-import Toast from '../components/Toast';
+import Toast from '../components/global/Toast';
 
 export default function AdminLayout() {
   const [open, setOpen] = useState(true); // side-nav expanded?

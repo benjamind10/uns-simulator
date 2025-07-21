@@ -1,6 +1,7 @@
-import { Types } from 'mongoose';
+import { Schema, Types } from 'mongoose';
 import User from '../models/User';
 import Broker, { IBroker } from '../models/Broker';
+import SchemaModel from '../models/Schema';
 
 interface CreateBrokerInput {
   name: string;
@@ -73,21 +74,24 @@ export const brokerResolvers = {
     },
 
     // Delete a broker
-    deleteBroker: async (_: any, { id }: { id: string }, context: Context) => {
+    deleteBroker: async (
+      _: unknown,
+      { id }: { id: string },
+      context: Context
+    ): Promise<boolean> => {
       requireAuth(context);
 
-      const broker = await Broker.findById(id);
-      if (!broker) {
-        throw new Error('Broker not found');
-      }
-
-      // If you need to clean up user references, do it here
-      // const userIds = (broker.users as Types.ObjectId[]).map((u) => u.toString());
-
+      // Delete the broker
       await Broker.findByIdAndDelete(id);
 
-      // Optionally, remove broker from users' brokers array
-      // await User.updateMany({ brokers: id }, { $pull: { brokers: id } });
+      // Remove broker reference from all users
+      await User.updateMany({ brokers: id }, { $pull: { brokers: id } });
+
+      // Remove broker reference from all schemas (if applicable)
+      await SchemaModel.updateMany(
+        { brokerIds: id },
+        { $pull: { brokerIds: id } }
+      );
 
       return true;
     },

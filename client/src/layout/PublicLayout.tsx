@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom';
 
-import Navbar from '../components/Navbar'; // reuse your existing top nav
+import Navbar from '../components/global/Navbar'; // reuse your existing top nav
 
 /**
  * PublicLayout

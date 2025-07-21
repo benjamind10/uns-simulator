@@ -3,8 +3,8 @@ import {
   selectSelectedSchemaId,
   setSelectedSchemaId,
 } from '../../store/schema/schemaSlice';
-import SchemaManager from '../../components/SchemaManager';
-import SchemaNodeEditor from '../../components/SchemaNodeEditor';
+import SchemaManager from '../../components/SchemaBuilder/SchemaManager';
+import SchemaNodeEditor from '../../components/SchemaBuilder/SchemaNodeEditor';
 
 /* ------------------------------------------------------------------
  * MAIN PAGE COMPONENT

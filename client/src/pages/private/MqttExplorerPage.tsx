@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectBrokers, fetchBrokersAsync } from '../../store/brokers';
-import MqttViewer from '../../components/MqttViewer';
+import MqttViewer from '../../components/Brokers/MqttViewer';
 import type { AppDispatch } from '../../store/store';
 
 export default function MqttExplorerPage() {

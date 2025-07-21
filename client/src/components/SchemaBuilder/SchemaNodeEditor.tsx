@@ -1,82 +1,16 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
-import type { AppDispatch } from '../store/store';
+import type { AppDispatch } from '../../store/store';
 import {
   saveNodesToSchemaAsync,
   fetchSchemasAsync,
-} from '../store/schema/schemaThunk';
-import { selectSchemas } from '../store/schema/schemaSlice';
-import type { ISchemaNode } from '../types';
+} from '../../store/schema/schemaThunk';
+import { selectSchemas } from '../../store/schema/schemaSlice';
+import type { SchemaNode } from '../../types';
+import { buildTree } from '../../utils/tree';
+import TreeNode from './TreeNode'; // <-- Import the extracted component
 
-// TreeNode component for rendering nodes in the tree
-interface TreeNodeProps {
-  node: SchemaNode & { children: SchemaNode[] };
-  onSelect: (node: SchemaNode) => void;
-  onDelete: (nodeId: string) => void;
-  selectedId: string | null;
-}
-
-function TreeNode({ node, onSelect, onDelete, selectedId }: TreeNodeProps) {
-  return (
-    <div className="ml-4 mb-2">
-      <div
-        className={`flex items-center gap-2 p-1 rounded cursor-pointer ${
-          selectedId === node.id
-            ? 'bg-blue-100 dark:bg-blue-900'
-            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-        }`}
-        onClick={() => onSelect(node)}
-      >
-        <span className="font-medium">{node.name}</span>
-        <span className="text-xs text-gray-500">{node.kind}</span>
-        {node.isTemporary && (
-          <span className="text-xs text-orange-500">(temp)</span>
-        )}
-        {node.isTemporary && (
-          <button
-            type="button"
-            className="ml-2 text-red-500 hover:text-red-700 text-xs"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(node.id);
-            }}
-          >
-            Delete
-          </button>
-        )}
-      </div>
-      {node.children.length > 0 && (
-        <div className="ml-4">
-          {node.children.map((child) => (
-            <TreeNode
-              key={child.id}
-              node={{ ...child, children: child.children ?? [] }}
-              onSelect={onSelect}
-              onDelete={onDelete}
-              selectedId={selectedId}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-export interface SchemaNode {
-  id: string;
-  name: string;
-  kind: 'group' | 'metric';
-  parent: string | null;
-  dataType?: 'Int' | 'Float' | 'Bool' | 'String';
-  unit?: string;
-  children?: SchemaNode[];
-  isTemporary?: boolean;
-  path?: string;
-  order?: number; // <-- Added order property
-}
-
-// Add props interface
 interface SchemaNodeEditorProps {
   schemaId: string;
 }
@@ -100,14 +34,12 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     unit: '',
   });
 
-  // Refresh schemas when schemaId changes
   useEffect(() => {
     dispatch(fetchSchemasAsync());
     setTempNodes([]);
     setSelectedNode(null);
   }, [dispatch, schemaId]);
 
-  // Guard: If schema is not loaded, show a message
   if (!schema) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
@@ -116,7 +48,6 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     );
   }
 
-  // Combine saved and temporary nodes
   const savedNodes =
     schema.nodes?.map((n) => ({
       ...n,
@@ -124,27 +55,10 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       isTemporary: false,
     })) ?? [];
 
-  // Debug
-  console.log('Schema nodes from Redux:', schema.nodes);
-  console.log('Saved nodes after mapping:', savedNodes);
-
-  // Build tree from combined nodes
-  const buildTree = (
-    nodes: SchemaNode[],
-    parentId: string | null = null
-  ): Array<SchemaNode & { children: SchemaNode[] }> =>
-    nodes
-      .filter((n) => n.parent === parentId)
-      .map((n) => ({
-        ...n,
-        children: buildTree(nodes, n.id) ?? [],
-      }));
-
   const currentTree = buildTree(savedNodes, null);
   const allNodes = [...savedNodes, ...tempNodes];
   const futureTree = buildTree(allNodes, null);
 
-  // Select node and fill form
   const handleSelect = (node: SchemaNode) => {
     setSelectedNode(node);
     setForm({
@@ -155,10 +69,9 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     });
   };
 
-  // Add new temporary node
   const handleAddNode = () => {
-    const newNode: ISchemaNode = {
-      id: Date.now().toString(), // <-- Use temp ID for frontend tracking
+    const newNode: SchemaNode = {
+      id: Date.now().toString(),
       name: form.name,
       kind: form.kind,
       parent: selectedNode?.id || null,
@@ -176,7 +89,6 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     toast.success('Node added to temporary list');
   };
 
-  // Delete temporary node
   const handleDeleteNode = (nodeId: string) => {
     const deleteNodeAndChildren = (
       nodes: SchemaNode[],
@@ -196,13 +108,11 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     toast.success('Node removed from temporary list');
   };
 
-  // Clear selected node
   const handleClearNode = () => {
     setSelectedNode(null);
     setForm({ name: '', kind: 'group', dataType: '', unit: '' });
   };
 
-  // Clear all temporary nodes
   const handleClearAll = () => {
     setTempNodes([]);
     setSelectedNode(null);
@@ -210,7 +120,6 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     toast.success('All temporary nodes cleared');
   };
 
-  // Save all temporary nodes to database (Redux)
   const handleSaveAll = async () => {
     if (tempNodes.length === 0) {
       toast.error('No temporary nodes to save');
@@ -234,9 +143,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       setSelectedNode(null);
       setForm({ name: '', kind: 'group', dataType: '', unit: '' });
 
-      // Refresh schemas to get updated nodes
       await dispatch(fetchSchemasAsync());
-
       toast.success('All nodes saved to database!');
     } catch (err) {
       console.error('Save error:', err);

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { IBroker } from '../types';
+import type { IBroker } from '../../types';
 
 interface BrokerFormProps {
   onSubmit: (broker: Omit<IBroker, 'id'>) => Promise<void>;

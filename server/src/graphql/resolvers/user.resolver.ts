@@ -1,6 +1,7 @@
-import User from '../models/User';
+import User, { IUser } from '../models/User';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import Broker from '../models/Broker';
 
 dotenv.config();
 
@@ -33,6 +34,13 @@ export const userResolvers = {
         token,
         user,
       };
+    },
+  },
+  User: {
+    brokers: async (parent: IUser) => {
+      // Only return brokers that actually exist
+      const brokers = await Broker.find({ _id: { $in: parent.brokers } });
+      return brokers;
     },
   },
 };

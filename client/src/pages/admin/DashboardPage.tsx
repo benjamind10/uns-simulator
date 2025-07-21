@@ -4,8 +4,8 @@ import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
-import StatCard from '../../components/StatCard';
-import BrokerCard from '../../components/BrokersCard';
+import StatCard from '../../components/admin/StatCard';
+import BrokerCard from '../../components/Brokers/BrokersCard';
 import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokers';
 
 import type { AppDispatch, RootState } from '../../store/store';

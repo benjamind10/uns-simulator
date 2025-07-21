@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Edit, Trash2, CheckCircle2, XCircle } from 'lucide-react';
 
-import ConfirmDialog from './ConfirmDialog';
-import type { IBroker } from '../types';
+import ConfirmDialog from '../global/ConfirmDialog';
+import type { IBroker } from '../../types';
 
 interface BrokerCardProps {
   broker: IBroker;

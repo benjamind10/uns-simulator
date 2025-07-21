@@ -1,6 +1,6 @@
 import { useSelector } from 'react-redux';
 
-import Login from '../../components/Login';
+import Login from '../../components/global/Login';
 import { selectIsAuthenticated } from '../../store/auth';
 
 export default function LandingPage() {
