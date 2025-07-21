@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { selectBrokers, fetchBrokersAsync } from '../../store/brokers';
+import { selectBrokerStatus } from '../../store/mqtt/mqttSlice';
+import { connectToBrokerAsync } from '../../store/mqtt/mqttThunk';
+import { getClient } from '../../store/mqtt/mqttClientManager';
 import MqttMessageViewer from '../../components/Brokers/MqttMessageViewer';
 import MqttTopicTree from '../../components/Brokers/MqttTopicTree';
 import { buildTopicTree } from '../../utils/mqttTopicTree';
-import type { AppDispatch } from '../../store/store';
-import { connectMqtt } from '../../utils/mqttConnection';
-import type { MqttClient } from 'mqtt';
+import type { AppDispatch, RootState } from '../../store/store';
 import type { MqttMessage } from '../../types';
 
 export default function MqttExplorerPage() {
@@ -14,58 +15,60 @@ export default function MqttExplorerPage() {
   const brokers = useSelector(selectBrokers);
   const [selectedBrokerId, setSelectedBrokerId] = useState<string>('');
   const [messages, setMessages] = useState<MqttMessage[]>([]);
-  const [client, setClient] = useState<MqttClient | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [topicInput, setTopicInput] = useState<string>('');
 
   const selectedBroker = brokers.find((b) => b.id === selectedBrokerId);
+  const brokerStatus = useSelector((state: RootState) =>
+    selectedBrokerId
+      ? selectBrokerStatus(state, selectedBrokerId)
+      : 'disconnected'
+  );
 
   // Fetch brokers on mount
   useEffect(() => {
     dispatch(fetchBrokersAsync());
   }, [dispatch]);
 
-  // Connect and subscribe to all topics when a broker is selected
+  // Connect to broker using Redux/thunk when selected
   useEffect(() => {
-    if (!selectedBroker) return;
-
-    // Disconnect previous client if any
-    if (client) {
-      client.end(true);
-      setClient(null);
+    if (selectedBroker && brokerStatus === 'disconnected') {
+      dispatch(connectToBrokerAsync(selectedBroker));
     }
-
-    // Connect to the selected broker
-    const url = `ws://${selectedBroker.url}:${selectedBroker.port}`;
-    const mqttClient = connectMqtt({
-      url,
-      topics: ['#'],
-      onMessage: (topic, payload) => {
-        setMessages((prev) => [
-          {
-            topic,
-            payload: typeof payload === 'string' ? payload : String(payload),
-            timestamp: new Date().toLocaleTimeString(),
-          },
-          ...prev,
-        ]);
-      },
-      onConnect: () => {
-        console.log('Connected to broker');
-      },
-      onError: (err) => {
-        console.error('MQTT error:', err);
-      },
-    });
-
-    setClient(mqttClient);
-
-    // Cleanup on unmount or broker change
-    return () => {
-      mqttClient.end(true);
-    };
+    // Optionally clear messages when broker changes
+    setMessages([]);
+    setSelectedTopic(null);
+    setTopicInput('');
     // eslint-disable-next-line
   }, [selectedBrokerId]);
+
+  // Subscribe to all topics using the singleton client
+  useEffect(() => {
+    if (!selectedBroker) return;
+    if (brokerStatus !== 'connected') return;
+
+    const client = getClient(selectedBroker.id);
+    if (!client) return;
+
+    const handleMessage = (topic: string, payload: Buffer) => {
+      setMessages((prev) => [
+        {
+          topic,
+          payload: payload.toString(),
+          timestamp: new Date().toLocaleTimeString(),
+        },
+        ...prev,
+      ]);
+    };
+
+    client.subscribe('#');
+    client.on('message', handleMessage);
+
+    return () => {
+      client.unsubscribe('#');
+      client.off('message', handleMessage);
+    };
+  }, [selectedBroker, brokerStatus]);
 
   // Build topic tree from received messages
   const topics = Array.from(new Set(messages.map((msg) => msg.topic)));
@@ -92,11 +95,7 @@ export default function MqttExplorerPage() {
         <select
           id="broker-select"
           value={selectedBrokerId}
-          onChange={(e) => {
-            setSelectedBrokerId(e.target.value);
-            setSelectedTopic(null); // Reset topic filter on broker change
-            setMessages([]); // Optionally clear messages on broker change
-          }}
+          onChange={(e) => setSelectedBrokerId(e.target.value)}
           className="w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
         >
           <option value="">-- Choose a broker --</option>
@@ -106,6 +105,24 @@ export default function MqttExplorerPage() {
             </option>
           ))}
         </select>
+        {selectedBrokerId && (
+          <div className="mt-2 text-sm">
+            Status:{' '}
+            <span
+              className={
+                brokerStatus === 'connected'
+                  ? 'text-green-600'
+                  : brokerStatus === 'connecting'
+                  ? 'text-yellow-600'
+                  : brokerStatus === 'error'
+                  ? 'text-red-600'
+                  : 'text-gray-600'
+              }
+            >
+              {brokerStatus}
+            </span>
+          </div>
+        )}
       </div>
 
       {selectedBroker ? (

@@ -36,3 +36,10 @@ export type UpdateBrokerResponse = {
 export type DeleteBrokerResponse = {
   deleteBroker: boolean;
 };
+
+export interface BrokerConnection {
+  brokerId: string;
+  status: 'disconnected' | 'connecting' | 'connected' | 'error';
+  lastError?: string;
+  lastConnected?: string;
+}

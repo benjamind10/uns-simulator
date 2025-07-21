@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Provider } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
+import { useEffect } from 'react';
 import { store } from './store/store';
+import { connectToMultipleBrokersAsync } from './store/mqtt/mqttThunk';
 
 import PublicLayout from './layout/PublicLayout';
 import AdminLayout from './layout/AdminLayout';
@@ -14,7 +16,19 @@ import SchemaBuilderPage from './pages/private/SchemaBuilderPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 // import UsersPage  from './pages/UsersPage';
 
+import type { RootState, AppDispatch } from './store/store';
+
 export default function App() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { brokers } = useSelector((state: RootState) => state.brokers);
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated && brokers.length > 0) {
+      dispatch(connectToMultipleBrokersAsync(brokers));
+    }
+  }, [isAuthenticated, brokers, dispatch]);
+
   return (
     <Provider store={store}>
       <BrowserRouter>

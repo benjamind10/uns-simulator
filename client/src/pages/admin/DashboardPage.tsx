@@ -5,16 +5,21 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import StatCard from '../../components/admin/StatCard';
+import SchemaCard from '../../components/SchemaBuilder/SchemaCard';
 import BrokerCard from '../../components/Brokers/BrokersCard';
 import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokers';
 import {
   fetchSchemasAsync,
   deleteSchemaAsync,
-} from '../../store/schema/schemaThunk'; // Add delete schema
+} from '../../store/schema/schemaThunk';
+import { connectToMultipleBrokersAsync } from '../../store/mqtt/mqttThunk';
+import {
+  selectConnectedBrokersCount,
+  selectBrokerStatuses,
+} from '../../store/mqtt/mqttSlice';
 
 import type { AppDispatch, RootState } from '../../store/store';
 import type { IBroker, ISchema } from '../../types';
-import SchemaCard from '../../components/SchemaBuilder/SchemaCard';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -26,17 +31,27 @@ export default function DashboardPage() {
     (state: RootState) => state.schema
   );
 
-  // Fetch both brokers and schemas on mount
+  const connectedBrokers = useSelector(selectConnectedBrokersCount);
+
+  // Get all broker statuses in one go
+  const brokerStatuses = useSelector(selectBrokerStatuses);
+
   useEffect(() => {
     dispatch(fetchBrokersAsync());
     dispatch(fetchSchemasAsync());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (brokers.length > 0) {
+      dispatch(connectToMultipleBrokersAsync(brokers));
+    }
+  }, [brokers, dispatch]);
+
   /* ---------------  stat cards --------------- */
   const stats = [
     {
       title: 'Brokers Online',
-      value: brokers.length,
+      value: connectedBrokers,
       icon: <Server size={20} className="text-blue-500" />,
     },
     {
@@ -46,7 +61,7 @@ export default function DashboardPage() {
     },
     {
       title: 'Sim Runs Today',
-      value: 128, // This would need to come from another API/store
+      value: 128,
       icon: <Activity size={20} className="text-amber-500" />,
     },
   ];
@@ -109,7 +124,6 @@ export default function DashboardPage() {
         <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
           Brokers Overview
         </h2>
-
         {brokersLoading ? (
           <p className="text-gray-500 dark:text-gray-400">Loading brokers…</p>
         ) : brokers.length === 0 ? (
@@ -122,7 +136,17 @@ export default function DashboardPage() {
               <BrokerCard
                 key={b.id}
                 broker={b}
-                status="online"
+                status={
+                  ['disconnected', 'connecting', 'connected', 'error'].includes(
+                    brokerStatuses[b.id]
+                  )
+                    ? (brokerStatuses[b.id] as
+                        | 'disconnected'
+                        | 'connecting'
+                        | 'connected'
+                        | 'error')
+                    : 'disconnected'
+                }
                 onDelete={handleDeleteBroker}
                 onEdit={() => handleEditBroker(b)}
               />
