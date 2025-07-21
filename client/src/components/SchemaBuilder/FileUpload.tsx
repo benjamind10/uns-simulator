@@ -11,7 +11,7 @@ export default function FileUpload({ onImport }: Props) {
     if (!files?.[0]) return;
     const file = files[0];
     try {
-      const nodes = await parseSchemaFile(file);
+      const nodes = await parseSchemaFile(file, []);
       onImport(nodes);
       toast.success(`${nodes.length} nodes imported`);
     } catch (err: unknown) {
