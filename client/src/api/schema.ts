@@ -7,7 +7,7 @@ import {
   GET_SCHEMA,
   SAVE_NODES_TO_SCHEMA,
 } from './mutations/schema.mutations';
-import type { ISchema, ISchemaNode } from '../types/schema';
+import type { ISchema, ISchemaNode } from '../types';
 
 const endpoint = import.meta.env.VITE_API_URL;
 

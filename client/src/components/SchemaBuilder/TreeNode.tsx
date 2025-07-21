@@ -1,8 +1,8 @@
-import type { SchemaNode } from '../../types';
+import type { ISchemaNode } from '../../types';
 
 interface TreeNodeProps {
-  node: SchemaNode & { children: SchemaNode[] };
-  onSelect: (node: SchemaNode) => void;
+  node: ISchemaNode & { children: ISchemaNode[] };
+  onSelect: (node: ISchemaNode) => void;
   onDelete: (nodeId: string) => void;
   selectedId: string | null;
 }

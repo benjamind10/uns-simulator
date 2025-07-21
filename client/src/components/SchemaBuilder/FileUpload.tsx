@@ -1,9 +1,9 @@
 import { parseSchemaFile } from '../../utils/parseSchemaFile';
 import { toast } from 'react-hot-toast';
-import type { SchemaNode } from '../../types';
+import type { ISchemaNode } from '../../types';
 
 interface Props {
-  onImport(nodes: SchemaNode[]): void;
+  onImport(nodes: ISchemaNode[]): void;
 }
 
 export default function FileUpload({ onImport }: Props) {

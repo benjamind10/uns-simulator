@@ -1,4 +1,4 @@
-import type { SchemaNode } from '../types';
+import type { ISchemaNode } from '../types';
 
 type RawNode = {
   id?: string;
@@ -18,8 +18,8 @@ type RawNode = {
  */
 export async function parseSchemaFile(
   file: File,
-  existingNodes: SchemaNode[]
-): Promise<SchemaNode[]> {
+  existingNodes: ISchemaNode[]
+): Promise<ISchemaNode[]> {
   const text = await file.text();
   const raw: RawNode[] = JSON.parse(text);
 
@@ -39,7 +39,7 @@ export async function parseSchemaFile(
     return (a.order ?? 0) - (b.order ?? 0);
   });
 
-  const result: SchemaNode[] = [];
+  const result: ISchemaNode[] = [];
   const tempIdMap = new Map<string, number>(); // original id -> array index
 
   // First pass: create nodes with null parents
@@ -48,7 +48,7 @@ export async function parseSchemaFile(
       tempIdMap.set(n.id, index);
     }
 
-    const schemaNode: SchemaNode = {
+    const schemaNode: ISchemaNode = {
       id: crypto.randomUUID(),
       name: n.name,
       kind: n.kind,
