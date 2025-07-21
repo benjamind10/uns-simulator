@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Edit, Trash2 } from 'lucide-react';
-
+import { Atom, Edit, Trash2 } from 'lucide-react';
 import ConfirmDialog from '../global/ConfirmDialog';
 import type { IBroker } from '../../types';
 
@@ -52,47 +51,50 @@ export default function BrokerCard({
 
   return (
     <>
-      <div className="rounded-lg bg-white dark:bg-gray-800 shadow p-5 flex flex-col gap-3">
-        {/* header row */}
-        <div className="flex items-start justify-between">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-            {broker.name}
-          </h3>
-
-          {/* status pill */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700 flex flex-col gap-3">
+        {/* Title and status */}
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex items-center space-x-3">
+            <Atom className="h-8 w-8 text-blue-500" />
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white">
+                {broker.name}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {broker.url}:{broker.port}
+              </p>
+            </div>
+          </div>
           <span
-            className={`inline-flex items-center gap-1 text-xs font-medium ${getStatusColor(
+            className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded ${getStatusColor(
               status
-            )}`}
+            )} text-white`}
           >
             {getStatusText(status)}
           </span>
         </div>
 
-        {/* connection details */}
-        <div className="text-sm text-gray-600 dark:text-gray-300">
-          <p>
-            <span className="font-medium">URL:</span> {broker.url}:{broker.port}
-          </p>
-          <p>
+        {/* Client ID and Icons */}
+        <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300">
+          <span>
             <span className="font-medium">Client ID:</span> {broker.clientId}
-          </p>
-        </div>
-
-        {/* actions */}
-        <div className="mt-auto flex gap-3">
-          <button
-            onClick={() => onEdit?.()}
-            className="flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400 text-sm"
-          >
-            <Edit size={16} /> Edit
-          </button>
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="flex items-center gap-1 text-red-600 hover:underline dark:text-red-400 text-sm"
-          >
-            <Trash2 size={16} /> Delete
-          </button>
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onEdit?.()}
+              className="p-2 hover:text-blue-600 dark:hover:text-blue-400"
+              title="Edit Broker"
+            >
+              <Edit size={16} />
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="p-2 hover:text-red-600 dark:hover:text-red-400"
+              title="Delete Broker"
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
         </div>
       </div>
 

@@ -52,7 +52,16 @@ export default function SchemaCard({
       )}
 
       <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-        <span>Created: {new Date(schema.createdAt).toLocaleDateString()}</span>
+        <span>
+          Created:{' '}
+          {schema.createdAt && !isNaN(Number(schema.createdAt))
+            ? new Date(
+                typeof schema.createdAt === 'number'
+                  ? schema.createdAt
+                  : Number(schema.createdAt)
+              ).toLocaleDateString()
+            : '-'}
+        </span>
         <span>{schema.brokerIds.length} broker(s)</span>
       </div>
     </div>

@@ -15,6 +15,7 @@ import SchemaBuilderPage from './pages/private/SchemaBuilderPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 
 import type { AppDispatch, RootState } from './types';
+import SchemaPage from './pages/admin/SchemaPage';
 
 export default function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -40,9 +41,13 @@ export default function App() {
         {/* ---------- ADMIN ROUTES ---------- */}
         <Route element={<AdminLayout />}>
           {/* <Route index element={<Dashboard />} /> */}
-          <Route path="brokers" element={<BrokersPage />} />
-          <Route path="brokers/edit/:brokerId" element={<BrokersPage />} />
+          <Route path="dashboard/brokers" element={<BrokersPage />} />
+          <Route
+            path="dashboard/brokers/edit/:brokerId"
+            element={<BrokersPage />}
+          />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="dashboard/schemas" element={<SchemaPage />} />
           {/* <Route path="users"   element={<UsersPage />} /> */}
         </Route>
         <Route element={<PrivateLayout />}>

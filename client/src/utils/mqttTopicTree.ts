@@ -1,4 +1,6 @@
 export interface TopicNode {
+  topicCount: any;
+  messageCount: any;
   name: string;
   children: Record<string, TopicNode>;
   fullPath: string;

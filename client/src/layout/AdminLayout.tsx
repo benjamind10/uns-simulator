@@ -131,7 +131,7 @@ export default function AdminLayout() {
 /* -------- navigation items -------- */
 const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
-  { to: '/Profile', label: 'Profile', icon: User },
-  { to: '/brokers', label: 'Brokers', icon: Server },
-  { to: '/schemas', label: 'Schemas', icon: FileCode },
+  { to: '/dashboard/profile', label: 'Profile', icon: User },
+  { to: '/dashboard/brokers', label: 'Brokers', icon: Server },
+  { to: '/dashboard/schemas', label: 'Schemas', icon: FileCode },
 ] as const;
