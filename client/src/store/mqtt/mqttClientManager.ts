@@ -1,8 +1,8 @@
-import mqtt, { MqttClient } from 'mqtt';
+import type { MqttClient } from 'mqtt';
 import type { IBroker } from '../../types';
+import mqtt from 'mqtt';
 
-type BrokerId = string;
-const clientMap = new Map<BrokerId, MqttClient>();
+const clientMap = new Map<string, MqttClient>();
 
 export function connectBroker(
   broker: IBroker,

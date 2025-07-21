@@ -39,8 +39,7 @@ export default function MqttExplorerPage() {
     setMessages([]);
     setSelectedTopic(null);
     setTopicInput('');
-    // eslint-disable-next-line
-  }, [selectedBrokerId]);
+  }, [selectedBrokerId, selectedBroker, brokerStatus, dispatch]); // Only runs when selectedBrokerId or dependencies change
 
   // Subscribe to all topics using the singleton client
   useEffect(() => {
