@@ -7,6 +7,7 @@ import {
   GET_SCHEMA,
   SAVE_NODES_TO_SCHEMA,
 } from './mutations/schema.mutations';
+import type { ISchema, ISchemaNode } from '../types/schema';
 
 const endpoint = import.meta.env.VITE_API_URL;
 
@@ -23,29 +24,6 @@ const getClient = () => {
       'Content-Type': 'application/json',
     },
   });
-};
-
-export type ISchemaNode = {
-  id: string;
-  name: string;
-  kind: 'group' | 'metric';
-  parent: string | null;
-  path: string;
-  order: number;
-  dataType?: 'Int' | 'Float' | 'Bool' | 'String';
-  unit?: string;
-  engineering?: Record<string, unknown>;
-};
-
-export type ISchema = {
-  id: string;
-  name: string;
-  description?: string;
-  nodes: ISchemaNode[];
-  brokerIds?: string[];
-  users: string[];
-  createdAt: string;
-  updatedAt: string;
 };
 
 type SchemasResponse = { schemas: ISchema[] };

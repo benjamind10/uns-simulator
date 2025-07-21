@@ -7,12 +7,7 @@ import { buildTopicTree } from '../../utils/mqttTopicTree';
 import type { AppDispatch } from '../../store/store';
 import { connectMqtt } from '../../utils/mqttConnection';
 import type { MqttClient } from 'mqtt';
-
-type MqttMessage = {
-  topic: string;
-  payload: string;
-  timestamp: string;
-};
+import type { MqttMessage } from '../../types';
 
 export default function MqttExplorerPage() {
   const dispatch = useDispatch<AppDispatch>();

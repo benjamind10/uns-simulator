@@ -1,13 +1,8 @@
 import type { FC } from 'react';
-
-interface Message {
-  topic: string;
-  payload: string;
-  timestamp: string;
-}
+import type { MqttMessage } from '../../types';
 
 interface MqttViewerProps {
-  messages: Message[];
+  messages: MqttMessage[];
   topics: string[];
 }
 

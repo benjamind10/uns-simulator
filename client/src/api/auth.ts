@@ -1,6 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 
 import { LOGIN_MUTATION } from './mutations/auth.mutations';
+import type { User } from '../types/auth';
 
 const endpoint = import.meta.env.VITE_API_URL;
 
@@ -13,13 +14,6 @@ const client = new GraphQLClient(endpoint, {
     'Content-Type': 'application/json',
   },
 });
-
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  createdAt: string;
-}
 
 interface AuthResponse {
   login: {
