@@ -113,14 +113,6 @@ export const brokerResolvers = {
       );
       const contextUserId = context.user._id.toString();
 
-      // Add the same debugging log as deleteBroker
-      console.log('Checking access:', {
-        brokerId: id,
-        userId: contextUserId,
-        allowedUsers: userIds,
-        matches: userIds.includes(contextUserId),
-      });
-
       if (!userIds.includes(contextUserId)) {
         throw new Error('Forbidden');
       }
