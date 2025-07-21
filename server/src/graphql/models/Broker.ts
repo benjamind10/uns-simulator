@@ -8,19 +8,22 @@ export interface IBroker extends Document {
   username?: string;
   password?: string;
   createdAt: Date;
+  updatedAt: Date;
   users: Types.ObjectId[];
 }
 
-const BrokerSchema: Schema = new Schema<IBroker>({
-  name: { type: String, required: true },
-  url: { type: String, required: true },
-  port: { type: Number, required: true },
-  clientId: { type: String, required: true },
-  username: { type: String },
-  password: { type: String },
-  createdAt: { type: Date, default: Date.now },
-  users: [{ type: Schema.Types.ObjectId, ref: 'User' }],
-});
+const BrokerSchema: Schema = new Schema<IBroker>(
+  {
+    name: { type: String, required: true },
+    url: { type: String, required: true },
+    port: { type: Number, required: true },
+    clientId: { type: String, required: true },
+    username: { type: String },
+    password: { type: String },
+    users: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }],
+  },
+  { timestamps: true }
+);
 
 BrokerSchema.set('toJSON', {
   transform: function (_doc, ret) {

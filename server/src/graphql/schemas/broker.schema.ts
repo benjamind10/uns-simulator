@@ -9,6 +9,7 @@ export const brokerTypeDefs = gql`
     clientId: String!
     username: String
     password: String
+    users: [ID!]!
     createdAt: String!
   }
 

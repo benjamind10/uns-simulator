@@ -1,6 +1,7 @@
-import { Types } from 'mongoose';
+import { Schema, Types } from 'mongoose';
 import User from '../models/User';
 import Broker, { IBroker } from '../models/Broker';
+import SchemaModel from '../models/Schema';
 
 interface CreateBrokerInput {
   name: string;
@@ -73,36 +74,24 @@ export const brokerResolvers = {
     },
 
     // Delete a broker
-    deleteBroker: async (_: any, { id }: { id: string }, context: Context) => {
-      if (!context.user) throw new Error('Unauthorized');
-
-      const broker = await Broker.findById(id);
-      if (!broker) throw new Error('Broker not found');
-
-      // Convert both to strings for comparison
-      const userIds = (broker.users as Types.ObjectId[]).map((u) =>
-        u.toString()
-      );
-      const contextUserId = context.user._id.toString();
-
-      console.log('Checking access:', {
-        brokerId: id,
-        userId: contextUserId,
-        allowedUsers: userIds,
-        matches: userIds.includes(contextUserId),
-      });
-
-      if (!userIds.includes(contextUserId)) {
-        throw new Error('Forbidden');
-      }
-
-      // Remove broker from user's list
-      await User.findByIdAndUpdate(context.user._id, {
-        $pull: { brokers: broker._id },
-      });
+    deleteBroker: async (
+      _: unknown,
+      { id }: { id: string },
+      context: Context
+    ): Promise<boolean> => {
+      requireAuth(context);
 
       // Delete the broker
       await Broker.findByIdAndDelete(id);
+
+      // Remove broker reference from all users
+      await User.updateMany({ brokers: id }, { $pull: { brokers: id } });
+
+      // Remove broker reference from all schemas (if applicable)
+      await SchemaModel.updateMany(
+        { brokerIds: id },
+        { $pull: { brokerIds: id } }
+      );
 
       return true;
     },
@@ -124,14 +113,6 @@ export const brokerResolvers = {
       );
       const contextUserId = context.user._id.toString();
 
-      // Add the same debugging log as deleteBroker
-      console.log('Checking access:', {
-        brokerId: id,
-        userId: contextUserId,
-        allowedUsers: userIds,
-        matches: userIds.includes(contextUserId),
-      });
-
       if (!userIds.includes(contextUserId)) {
         throw new Error('Forbidden');
       }
@@ -149,3 +130,8 @@ export const brokerResolvers = {
     },
   },
 };
+function requireAuth(context: Context) {
+  if (!context.user || !context.user._id) {
+    throw new Error('Unauthorized');
+  }
+}

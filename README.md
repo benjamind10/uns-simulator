@@ -94,6 +94,11 @@ uns-simulator/
 │   ├── src/
 │   │   ├── api/          # GraphQL API calls
 │   │   ├── components/   # Reusable React components
+|   |   |── layout/       # Holds Layouts for private Routes
+
+
+
+
 │   │   ├── pages/       # Page components
 │   │   ├── store/       # Redux store configuration
 │   │   └── types/       # TypeScript type definitions

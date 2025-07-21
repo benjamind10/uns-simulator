@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { IBroker } from '../types';
+import type { IBroker } from '../../types';
 
 interface BrokerFormProps {
   onSubmit: (broker: Omit<IBroker, 'id'>) => Promise<void>;
@@ -38,11 +38,11 @@ export default function BrokerForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const brokerData = {
-      ...formData,
-      createdAt: initialData?.createdAt ?? new Date().toISOString(),
-    };
+    // Don't send createdAt - let the server handle it
+    const brokerData = { ...formData };
+
     await onSubmit(brokerData);
+
     if (!initialData) {
       // Only reset form if we're not editing
       setFormData({

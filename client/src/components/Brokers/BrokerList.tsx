@@ -1,7 +1,7 @@
 import { Edit, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import type { IBroker } from '../types';
+import type { IBroker } from '../../types';
 
 interface BrokerListProps {
   brokers: IBroker[];
