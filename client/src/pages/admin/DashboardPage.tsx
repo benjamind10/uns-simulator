@@ -5,32 +5,58 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import StatCard from '../../components/admin/StatCard';
-import BrokerCard from '../../components/Brokers/BrokersCard';
+import SchemaCard from '../../components/schema/SchemaCard';
+import BrokerCard from '../../components/brokers/BrokersCard';
 import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokers';
+import {
+  fetchSchemasAsync,
+  deleteSchemaAsync,
+} from '../../store/schema/schemaThunk';
+import { connectToMultipleBrokersAsync } from '../../store/mqtt/mqttThunk';
+import {
+  selectConnectedBrokersCount,
+  selectBrokerStatuses,
+} from '../../store/mqtt/mqttSlice';
 
 import type { AppDispatch, RootState } from '../../store/store';
-import type { IBroker } from '../../types';
+import type { IBroker, ISchema } from '../../types';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const { brokers, loading } = useSelector((state: RootState) => state.brokers);
+  const { brokers, loading: brokersLoading } = useSelector(
+    (state: RootState) => state.brokers
+  );
+  const { schemas, loading: schemasLoading } = useSelector(
+    (state: RootState) => state.schema
+  );
 
-  // Add useEffect to fetch brokers on mount
+  const connectedBrokers = useSelector(selectConnectedBrokersCount);
+
+  // Get all broker statuses in one go
+  const brokerStatuses = useSelector(selectBrokerStatuses);
+
   useEffect(() => {
     dispatch(fetchBrokersAsync());
+    dispatch(fetchSchemasAsync());
   }, [dispatch]);
+
+  useEffect(() => {
+    if (brokers.length > 0) {
+      dispatch(connectToMultipleBrokersAsync(brokers));
+    }
+  }, [brokers, dispatch]);
 
   /* ---------------  stat cards --------------- */
   const stats = [
     {
       title: 'Brokers Online',
-      value: brokers.length,
+      value: connectedBrokers,
       icon: <Server size={20} className="text-blue-500" />,
     },
     {
       title: 'Total Sim Schemas',
-      value: 42,
+      value: schemas.length,
       icon: <Book size={20} className="text-green-500" />,
     },
     {
@@ -40,7 +66,7 @@ export default function DashboardPage() {
     },
   ];
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteBroker = async (id: string) => {
     try {
       await dispatch(deleteBrokerAsync(id)).unwrap();
       toast.success('Broker deleted successfully', {
@@ -58,8 +84,30 @@ export default function DashboardPage() {
     }
   };
 
-  const handleEdit = (broker: IBroker) => {
+  const handleDeleteSchema = async (id: string) => {
+    try {
+      await dispatch(deleteSchemaAsync(id)).unwrap();
+      toast.success('Schema deleted successfully', {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+    } catch (error) {
+      console.error('Error deleting schema:', error);
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        toast.error('Session expired. Please log in again.');
+        navigate('/login');
+      } else {
+        toast.error('Failed to delete schema');
+      }
+    }
+  };
+
+  const handleEditBroker = (broker: IBroker) => {
     navigate(`/brokers/edit/${broker.id}`);
+  };
+
+  const handleEditSchema = (schema: ISchema) => {
+    navigate(`/schema-builder/${schema.id}`);
   };
 
   return (
@@ -76,8 +124,7 @@ export default function DashboardPage() {
         <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
           Brokers Overview
         </h2>
-
-        {loading ? (
+        {brokersLoading ? (
           <p className="text-gray-500 dark:text-gray-400">Loading brokers…</p>
         ) : brokers.length === 0 ? (
           <p className="text-gray-500 dark:text-gray-400">
@@ -89,9 +136,45 @@ export default function DashboardPage() {
               <BrokerCard
                 key={b.id}
                 broker={b}
-                status="online"
-                onDelete={handleDelete}
-                onEdit={() => handleEdit(b)}
+                status={
+                  ['disconnected', 'connecting', 'connected', 'error'].includes(
+                    brokerStatuses[b.id]
+                  )
+                    ? (brokerStatuses[b.id] as
+                        | 'disconnected'
+                        | 'connecting'
+                        | 'connected'
+                        | 'error')
+                    : 'disconnected'
+                }
+                onDelete={handleDeleteBroker}
+                onEdit={() => handleEditBroker(b)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* --- schemas preview row --- */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
+          Schemas Overview
+        </h2>
+
+        {schemasLoading ? (
+          <p className="text-gray-500 dark:text-gray-400">Loading schemas…</p>
+        ) : schemas.length === 0 ? (
+          <p className="text-gray-500 dark:text-gray-400">
+            No schemas created yet.
+          </p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {schemas.map((schema) => (
+              <SchemaCard
+                key={schema.id}
+                schema={schema}
+                onDelete={handleDeleteSchema}
+                onEdit={() => handleEditSchema(schema)}
               />
             ))}
           </div>

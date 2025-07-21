@@ -1,9 +1,9 @@
-import type { SchemaNode } from '../types';
+import type { ISchemaNode } from '../types';
 
 export function buildTree(
-  nodes: SchemaNode[],
+  nodes: ISchemaNode[],
   parentId: string | null = null
-): Array<SchemaNode & { children: SchemaNode[] }> {
+): Array<ISchemaNode & { children: ISchemaNode[] }> {
   return nodes
     .filter((n) => n.parent === parentId)
     .map((n) => ({

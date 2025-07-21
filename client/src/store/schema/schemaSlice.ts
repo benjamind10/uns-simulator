@@ -7,34 +7,10 @@ import {
   deleteSchemaAsync,
   saveNodesToSchemaAsync,
 } from './schemaThunk';
-
-// Node type matches GraphQL SchemaNode
-export interface SchemaNode {
-  id: string;
-  name: string;
-  kind: 'group' | 'metric';
-  parent?: string | null;
-  path: string;
-  order: number;
-  dataType?: 'Int' | 'Float' | 'Bool' | 'String';
-  unit?: string;
-  engineering?: Record<string, unknown>;
-}
-
-// Schema type matches GraphQL Schema
-export interface Schema {
-  id: string;
-  name: string;
-  description?: string;
-  nodes: SchemaNode[];
-  brokerIds?: string[];
-  users: string[];
-  createdAt: string;
-  updatedAt: string;
-}
+import type { ISchema } from '../../types';
 
 export interface SchemaState {
-  schemas: Schema[];
+  schemas: ISchema[];
   loading: boolean;
   error: string | null;
   selectedSchemaId: string | null;

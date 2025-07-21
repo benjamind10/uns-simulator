@@ -1,28 +1,49 @@
 import { useState } from 'react';
-import { Edit, Trash2, CheckCircle2, XCircle } from 'lucide-react';
+import { Edit, Trash2 } from 'lucide-react';
 
 import ConfirmDialog from '../global/ConfirmDialog';
 import type { IBroker } from '../../types';
 
 interface BrokerCardProps {
   broker: IBroker;
-  onEdit?: (b: IBroker) => void;
-  onDelete?: (id: string) => void;
-  status?: 'online' | 'offline'; // optional live status
+  status: 'disconnected' | 'connecting' | 'connected' | 'error';
+  onDelete: (id: string) => void;
+  onEdit: () => void;
 }
 
 export default function BrokerCard({
   broker,
-  status = 'offline',
+  status = 'disconnected',
   onEdit,
   onDelete,
 }: BrokerCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const statusInfo = {
-    online: { label: 'Online', color: 'text-green-600', Icon: CheckCircle2 },
-    offline: { label: 'Offline', color: 'text-red-600', Icon: XCircle },
-  }[status];
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return 'bg-green-500';
+      case 'connecting':
+        return 'bg-yellow-500';
+      case 'error':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return 'Connected';
+      case 'connecting':
+        return 'Connecting...';
+      case 'error':
+        return 'Error';
+      default:
+        return 'Disconnected';
+    }
+  };
 
   const handleDelete = () => {
     onDelete?.(broker.id);
@@ -40,9 +61,11 @@ export default function BrokerCard({
 
           {/* status pill */}
           <span
-            className={`inline-flex items-center gap-1 text-xs font-medium ${statusInfo.color}`}
+            className={`inline-flex items-center gap-1 text-xs font-medium ${getStatusColor(
+              status
+            )}`}
           >
-            <statusInfo.Icon size={14} /> {statusInfo.label}
+            {getStatusText(status)}
           </span>
         </div>
 
@@ -59,7 +82,7 @@ export default function BrokerCard({
         {/* actions */}
         <div className="mt-auto flex gap-3">
           <button
-            onClick={() => onEdit?.(broker)}
+            onClick={() => onEdit?.()}
             className="flex items-center gap-1 text-blue-600 hover:underline dark:text-blue-400 text-sm"
           >
             <Edit size={16} /> Edit

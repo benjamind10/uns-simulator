@@ -38,13 +38,15 @@ export default function BrokerForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Don't send createdAt - let the server handle it
-    const brokerData = { ...formData };
+    // Ensure port is a number
+    const brokerData = {
+      ...formData,
+      port: Number(formData.port), // <-- convert to number
+    };
 
     await onSubmit(brokerData);
 
     if (!initialData) {
-      // Only reset form if we're not editing
       setFormData({
         name: '',
         url: '',

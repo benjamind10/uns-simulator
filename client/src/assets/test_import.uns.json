@@ -1,0 +1,28 @@
+[
+    {
+        "id": "area-1",
+        "name": "Area 1",
+        "kind": "group",
+        "parent": null,
+        "path": "Area 1",
+        "order": 0
+    },
+    {
+        "id": "line-1",
+        "name": "Line 1",
+        "kind": "group",
+        "parent": "area-1",
+        "path": "Area 1/Line 1",
+        "order": 1
+    },
+    {
+        "id": "oee-1",
+        "name": "OEE",
+        "kind": "metric",
+        "parent": "line-1",
+        "dataType": "Float",
+        "unit": "%",
+        "path": "Area 1/Line 1/OEE",
+        "order": 2
+    }
+]

@@ -8,6 +8,14 @@ import {
 } from './mutations/brokerMutations';
 
 import type { IBroker } from '../types';
+import type {
+  BrokersResponse,
+  CreateBrokerInput,
+  CreateBrokerResponse,
+  DeleteBrokerResponse,
+  UpdateBrokerInput,
+  UpdateBrokerResponse,
+} from '../types/broker';
 
 const endpoint = import.meta.env.VITE_API_URL;
 
@@ -29,34 +37,6 @@ const getClient = () => {
       'Content-Type': 'application/json',
     },
   });
-};
-
-// Types for GraphQL responses
-type BrokersResponse = {
-  brokers: IBroker[];
-};
-
-type CreateBrokerInput = {
-  name: string;
-  url: string;
-  port: number;
-  clientId: string;
-  username?: string;
-  password?: string;
-};
-
-type CreateBrokerResponse = {
-  createBroker: IBroker;
-};
-
-type UpdateBrokerInput = Partial<CreateBrokerInput>;
-
-type UpdateBrokerResponse = {
-  updateBroker: IBroker;
-};
-
-type DeleteBrokerResponse = {
-  deleteBroker: boolean;
 };
 
 // Fetch brokers for current user
