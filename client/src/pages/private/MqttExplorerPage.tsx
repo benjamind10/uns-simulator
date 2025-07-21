@@ -4,8 +4,8 @@ import { selectBrokers, fetchBrokersAsync } from '../../store/brokers';
 import { selectBrokerStatus } from '../../store/mqtt/mqttSlice';
 import { connectToBrokerAsync } from '../../store/mqtt/mqttThunk';
 import { getClient } from '../../store/mqtt/mqttClientManager';
-import MqttMessageViewer from '../../components/Brokers/MqttMessageViewer';
-import MqttTopicTree from '../../components/Brokers/MqttTopicTree';
+import MqttMessageViewer from '../../components/brokers/MqttMessageViewer';
+import MqttTopicTree from '../../components/brokers/MqttTopicTree';
 import { buildTopicTree } from '../../utils/mqttTopicTree';
 
 import type { AppDispatch, RootState } from '../../store/store';

@@ -4,8 +4,8 @@ import {
   selectSelectedSchemaId,
   setSelectedSchemaId,
 } from '../../store/schema/schemaSlice';
-import SchemaManager from '../../components/SchemaBuilder/SchemaManager';
-import SchemaNodeEditor from '../../components/SchemaBuilder/SchemaNodeEditor';
+import SchemaManager from '../../components/schema/SchemaManager';
+import SchemaNodeEditor from '../../components/schema/SchemaNodeEditor';
 import { useEffect } from 'react';
 
 /* ------------------------------------------------------------------

@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import StatCard from '../../components/admin/StatCard';
-import SchemaCard from '../../components/SchemaBuilder/SchemaCard';
-import BrokerCard from '../../components/Brokers/BrokersCard';
+import SchemaCard from '../../components/schema/SchemaCard';
+import BrokerCard from '../../components/brokers/BrokersCard';
 import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokers';
 import {
   fetchSchemasAsync,
