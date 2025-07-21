@@ -7,6 +7,7 @@ import compression from 'compression';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
+import { jwtDecode } from 'jwt-decode';
 
 import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
 import { userTypeDefs } from './graphql/schemas/user.schema';
@@ -49,6 +50,16 @@ const getContext = async ({ req }: { req: any }) => {
     return {};
   }
 };
+
+function isTokenExpired(token: string) {
+  try {
+    const decoded: any = jwtDecode(token);
+    if (!decoded.exp) return false;
+    return decoded.exp * 1000 < Date.now();
+  } catch {
+    return true;
+  }
+}
 
 // Add allowed origins based on environment
 const allowedOrigins = [
@@ -138,5 +149,12 @@ process.on('SIGTERM', async () => {
   await mongoose.connection.close();
   process.exit(0);
 });
+
+// When app loads or before requests:
+const authHeader = ''; // Get this from your request headers
+const token = authHeader.split(' ')[1];
+if (isTokenExpired(token)) {
+  // Log out user, clear token, redirect to login, etc.
+}
 
 startServer();

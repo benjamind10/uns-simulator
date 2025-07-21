@@ -128,6 +128,9 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     }
 
     try {
+      // 1. Insert all nodes via Redux thunk or backend API (handled by saveNodesToSchemaAsync)
+      // No direct NodeModel usage here; handled by backend.
+
       await dispatch(
         saveNodesToSchemaAsync({
           schemaId,
