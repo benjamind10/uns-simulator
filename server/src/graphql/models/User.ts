@@ -6,7 +6,8 @@ export interface IUser extends Document {
   email: string;
   password: string;
   createdAt: Date;
-  brokers: Types.ObjectId[]; // References to Broker documents
+  brokers: Types.ObjectId[];
+  schemas: Types.ObjectId[];
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -16,6 +17,7 @@ const UserSchema: Schema<IUser> = new Schema({
   password: { type: String, required: true },
   createdAt: { type: Date, default: Date.now },
   brokers: [{ type: Schema.Types.ObjectId, ref: 'Broker' }],
+  schemas: [{ type: Schema.Types.ObjectId, ref: 'Schema' }],
 });
 
 // Hash password before saving

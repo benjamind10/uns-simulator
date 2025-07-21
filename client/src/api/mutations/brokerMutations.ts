@@ -10,6 +10,7 @@ export const GET_BROKERS = gql`
       clientId
       username
       createdAt
+      users
     }
   }
 `;
@@ -24,6 +25,7 @@ export const CREATE_BROKER = gql`
       clientId
       username
       createdAt
+      users
     }
   }
 `;
@@ -38,6 +40,7 @@ export const GET_BROKER = gql`
       clientId
       username
       createdAt
+      users
     }
   }
 `;
@@ -58,6 +61,7 @@ export const UPDATE_BROKER = gql`
       clientId
       username
       createdAt
+      users
     }
   }
 `;

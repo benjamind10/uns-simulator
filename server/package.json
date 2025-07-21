@@ -10,13 +10,20 @@
   "dependencies": {
     "apollo-server": "^3.13.0",
     "bcrypt": "^6.0.0",
+    "compression": "^1.8.1",
+    "cors": "^2.8.5",
     "dotenv": "^10.0.0",
+    "express-rate-limit": "^8.0.1",
     "graphql": "^16.0.0",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^7.8.7"
+    "mongoose": "^7.8.7",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
+    "@types/compression": "^1.8.1",
+    "@types/cors": "^2.8.19",
     "@types/dotenv": "^8.2.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.97",
