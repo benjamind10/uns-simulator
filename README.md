@@ -7,6 +7,8 @@ A web-based MQTT broker simulator for testing and development purposes.
 - User authentication and authorization
 - MQTT broker management (add, edit, delete)
 - Real-time broker status monitoring
+- MQTT topic tree and message viewer
+- Schema import/export (JSON)
 - Dark/Light theme support
 - Responsive design
 
@@ -34,6 +36,7 @@ A web-based MQTT broker simulator for testing and development purposes.
 - Node.js (v16 or higher)
 - MongoDB installed and running
 - npm or yarn
+- (Optional) MQTT broker (e.g., Mosquitto) for local MQTT/WebSocket testing
 
 ### Installation
 
@@ -92,23 +95,19 @@ The application will be available at:
 uns-simulator/
 ├── client/                # Frontend React application
 │   ├── src/
-│   │   ├── api/          # GraphQL API calls
-│   │   ├── components/   # Reusable React components
-|   |   |── layout/       # Holds Layouts for private Routes
-
-
-
-
-│   │   ├── pages/       # Page components
-│   │   ├── store/       # Redux store configuration
-│   │   └── types/       # TypeScript type definitions
+│   │   ├── api/           # GraphQL API calls
+│   │   ├── components/    # Reusable React components
+│   │   ├── layout/        # Layouts for private routes
+│   │   ├── pages/         # Page components
+│   │   ├── store/         # Redux store configuration
+│   │   └── types/         # TypeScript type definitions
 │   └── package.json
 │
-└── server/               # Backend Node.js application
+└── server/                # Backend Node.js application
     ├── src/
-    │   ├── graphql/     # GraphQL schemas and resolvers
-    │   ├── models/      # Mongoose models
-    │   └── index.ts     # Server entry point
+    │   ├── graphql/       # GraphQL schemas and resolvers
+    │   ├── models/        # Mongoose models
+    │   └── index.ts       # Server entry point
     └── package.json
 ```
 

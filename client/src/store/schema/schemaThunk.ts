@@ -1,9 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import * as api from '../../api/schema';
-import type { Schema, SchemaNode } from './schemaSlice';
+import type { ISchemaNode, ISchema } from '../../types';
 
 // Input types for mutations
-type SchemaNodeInput = Omit<SchemaNode, 'id'>;
+type SchemaNodeInput = Omit<ISchemaNode, 'id'>;
 type SchemaInput = {
   name: string;
   description?: string;
@@ -13,7 +13,7 @@ type SchemaInput = {
 };
 
 // Fetch all schemas
-export const fetchSchemasAsync = createAsyncThunk<Schema[]>(
+export const fetchSchemasAsync = createAsyncThunk<ISchema[]>(
   'schema/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
@@ -21,7 +21,7 @@ export const fetchSchemasAsync = createAsyncThunk<Schema[]>(
       return schemas.map((schema) => ({
         ...schema,
         id: String(schema.id),
-      })) as Schema[];
+      })) as ISchema[];
     } catch (err) {
       if (err instanceof Error) {
         return rejectWithValue(err.message);
@@ -31,7 +31,7 @@ export const fetchSchemasAsync = createAsyncThunk<Schema[]>(
   }
 );
 
-export const createSchemaAsync = createAsyncThunk<Schema, SchemaInput>(
+export const createSchemaAsync = createAsyncThunk<ISchema, SchemaInput>(
   'schema/create',
   async (input, { rejectWithValue }) => {
     try {
@@ -46,7 +46,7 @@ export const createSchemaAsync = createAsyncThunk<Schema, SchemaInput>(
       return {
         ...schema,
         id: String(schema.id),
-      } as Schema;
+      } as ISchema;
     } catch (err) {
       if (err instanceof Error) {
         return rejectWithValue(err.message);
@@ -58,7 +58,7 @@ export const createSchemaAsync = createAsyncThunk<Schema, SchemaInput>(
 
 // Update a schema
 export const updateSchemaAsync = createAsyncThunk<
-  Schema,
+  ISchema,
   { id: string; input: SchemaInput }
 >('schema/update', async ({ id, input }, { rejectWithValue }) => {
   try {
@@ -73,7 +73,7 @@ export const updateSchemaAsync = createAsyncThunk<
     return {
       ...schema,
       id: String(schema.id),
-    } as Schema;
+    } as ISchema;
   } catch (err) {
     if (err instanceof Error) {
       return rejectWithValue(err.message);
@@ -100,7 +100,7 @@ export const deleteSchemaAsync = createAsyncThunk<string, string>(
 
 // Save nodes to schema
 export const saveNodesToSchemaAsync = createAsyncThunk<
-  Schema,
+  ISchema,
   { schemaId: string; nodes: SchemaNodeInput[] }
 >('schema/saveNodes', async ({ schemaId, nodes }, { rejectWithValue }) => {
   try {
@@ -115,7 +115,7 @@ export const saveNodesToSchemaAsync = createAsyncThunk<
     return {
       ...schema,
       id: String(schema.id),
-    } as Schema;
+    } as ISchema;
   } catch (err) {
     if (err instanceof Error) {
       return rejectWithValue(err.message);

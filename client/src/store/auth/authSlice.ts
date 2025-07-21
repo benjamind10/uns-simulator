@@ -1,11 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
-import type { AuthState } from './authTypes';
 import { loginAsync, logoutAsync } from './authThunks';
 import type { RootState } from '../store';
+import type { AuthState } from '../../types/auth';
 
 const initialState: AuthState = {
   user: JSON.parse(sessionStorage.getItem('authUser') || 'null'),
   token: sessionStorage.getItem('authToken'),
+  isAuthenticated: !!sessionStorage.getItem('authToken'),
   loading: false,
   error: null,
 };
@@ -28,14 +29,17 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = action.payload.user;
         state.token = action.payload.token;
+        state.isAuthenticated = true;
       })
       .addCase(loginAsync.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Login failed';
+        state.isAuthenticated = false;
       })
       .addCase(logoutAsync.fulfilled, (state) => {
         state.user = null;
         state.token = null;
+        state.isAuthenticated = false;
       });
   },
 });
@@ -46,6 +50,7 @@ export const { clearError } = authSlice.actions;
 // Selectors
 export const selectAuth = (state: RootState) => state.auth;
 export const selectUser = (state: RootState) => state.auth.user;
-export const selectIsAuthenticated = (state: RootState) => !!state.auth.token;
+export const selectIsAuthenticated = (state: RootState) =>
+  state.auth.isAuthenticated;
 
 export default authSlice.reducer;

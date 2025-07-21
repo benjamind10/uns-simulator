@@ -28,6 +28,7 @@ export const schemaTypeDefs = gql`
   }
 
   input SchemaNodeInput {
+    id: String! # Add this line
     name: String!
     kind: SchemaNodeKind!
     parent: ID
