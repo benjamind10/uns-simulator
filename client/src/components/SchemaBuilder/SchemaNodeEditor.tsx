@@ -10,6 +10,7 @@ import { selectSchemas } from '../../store/schema/schemaSlice';
 import type { SchemaNode } from '../../types';
 import { buildTree } from '../../utils/tree';
 import TreeNode from './TreeNode'; // <-- Import the extracted component
+import FileUpload from './FileUpload';
 
 interface SchemaNodeEditorProps {
   schemaId: string;
@@ -207,7 +208,12 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
 
       {/* Right: Node Builder Form */}
       <div className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-6">
-        <h2 className="font-bold mb-4 text-lg">Node Builder</h2>
+        <h2 className="font-bold mb-4 text-lg flex items-center justify-between">
+          Node Builder
+          <FileUpload
+            onImport={(nodes) => setTempNodes((prev) => [...prev, ...nodes])}
+          />
+        </h2>
         <form
           className="space-y-4"
           onSubmit={(e) => {
