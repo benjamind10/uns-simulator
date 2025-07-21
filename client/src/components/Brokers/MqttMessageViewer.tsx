@@ -11,7 +11,7 @@ interface MqttViewerProps {
   topics: string[];
 }
 
-const MqttViewer: FC<MqttViewerProps> = ({ messages, topics }) => {
+const MqttMessageViewer: FC<MqttViewerProps> = ({ messages, topics }) => {
   return (
     <div className="mb-6">
       <h3 className="text-lg font-semibold mb-2">Subscribed Topics</h3>
@@ -51,4 +51,4 @@ const MqttViewer: FC<MqttViewerProps> = ({ messages, topics }) => {
   );
 };
 
-export default MqttViewer;
+export default MqttMessageViewer;
