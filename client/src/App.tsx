@@ -48,6 +48,10 @@ export default function App() {
         <Route element={<PrivateLayout />}>
           <Route path="explorer" element={<MqttExplorerPage />} />
           <Route path="schema-builder" element={<SchemaBuilderPage />} />
+          <Route
+            path="schema-builder/:schemaId"
+            element={<SchemaBuilderPage />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>
