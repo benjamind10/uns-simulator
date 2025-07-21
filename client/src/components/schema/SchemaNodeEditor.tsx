@@ -128,17 +128,20 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     }
 
     try {
-      // 1. Insert all nodes via Redux thunk or backend API (handled by saveNodesToSchemaAsync)
-      // No direct NodeModel usage here; handled by backend.
-
       await dispatch(
         saveNodesToSchemaAsync({
           schemaId,
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          nodes: tempNodes.map(({ id, isTemporary, children, ...node }) => ({
-            ...node,
-            order: typeof node.order === 'number' ? node.order : 0,
+          nodes: tempNodes.map(({ isTemporary, children, ...node }) => ({
+            id: node.id, // Keep the temp id for backend mapping
+            name: node.name,
+            kind: node.kind,
+            parent: node.parent, // Keep for parent mapping
             path: node.path ?? '',
+            order: typeof node.order === 'number' ? node.order : 0,
+            dataType: node.dataType,
+            unit: node.unit ?? '',
+            engineering: node.engineering ?? {},
           })),
         })
       ).unwrap();

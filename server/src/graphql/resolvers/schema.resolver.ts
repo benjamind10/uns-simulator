@@ -89,22 +89,44 @@ export const schemaResolvers = {
 
     saveNodesToSchema: async (
       _: unknown,
-      { schemaId, nodes }: { schemaId: string; nodes: SchemaNodeInput[] },
+      { schemaId, nodes }: { schemaId: string; nodes: any[] },
       context: Context
-    ): Promise<ISchema | null> => {
-      requireAuth(context);
+    ) => {
+      const { user } = context;
+      if (!user) throw new Error('Unauthenticated');
 
-      // Clean the input nodes (remove id, isTemporary, etc.)
-      const nodesCleaned = nodes.map(({ ...rest }) => ({ ...rest }));
+      // 1️⃣ Create a tempId -> real Mongo ObjectId map
+      const tempToReal = new Map<string, Types.ObjectId>();
+      nodes.forEach((n) => tempToReal.set(n.id, new Types.ObjectId()));
 
-      // APPEND to existing nodes instead of replacing
-      const schema = await Schema.findByIdAndUpdate(
-        schemaId,
-        { $push: { nodes: { $each: nodesCleaned } } }, // <-- Use $push with $each
+      // 2️⃣ Build the array with correct _id + parent
+      const docs = nodes.map((n) => ({
+        _id: tempToReal.get(n.id), // generated Mongo id
+        name: n.name,
+        kind: n.kind,
+        parent:
+          n.parent && tempToReal.has(n.parent)
+            ? tempToReal.get(n.parent) // replace temp id with real id
+            : n.parent || null, // keep as-is if not in this batch
+        path: n.path,
+        order: n.order ?? 0,
+        dataType: n.dataType,
+        unit: n.unit,
+        engineering: n.engineering ?? {},
+      }));
+
+      // 3️⃣ Remove all old nodes for this schema (optional, if you want to replace)
+      await Schema.findByIdAndUpdate(schemaId, { $set: { nodes: [] } });
+
+      // 4️⃣ Push the new nodes
+      const updated = await Schema.findOneAndUpdate(
+        { _id: schemaId, users: user._id },
+        { $push: { nodes: { $each: docs } } },
         { new: true }
       );
 
-      return schema;
+      if (!updated) throw new Error('Schema not found or unauthorized');
+      return updated;
     },
 
     addNodeToSchema: async (
