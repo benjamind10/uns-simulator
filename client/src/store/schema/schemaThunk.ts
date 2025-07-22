@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import * as api from '../../api/schema';
 import type { ISchemaNode, ISchema } from '../../types';
+import { SCHEMA_ACTIONS, SCHEMA_ERRORS } from '../constants';
 
 // Input types for mutations
 type SchemaNodeInput = Omit<ISchemaNode, 'id'>;
@@ -14,7 +15,7 @@ type SchemaInput = {
 
 // Fetch all schemas
 export const fetchSchemasAsync = createAsyncThunk<ISchema[]>(
-  'schema/fetchAll',
+  SCHEMA_ACTIONS.FETCH_ALL,
   async (_, { rejectWithValue }) => {
     try {
       const schemas = await api.fetchSchemas();
@@ -26,13 +27,13 @@ export const fetchSchemasAsync = createAsyncThunk<ISchema[]>(
       if (err instanceof Error) {
         return rejectWithValue(err.message);
       }
-      return rejectWithValue('Failed to fetch schemas');
+      return rejectWithValue(SCHEMA_ERRORS.FETCH_ALL_FAILED);
     }
   }
 );
 
 export const createSchemaAsync = createAsyncThunk<ISchema, SchemaInput>(
-  'schema/create',
+  SCHEMA_ACTIONS.CREATE,
   async (input, { rejectWithValue }) => {
     try {
       const normalizedInput = {
@@ -51,7 +52,7 @@ export const createSchemaAsync = createAsyncThunk<ISchema, SchemaInput>(
       if (err instanceof Error) {
         return rejectWithValue(err.message);
       }
-      return rejectWithValue('Failed to create schema');
+      return rejectWithValue(SCHEMA_ERRORS.CREATE_FAILED);
     }
   }
 );
@@ -60,7 +61,7 @@ export const createSchemaAsync = createAsyncThunk<ISchema, SchemaInput>(
 export const updateSchemaAsync = createAsyncThunk<
   ISchema,
   { id: string; input: SchemaInput }
->('schema/update', async ({ id, input }, { rejectWithValue }) => {
+>(SCHEMA_ACTIONS.UPDATE, async ({ id, input }, { rejectWithValue }) => {
   try {
     const normalizedInput = {
       ...input,
@@ -78,13 +79,13 @@ export const updateSchemaAsync = createAsyncThunk<
     if (err instanceof Error) {
       return rejectWithValue(err.message);
     }
-    return rejectWithValue('Failed to update schema');
+    return rejectWithValue(SCHEMA_ERRORS.UPDATE_FAILED);
   }
 });
 
 // Delete a schema
 export const deleteSchemaAsync = createAsyncThunk<string, string>(
-  'schema/delete',
+  SCHEMA_ACTIONS.DELETE,
   async (id, { rejectWithValue }) => {
     try {
       await api.deleteSchema(id);
@@ -93,7 +94,7 @@ export const deleteSchemaAsync = createAsyncThunk<string, string>(
       if (err instanceof Error) {
         return rejectWithValue(err.message);
       }
-      return rejectWithValue('Failed to delete schema');
+      return rejectWithValue(SCHEMA_ERRORS.DELETE_FAILED);
     }
   }
 );
@@ -102,24 +103,27 @@ export const deleteSchemaAsync = createAsyncThunk<string, string>(
 export const saveNodesToSchemaAsync = createAsyncThunk<
   ISchema,
   { schemaId: string; nodes: SchemaNodeInput[] }
->('schema/saveNodes', async ({ schemaId, nodes }, { rejectWithValue }) => {
-  try {
-    const nodesWithNormalizedParent = nodes.map((node) => ({
-      ...node,
-      parent: node.parent === undefined ? null : node.parent,
-    }));
-    const schema = await api.saveNodesToSchema(
-      schemaId,
-      nodesWithNormalizedParent
-    );
-    return {
-      ...schema,
-      id: String(schema.id),
-    } as ISchema;
-  } catch (err) {
-    if (err instanceof Error) {
-      return rejectWithValue(err.message);
+>(
+  SCHEMA_ACTIONS.SAVE_NODES,
+  async ({ schemaId, nodes }, { rejectWithValue }) => {
+    try {
+      const nodesWithNormalizedParent = nodes.map((node) => ({
+        ...node,
+        parent: node.parent === undefined ? null : node.parent,
+      }));
+      const schema = await api.saveNodesToSchema(
+        schemaId,
+        nodesWithNormalizedParent
+      );
+      return {
+        ...schema,
+        id: String(schema.id),
+      } as ISchema;
+    } catch (err) {
+      if (err instanceof Error) {
+        return rejectWithValue(err.message);
+      }
+      return rejectWithValue('Failed to save nodes');
     }
-    return rejectWithValue('Failed to save nodes');
   }
-});
+);

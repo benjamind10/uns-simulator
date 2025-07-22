@@ -9,11 +9,12 @@ import {
   type CreateSimulationProfileInput,
   type UpdateSimulationProfileInput,
 } from '../../api/simulationProfile';
+import { SIMULATION_PROFILE_ACTIONS } from '../constants';
 
 // Fetch all simulation profiles
 export const fetchSimulationProfilesAsync = createAsyncThunk<
   ISimulationProfile[]
->('simulationProfile/fetchAll', async () => {
+>(SIMULATION_PROFILE_ACTIONS.FETCH_ALL, async () => {
   return await fetchSimulationProfiles();
 });
 
@@ -21,7 +22,7 @@ export const fetchSimulationProfilesAsync = createAsyncThunk<
 export const fetchSimulationProfileAsync = createAsyncThunk<
   ISimulationProfile,
   string
->('simulationProfile/fetchOne', async (id) => {
+>(SIMULATION_PROFILE_ACTIONS.FETCH_ONE, async (id) => {
   return await fetchSimulationProfile(id);
 });
 
@@ -29,7 +30,7 @@ export const fetchSimulationProfileAsync = createAsyncThunk<
 export const createSimulationProfileAsync = createAsyncThunk<
   ISimulationProfile,
   CreateSimulationProfileInput
->('simulationProfile/create', async (input) => {
+>(SIMULATION_PROFILE_ACTIONS.CREATE, async (input) => {
   return await createSimulationProfile(input);
 });
 
@@ -37,13 +38,13 @@ export const createSimulationProfileAsync = createAsyncThunk<
 export const updateSimulationProfileAsync = createAsyncThunk<
   ISimulationProfile,
   { id: string; input: UpdateSimulationProfileInput }
->('simulationProfile/update', async ({ id, input }) => {
+>(SIMULATION_PROFILE_ACTIONS.UPDATE, async ({ id, input }) => {
   return await updateSimulationProfile(id, input);
 });
 
 // Delete a simulation profile
 export const deleteSimulationProfileAsync = createAsyncThunk<string, string>(
-  'simulationProfile/delete',
+  SIMULATION_PROFILE_ACTIONS.DELETE,
   async (id) => {
     await deleteSimulationProfile(id);
     return id;
