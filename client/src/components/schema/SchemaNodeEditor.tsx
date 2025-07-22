@@ -1,6 +1,3 @@
-/* ------------------------------------------------------------------
-   SchemaNodeEditor.tsx  –  DROP-IN REPLACEMENT
--------------------------------------------------------------------*/
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';

@@ -16,6 +16,7 @@ import NotFoundPage from './pages/public/NotFoundPage';
 
 import type { AppDispatch, RootState } from './types';
 import SchemaPage from './pages/admin/SchemaPage';
+import SimulationPage from './pages/private/SimulationPage';
 
 export default function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -50,6 +51,8 @@ export default function App() {
         <Route element={<PrivateLayout />}>
           <Route path="explorer" element={<MqttExplorerPage />} />
           <Route path="schema-builder" element={<SchemaBuilderPage />} />
+          <Route path="simulator" element={<SimulationPage />} />
+          <Route path="simulator/:simulationId" element={<SimulationPage />} />
           <Route
             path="schema-builder/:schemaId"
             element={<SchemaBuilderPage />}

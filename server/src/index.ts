@@ -46,11 +46,12 @@ const getContext = async ({ req }: { req: any }) => {
 
   try {
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    console.log('Decoded token:', decoded, 'Now:', Date.now() / 1000);
     const user = await User.findById(decoded.userId);
     if (!user) return {};
     return { user };
   } catch (err) {
-    console.warn('❌ Invalid token:', (err as Error).message);
+    console.warn('❌ Invalid token:', (err as Error).message, 'Token:', token);
     return {};
   }
 };
