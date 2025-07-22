@@ -1,3 +1,6 @@
+/* ------------------------------------------------------------------
+   SchemaNodeEditor.tsx  –  DROP-IN REPLACEMENT
+-------------------------------------------------------------------*/
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
@@ -9,9 +12,11 @@ import {
 import { selectSchemas } from '../../store/schema/schemaSlice';
 import type { ISchemaNode } from '../../types';
 import { buildTree } from '../../utils/tree';
-import TreeNode from './TreeNode'; // <-- Import the extracted component
+import TreeNode from './TreeNode';
 import FileUpload from './FileUpload';
+import ConfirmDialog from '../global/ConfirmDialog'; // confirm modal
 
+/* ------------------------------------------------------------------ */
 interface SchemaNodeEditorProps {
   schemaId: string;
 }
@@ -23,18 +28,16 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
 
   const [tempNodes, setTempNodes] = useState<ISchemaNode[]>([]);
   const [selectedNode, setSelectedNode] = useState<ISchemaNode | null>(null);
-  const [form, setForm] = useState<{
-    name: string;
-    kind: 'group' | 'metric';
-    dataType: '' | 'Int' | 'Float' | 'Bool' | 'String';
-    unit: string;
-  }>({
+  const [showClearSavedConfirm, setShowClearSavedConfirm] = useState(false);
+
+  const [form, setForm] = useState({
     name: '',
-    kind: 'group',
-    dataType: '',
+    kind: 'group' as 'group' | 'metric',
+    dataType: '' as '' | 'Int' | 'Float' | 'Bool' | 'String',
     unit: '',
   });
 
+  /* ── refresh schema on mount / id change ── */
   useEffect(() => {
     dispatch(fetchSchemasAsync());
     setTempNodes([]);
@@ -49,6 +52,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     );
   }
 
+  /* --------------------- helpers --------------------- */
   const savedNodes =
     schema.nodes?.map((n) => ({
       ...n,
@@ -57,8 +61,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     })) ?? [];
 
   const currentTree = buildTree(savedNodes, null);
-  const allNodes = [...savedNodes, ...tempNodes];
-  const futureTree = buildTree(allNodes, null);
+  const futureTree = buildTree([...savedNodes, ...tempNodes], null);
 
   const handleSelect = (node: ISchemaNode) => {
     setSelectedNode(node);
@@ -84,29 +87,23 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       isTemporary: true,
     };
 
-    setTempNodes([...tempNodes, newNode]);
+    setTempNodes((p) => [...p, newNode]);
     setForm({ name: '', kind: 'group', dataType: '', unit: '' });
     setSelectedNode(null);
     toast.success('Node added to temporary list');
   };
 
   const handleDeleteNode = (nodeId: string) => {
-    const deleteNodeAndChildren = (
-      nodes: ISchemaNode[],
-      targetId: string
-    ): ISchemaNode[] => {
-      const filtered = nodes.filter((n) => n.id !== targetId);
-      return filtered.filter((n) => n.parent !== targetId);
-    };
+    const prune = (nodes: ISchemaNode[], target: string) =>
+      nodes.filter((n) => n.id !== target && n.parent !== target);
 
-    setTempNodes((prev) => deleteNodeAndChildren(prev, nodeId));
+    setTempNodes((p) => prune(p, nodeId));
 
     if (selectedNode?.id === nodeId) {
       setSelectedNode(null);
       setForm({ name: '', kind: 'group', dataType: '', unit: '' });
     }
-
-    toast.success('Node removed from temporary list');
+    toast.success('Node removed');
   };
 
   const handleClearNode = () => {
@@ -114,68 +111,87 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     setForm({ name: '', kind: 'group', dataType: '', unit: '' });
   };
 
-  const handleClearAll = () => {
+  const handleClearAllTemp = () => {
     setTempNodes([]);
-    setSelectedNode(null);
-    setForm({ name: '', kind: 'group', dataType: '', unit: '' });
+    handleClearNode();
     toast.success('All temporary nodes cleared');
   };
 
-  const handleSaveAll = async () => {
-    if (tempNodes.length === 0) {
-      toast.error('No temporary nodes to save');
-      return;
+  /* ---- NEW: clear ALL saved nodes from DB ---- */
+  const handleClearSaved = async () => {
+    try {
+      await dispatch(saveNodesToSchemaAsync({ schemaId, nodes: [] })).unwrap();
+      toast.success('All saved nodes removed');
+      setShowClearSavedConfirm(false);
+      dispatch(fetchSchemasAsync());
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to clear saved nodes');
     }
+  };
+
+  const handleSaveAll = async () => {
+    if (tempNodes.length === 0)
+      return toast.error('No temporary nodes to save');
 
     try {
       await dispatch(
         saveNodesToSchemaAsync({
           schemaId,
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          nodes: tempNodes.map(({ isTemporary, children, ...node }) => ({
-            id: node.id, // Keep the temp id for backend mapping
-            name: node.name,
-            kind: node.kind,
-            parent: node.parent, // Keep for parent mapping
-            path: node.path ?? '',
-            order: typeof node.order === 'number' ? node.order : 0,
-            dataType: node.dataType,
-            unit: node.unit ?? '',
-            engineering: node.engineering ?? {},
+          nodes: tempNodes.map(({ isTemporary, children, ...n }) => ({
+            id: n.id,
+            name: n.name,
+            kind: n.kind,
+            parent: n.parent,
+            path: n.path ?? '',
+            order: typeof n.order === 'number' ? n.order : 0,
+            dataType: n.dataType,
+            unit: n.unit ?? '',
+            engineering: n.engineering ?? {},
           })),
         })
       ).unwrap();
 
       setTempNodes([]);
-      setSelectedNode(null);
-      setForm({ name: '', kind: 'group', dataType: '', unit: '' });
-
-      await dispatch(fetchSchemasAsync());
+      handleClearNode();
+      dispatch(fetchSchemasAsync());
       toast.success('All nodes saved to database!');
     } catch (err) {
-      console.error('Save error:', err);
-      toast.error('Failed to save nodes to database');
+      console.error(err);
+      toast.error('Failed to save nodes');
     }
   };
 
+  /* ------------------------------------------------------------------ */
   return (
     <div className="flex gap-4">
-      {/* Left: Current Asset Tree */}
+      {/* ── LEFT: Current Asset Tree ── */}
       <div
         className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-4"
-        style={{ maxHeight: '500px', overflow: 'auto' }}
+        style={{ maxHeight: 500, overflow: 'auto' }}
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-bold text-lg">Current Asset Tree</h2>
-          <span className="text-sm text-gray-500">
-            {savedNodes.length} saved
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">
+              {savedNodes.length} saved
+            </span>
+            {savedNodes.length > 0 && (
+              <button
+                onClick={() => setShowClearSavedConfirm(true)}
+                className="text-red-500 hover:text-red-700 text-xs underline"
+              >
+                Clear Saved
+              </button>
+            )}
+          </div>
         </div>
-        {currentTree.length > 0 ? (
-          currentTree.map((node) => (
+        {currentTree.length ? (
+          currentTree.map((n) => (
             <TreeNode
-              key={node.id}
-              node={node}
+              key={n.id}
+              node={n}
               onSelect={handleSelect}
               onDelete={handleDeleteNode}
               selectedId={selectedNode?.id ?? null}
@@ -186,20 +202,20 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
         )}
       </div>
 
-      {/* Middle: Future Asset Tree */}
+      {/* ── MIDDLE: Future Asset Tree ── */}
       <div
         className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-4"
-        style={{ height: '500px', overflow: 'auto' }}
+        style={{ height: 500, overflow: 'auto' }}
       >
         <div className="flex justify-between items-center mb-4">
           <h2 className="font-bold text-lg">Future Asset Tree</h2>
           <span className="text-sm text-gray-500">{tempNodes.length} temp</span>
         </div>
-        {futureTree.length > 0 ? (
-          futureTree.map((node) => (
+        {futureTree.length ? (
+          futureTree.map((n) => (
             <TreeNode
-              key={node.id}
-              node={node}
+              key={n.id}
+              node={n}
               onSelect={handleSelect}
               onDelete={handleDeleteNode}
               selectedId={selectedNode?.id ?? null}
@@ -207,19 +223,20 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
           ))
         ) : (
           <div className="text-gray-400">
-            {savedNodes.length > 0 ? 'Same as current tree.' : 'No nodes yet.'}
+            {savedNodes.length ? 'Same as current tree.' : 'No nodes yet.'}
           </div>
         )}
       </div>
 
-      {/* Right: Node Builder Form */}
+      {/* ── RIGHT: Builder Form ── */}
       <div className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-6">
         <h2 className="font-bold mb-4 text-lg flex items-center justify-between">
           Node Builder
           <FileUpload
-            onImport={(nodes) => setTempNodes((prev) => [...prev, ...nodes])}
+            onImport={(nodes) => setTempNodes((p) => [...p, ...nodes])}
           />
         </h2>
+
         <form
           className="space-y-4"
           onSubmit={(e) => {
@@ -227,19 +244,20 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
             handleAddNode();
           }}
         >
+          {/* NAME */}
           <div>
             <label className="block text-sm font-medium mb-1">Name</label>
             <input
-              type="text"
+              className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-900"
               value={form.name}
               onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-900"
-              placeholder="Enter node name"
             />
           </div>
+          {/* KIND */}
           <div>
             <label className="block text-sm font-medium mb-1">Type</label>
             <select
+              className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-900"
               value={form.kind}
               onChange={(e) =>
                 setForm((f) => ({
@@ -247,12 +265,12 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                   kind: e.target.value as 'group' | 'metric',
                 }))
               }
-              className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-900"
             >
               <option value="group">Group</option>
               <option value="metric">Metric</option>
             </select>
           </div>
+
           {form.kind === 'metric' && (
             <>
               <div>
@@ -260,6 +278,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                   Data Type
                 </label>
                 <select
+                  className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-900"
                   value={form.dataType}
                   onChange={(e) =>
                     setForm((f) => ({
@@ -272,7 +291,6 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                         | 'String',
                     }))
                   }
-                  className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-900"
                 >
                   <option value="">Select type</option>
                   <option value="Int">Int</option>
@@ -284,18 +302,18 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
               <div>
                 <label className="block text-sm font-medium mb-1">Unit</label>
                 <input
-                  type="text"
+                  className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-900"
+                  placeholder="%, °C, m/s, …"
                   value={form.unit}
                   onChange={(e) =>
                     setForm((f) => ({ ...f, unit: e.target.value }))
                   }
-                  className="w-full p-2 border rounded bg-gray-50 dark:bg-gray-900"
-                  placeholder="%, °C, m/s, etc."
                 />
               </div>
             </>
           )}
 
+          {/* ACTION BUTTONS */}
           <div className="flex flex-col gap-2 mt-6">
             <button
               type="submit"
@@ -303,6 +321,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
             >
               {selectedNode ? 'Add Child Node' : 'Add Root Node'}
             </button>
+
             {selectedNode && (
               <button
                 type="button"
@@ -312,14 +331,15 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                 Clear Selection
               </button>
             )}
+
             {tempNodes.length > 0 && (
               <>
                 <button
                   type="button"
-                  onClick={handleClearAll}
+                  onClick={handleClearAllTemp}
                   className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
                 >
-                  Clear All
+                  Clear All Temp
                 </button>
                 <button
                   type="button"
@@ -334,17 +354,23 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
         </form>
 
         {selectedNode && (
-          <div className="mt-6 p-3 bg-gray-100 dark:bg-gray-700 rounded">
-            <div className="text-sm text-gray-600 dark:text-gray-300">
-              Selected:{' '}
-              <span className="font-semibold">{selectedNode.name}</span>
-              {selectedNode.isTemporary && ' (temporary)'}
-              <br />
-              New nodes will be added as children.
-            </div>
+          <div className="mt-6 p-3 bg-gray-100 dark:bg-gray-700 rounded text-sm text-gray-600 dark:text-gray-300">
+            Selected: <span className="font-semibold">{selectedNode.name}</span>
+            {selectedNode.isTemporary && ' (temporary)'}
+            <br />
+            New nodes will be added as children.
           </div>
         )}
       </div>
+
+      {/* ── Confirm delete dialog ── */}
+      <ConfirmDialog
+        isOpen={showClearSavedConfirm}
+        onClose={() => setShowClearSavedConfirm(false)}
+        onConfirm={handleClearSaved}
+        title="Remove ALL saved nodes"
+        message="This will delete every node currently stored in the database for this schema. Are you sure?"
+      />
     </div>
   );
 }
