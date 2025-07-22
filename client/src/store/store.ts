@@ -1,8 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './auth/authSlice';
-import mqttReducer from './mqtt'; // Add this import
+import mqttReducer from './mqtt';
 import { brokersReducer } from './brokers';
 import { schemaReducer } from './schema/schemaSlice';
+import simulationProfileReducer from './simulationProfile/simulationProfileSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     brokers: brokersReducer,
     schema: schemaReducer,
     mqtt: mqttReducer,
+    simulationProfile: simulationProfileReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

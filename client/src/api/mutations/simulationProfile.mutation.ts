@@ -51,3 +51,51 @@ export const DELETE_SIMULATION_PROFILE = gql`
     deleteSimulationProfile(id: $id)
   }
 `;
+
+// --- Missing Queries ---
+
+export const GET_SIMULATION_PROFILES = gql`
+  query GetSimulationProfiles {
+    simulationProfiles {
+      id
+      name
+      description
+      schemaId
+      brokerId
+      globalSettings {
+        defaultUpdateFrequency
+        timeScale
+        publishRoot
+        startDelay
+        simulationLength
+      }
+      defaultScenario
+      userId
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_SIMULATION_PROFILE = gql`
+  query GetSimulationProfile($id: ID!) {
+    simulationProfile(id: $id) {
+      id
+      name
+      description
+      schemaId
+      brokerId
+      globalSettings {
+        defaultUpdateFrequency
+        timeScale
+        publishRoot
+        startDelay
+        simulationLength
+      }
+      defaultScenario
+      userId
+      createdAt
+      updatedAt
+    }
+  }
+`;
