@@ -1,11 +1,13 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { ISimulationProfile } from '../../types';
+import type { ISimulationProfile, NodeSettings } from '../../types';
 import {
   fetchSimulationProfilesAsync,
   fetchSimulationProfileAsync,
   createSimulationProfileAsync,
   updateSimulationProfileAsync,
   deleteSimulationProfileAsync,
+  upsertNodeSettingsAsync,
+  deleteNodeSettingsAsync,
 } from './simulationProfieThunk';
 
 interface SimulationProfileState {
@@ -50,6 +52,33 @@ const simulationProfileSlice = createSlice({
     },
     removeProfile(state, action: PayloadAction<string>) {
       state.profiles = state.profiles.filter((p) => p.id !== action.payload);
+    },
+    // New: update node settings for selected profile
+    upsertNodeSettings(state, action: PayloadAction<NodeSettings>) {
+      if (state.selectedProfile) {
+        const idx = state.selectedProfile.nodeSettings?.findIndex(
+          (n) => n.nodeId === action.payload.nodeId
+        );
+        if (
+          idx !== undefined &&
+          idx !== -1 &&
+          state.selectedProfile.nodeSettings
+        ) {
+          state.selectedProfile.nodeSettings[idx] = action.payload;
+        } else if (state.selectedProfile.nodeSettings) {
+          state.selectedProfile.nodeSettings.push(action.payload);
+        } else {
+          state.selectedProfile.nodeSettings = [action.payload];
+        }
+      }
+    },
+    deleteNodeSettings(state, action: PayloadAction<string>) {
+      if (state.selectedProfile && state.selectedProfile.nodeSettings) {
+        state.selectedProfile.nodeSettings =
+          state.selectedProfile.nodeSettings.filter(
+            (n) => n.nodeId !== action.payload
+          );
+      }
     },
   },
   extraReducers: (builder) => {
@@ -136,6 +165,53 @@ const simulationProfileSlice = createSlice({
         state.loading = false;
         state.error =
           action.error.message || 'Failed to delete simulation profile';
+      })
+      // Upsert node settings
+      .addCase(upsertNodeSettingsAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(upsertNodeSettingsAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        // action.payload is NodeSettings
+        if (state.selectedProfile) {
+          const idx = state.selectedProfile.nodeSettings?.findIndex(
+            (n) => n.nodeId === action.payload.nodeId
+          );
+          if (
+            idx !== undefined &&
+            idx !== -1 &&
+            state.selectedProfile.nodeSettings
+          ) {
+            state.selectedProfile.nodeSettings[idx] = action.payload;
+          } else if (state.selectedProfile.nodeSettings) {
+            state.selectedProfile.nodeSettings.push(action.payload);
+          } else {
+            state.selectedProfile.nodeSettings = [action.payload];
+          }
+        }
+      })
+      .addCase(upsertNodeSettingsAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to upsert node settings';
+      })
+      // Delete node settings
+      .addCase(deleteNodeSettingsAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteNodeSettingsAsync.fulfilled, (state, action) => {
+        state.loading = false;
+        if (state.selectedProfile && state.selectedProfile.nodeSettings) {
+          state.selectedProfile.nodeSettings =
+            state.selectedProfile.nodeSettings.filter(
+              (n) => n.nodeId !== action.payload
+            );
+        }
+      })
+      .addCase(deleteNodeSettingsAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to delete node settings';
       });
   },
 });
@@ -148,6 +224,8 @@ export const {
   addProfile,
   updateProfile,
   removeProfile,
+  upsertNodeSettings,
+  deleteNodeSettings,
 } = simulationProfileSlice.actions;
 
 export default simulationProfileSlice.reducer;
