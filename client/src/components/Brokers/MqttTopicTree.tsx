@@ -31,14 +31,20 @@ const TreeNode: FC<{
   return (
     <li>
       <div
-        className="flex items-center"
-        style={{ paddingLeft: `${level * 20}px`, position: 'relative' }}
+        className="flex items-center relative"
+        style={{ paddingLeft: `${level * 20}px` }}
       >
         {/* Indentation line */}
         {level > 0 && (
           <span
-            className="absolute left-0 top-0 h-full border-l border-gray-400 dark:border-gray-700"
-            style={{ left: `${(level - 1) * 20 + 10}px`, width: '1px' }}
+            className="absolute border-l border-gray-400 dark:border-gray-700"
+            style={{
+              left: `${(level - 1) * 20 + 10}px`,
+              top: 0,
+              bottom: 0,
+              width: '1px',
+              height: '100%'
+            }}
           />
         )}
         {/* Expand/Collapse Button */}
@@ -87,18 +93,20 @@ const TreeNode: FC<{
       </div>
       {hasChildren && isExpanded && (
         <ul>
-          {Object.values(node.children).map((child) => (
-            <TreeNode
-              key={child.fullPath}
-              node={child}
-              expanded={expanded}
-              toggle={toggle}
-              selected={selected}
-              select={select}
-              onSelectTopic={onSelectTopic}
-              level={level + 1}
-            />
-          ))}
+          {Object.values(node.children)
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((child) => (
+              <TreeNode
+                key={child.fullPath}
+                node={child}
+                expanded={expanded}
+                toggle={toggle}
+                selected={selected}
+                select={select}
+                onSelectTopic={onSelectTopic}
+                level={level + 1}
+              />
+            ))}
         </ul>
       )}
     </li>
@@ -115,23 +123,23 @@ function getAllFullPaths(node: TopicNode): string[] {
 }
 
 const MqttTopicTree: FC<MqttTopicTreeProps> = ({ root, onSelectTopic }) => {
-  // Use a ref to keep the initial expanded state static
-  const initialExpanded = useRef<Set<string>>(new Set(getAllFullPaths(root)));
-  const [expanded, setExpanded] = useState<Set<string>>(
-    initialExpanded.current
-  );
-  const [selected, setSelected] = useState<string | null>(null);
+  // Memoize expanded and selected state so the tree doesn't reset on parent re-render
+  const expandedRef = useRef<Set<string>>(new Set(getAllFullPaths(root)));
+  const selectedRef = useRef<string | null>(null);
+  const [, forceUpdate] = useState(0); // for rerender on state change
 
   const toggle = (id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const next = new Set(expandedRef.current);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    expandedRef.current = next;
+    forceUpdate((n) => n + 1);
   };
 
-  const select = (id: string) => setSelected(id);
+  const select = (id: string) => {
+    selectedRef.current = id;
+    forceUpdate((n) => n + 1);
+  };
 
   return (
     <div
@@ -143,9 +151,9 @@ const MqttTopicTree: FC<MqttTopicTreeProps> = ({ root, onSelectTopic }) => {
         <ul className="h-full max-h-full overflow-y-auto">
           <TreeNode
             node={root}
-            expanded={expanded}
+            expanded={expandedRef.current}
             toggle={toggle}
-            selected={selected}
+            selected={selectedRef.current}
             select={select}
             onSelectTopic={onSelectTopic}
           />
