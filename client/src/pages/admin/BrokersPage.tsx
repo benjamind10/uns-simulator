@@ -97,28 +97,26 @@ export default function BrokersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100 px-4 pt-10 transition-colors duration-300">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">
-          {brokerId ? 'Edit MQTT Broker' : 'Add MQTT Broker'}
-        </h1>
+    <div className="max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">
+        {brokerId ? 'Edit MQTT Broker' : 'Add MQTT Broker'}
+      </h1>
 
-        <div className="broker-form bg-white text-gray-900 dark:bg-gray-900 dark:text-white px-4 py-6 rounded-lg shadow-md">
-          <BrokerForm
-            onSubmit={handleAddBroker}
-            initialData={editingBroker}
-            onCancel={handleCancelEdit}
-          />
-        </div>
+      <div className="broker-form bg-white text-gray-900 dark:bg-gray-900 dark:text-white px-4 py-6 rounded-lg shadow-md">
+        <BrokerForm
+          onSubmit={handleAddBroker}
+          initialData={editingBroker}
+          onCancel={handleCancelEdit}
+        />
+      </div>
 
-        <div className="mt-8">
-          {error && <p className="text-red-500 mb-4">{error}</p>}
-          {loading ? (
-            <p>Loading brokers...</p>
-          ) : (
-            <BrokerList brokers={brokers} onDelete={handleDeleteBroker} />
-          )}
-        </div>
+      <div className="mt-8">
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        {loading ? (
+          <p>Loading brokers...</p>
+        ) : (
+          <BrokerList brokers={brokers} onDelete={handleDeleteBroker} />
+        )}
       </div>
     </div>
   );
