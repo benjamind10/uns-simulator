@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react';
 import type { FC } from 'react';
 import type { TopicNode } from '../../utils/mqttTopicTree';
-import { ChevronDown, ChevronRight } from 'lucide-react'; 
+import type { MqttMessage } from '../../types';
+import { ChevronDown, ChevronRight, Folder, FolderOpen, FileText } from 'lucide-react'; 
 
 interface MqttTopicTreeProps {
   root: TopicNode;
+  messages: MqttMessage[];
   onSelectTopic?: (topic: string) => void;
 }
 
@@ -16,6 +18,7 @@ const TreeNode: FC<{
   select: (id: string) => void;
   onSelectTopic?: (topic: string) => void;
   level?: number;
+  messages: MqttMessage[];
 }> = ({
   node,
   expanded,
@@ -24,22 +27,38 @@ const TreeNode: FC<{
   select,
   onSelectTopic,
   level = 0,
+  messages,
 }) => {
   const hasChildren = Object.keys(node.children).length > 0;
   const isExpanded = expanded.has(node.fullPath);
 
+  let latestValue: string | undefined = undefined;
+  let prettyValue: string | undefined = undefined;
+  if (!hasChildren) {
+    const msg = messages.find((m) => m.topic === node.fullPath);
+    if (msg) {
+      latestValue = msg.payload;
+      try {
+        const parsed = JSON.parse(msg.payload);
+        prettyValue = JSON.stringify(parsed, null, 1);
+      } catch {
+        prettyValue = msg.payload;
+      }
+    }
+  }
+
   return (
     <li>
       <div
-        className="flex items-center relative"
-        style={{ paddingLeft: `${level * 20}px` }}
+        className={`group flex items-center relative transition-all duration-100 ${selected === node.fullPath ? 'bg-blue-100/60 dark:bg-blue-900/30' : ''}`}
+        style={{ paddingLeft: `${level * 18}px`, minHeight: 24, fontSize: 14, fontFamily: 'Segoe UI, Arial, sans-serif' }}
       >
         {/* Indentation line */}
         {level > 0 && (
           <span
-            className="absolute border-l border-gray-400 dark:border-gray-700"
+            className="absolute border-l border-gray-300 dark:border-gray-700"
             style={{
-              left: `${(level - 1) * 20 + 10}px`,
+              left: `${(level - 1) * 18 + 9}px`,
               top: 0,
               bottom: 0,
               width: '1px',
@@ -47,10 +66,10 @@ const TreeNode: FC<{
             }}
           />
         )}
-        {/* Expand/Collapse Button */}
+        {/* Expand/Collapse Button and Folder/File Icon */}
         <button
           onClick={() => hasChildren && toggle(node.fullPath)}
-          className="w-6 h-6 flex items-center justify-center focus:outline-none"
+          className="w-6 h-6 flex items-center justify-center focus:outline-none mr-1"
           aria-label={isExpanded ? 'Collapse' : 'Expand'}
           tabIndex={-1}
           style={{ minWidth: 24 }}
@@ -65,14 +84,15 @@ const TreeNode: FC<{
             <span className="inline-block w-4" />
           )}
         </button>
+        {hasChildren ? (
+          isExpanded ? <FolderOpen size={16} className="text-yellow-500 mr-1" /> : <Folder size={16} className="text-yellow-500 mr-1" />
+        ) : (
+          <FileText size={15} className="text-gray-400 mr-1" />
+        )}
         {/* Node Name */}
         <span
-          className={`cursor-pointer rounded px-2 py-1 transition
-            ${
-              selected === node.fullPath
-                ? 'bg-blue-500 text-white font-bold shadow'
-                : 'hover:bg-blue-100 dark:hover:bg-blue-900'
-            }`}
+          className={`cursor-pointer px-1 py-0.5 font-normal transition-colors duration-100 ${selected === node.fullPath ? 'text-blue-700 dark:text-blue-300 font-semibold' : 'hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-800 dark:text-gray-100'}`}
+          style={{ borderRadius: 2, fontSize: 14, fontFamily: 'Segoe UI, Arial, sans-serif' }}
           onClick={() => {
             select(node.fullPath);
             onSelectTopic?.(node.fullPath);
@@ -80,9 +100,19 @@ const TreeNode: FC<{
         >
           {node.name}
         </span>
+        {/* Value for leaf nodes as single-line JSON with horizontal scroll */}
+        {prettyValue !== undefined && (
+          <span
+            className="ml-2 text-xs font-mono text-gray-700 dark:text-gray-200 whitespace-nowrap max-w-[320px] overflow-x-auto block bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-0.5 shadow-sm"
+            style={{ fontSize: 13, lineHeight: 1.3, marginLeft: 8, marginRight: 2 }}
+          >
+            {'= '}
+            {typeof prettyValue === 'string' ? prettyValue.replace(/\s+/g, ' ') : prettyValue}
+          </span>
+        )}
         {/* Counts */}
         {typeof node.topicCount === 'number' && (
-          <span className="ml-2 text-xs text-blue-400">
+          <span className="ml-2 text-xs text-gray-400">
             ({node.topicCount} topics
             {typeof node.messageCount === 'number'
               ? `, ${node.messageCount} messages`
@@ -105,6 +135,7 @@ const TreeNode: FC<{
                 select={select}
                 onSelectTopic={onSelectTopic}
                 level={level + 1}
+                messages={messages}
               />
             ))}
         </ul>
@@ -122,7 +153,7 @@ function getAllFullPaths(node: TopicNode): string[] {
   return paths;
 }
 
-const MqttTopicTree: FC<MqttTopicTreeProps> = ({ root, onSelectTopic }) => {
+const MqttTopicTree: FC<MqttTopicTreeProps> = ({ root, messages, onSelectTopic }) => {
   // Memoize expanded and selected state so the tree doesn't reset on parent re-render
   const expandedRef = useRef<Set<string>>(new Set(getAllFullPaths(root)));
   const selectedRef = useRef<string | null>(null);
@@ -143,12 +174,12 @@ const MqttTopicTree: FC<MqttTopicTreeProps> = ({ root, onSelectTopic }) => {
 
   return (
     <div
-      className="bg-gray-100 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 p-3 h-full shadow-inner flex flex-col"
-      style={{ minHeight: '400px', height: '47vh' }}
+      className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-2 h-full flex flex-col"
+      style={{ minHeight: '400px', height: '55vh', minWidth: '420px', width: '100%' }}
     >
-      <h3 className="text-lg font-semibold mb-2">Topic Tree</h3>
+      <h3 className="text-base font-semibold mb-2 tracking-tight text-gray-700 dark:text-gray-200" style={{ fontFamily: 'Segoe UI, Arial, sans-serif' }}>Topic Tree</h3>
       <div className="flex-1 min-h-0 pr-1">
-        <ul className="h-full max-h-full overflow-y-auto">
+        <ul className="h-full max-h-full overflow-y-auto pr-2">
           <TreeNode
             node={root}
             expanded={expandedRef.current}
@@ -156,6 +187,7 @@ const MqttTopicTree: FC<MqttTopicTreeProps> = ({ root, onSelectTopic }) => {
             selected={selectedRef.current}
             select={select}
             onSelectTopic={onSelectTopic}
+            messages={messages}
           />
         </ul>
       </div>

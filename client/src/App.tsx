@@ -13,10 +13,10 @@ import PrivateLayout from './layout/PrivateLayout';
 import MqttExplorerPage from './pages/private/MqttExplorerPage';
 import SchemaBuilderPage from './pages/private/SchemaBuilderPage';
 import NotFoundPage from './pages/public/NotFoundPage';
-
-import type { AppDispatch, RootState } from './types';
 import SchemaPage from './pages/admin/SchemaPage';
 import SimulationPage from './pages/private/SimulationPage';
+
+import type { AppDispatch, RootState } from './types';
 
 export default function App() {
   const dispatch = useDispatch<AppDispatch>();
