@@ -133,7 +133,7 @@ export default function MqttExplorerPage() {
               >
                 <input
                   type="text"
-                  className="flex-1 px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  className="flex-1 px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                   placeholder="Type topic to filter (e.g. Test1/Test3)"
                   value={topicInput}
                   onChange={(e) => setTopicInput(e.target.value)}
