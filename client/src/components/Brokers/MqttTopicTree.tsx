@@ -2,7 +2,13 @@ import { useState, useRef } from 'react';
 import type { FC } from 'react';
 import type { TopicNode } from '../../utils/mqttTopicTree';
 import type { MqttMessage } from '../../types';
-import { ChevronDown, ChevronRight, Folder, FolderOpen, FileText } from 'lucide-react'; 
+import {
+  ChevronDown,
+  ChevronRight,
+  Folder,
+  FolderOpen,
+  FileText,
+} from 'lucide-react';
 
 interface MqttTopicTreeProps {
   root: TopicNode;
@@ -32,12 +38,10 @@ const TreeNode: FC<{
   const hasChildren = Object.keys(node.children).length > 0;
   const isExpanded = expanded.has(node.fullPath);
 
-  let latestValue: string | undefined = undefined;
   let prettyValue: string | undefined = undefined;
   if (!hasChildren) {
     const msg = messages.find((m) => m.topic === node.fullPath);
     if (msg) {
-      latestValue = msg.payload;
       try {
         const parsed = JSON.parse(msg.payload);
         prettyValue = JSON.stringify(parsed, null, 1);
@@ -50,8 +54,15 @@ const TreeNode: FC<{
   return (
     <li>
       <div
-        className={`group flex items-center relative transition-all duration-100 ${selected === node.fullPath ? 'bg-blue-100/60 dark:bg-blue-900/30' : ''}`}
-        style={{ paddingLeft: `${level * 18}px`, minHeight: 24, fontSize: 14, fontFamily: 'Segoe UI, Arial, sans-serif' }}
+        className={`group flex items-center relative transition-all duration-100 ${
+          selected === node.fullPath ? 'bg-blue-100/60 dark:bg-blue-900/30' : ''
+        }`}
+        style={{
+          paddingLeft: `${level * 18}px`,
+          minHeight: 24,
+          fontSize: 14,
+          fontFamily: 'Segoe UI, Arial, sans-serif',
+        }}
       >
         {/* Indentation line */}
         {level > 0 && (
@@ -62,7 +73,7 @@ const TreeNode: FC<{
               top: 0,
               bottom: 0,
               width: '1px',
-              height: '100%'
+              height: '100%',
             }}
           />
         )}
@@ -85,14 +96,26 @@ const TreeNode: FC<{
           )}
         </button>
         {hasChildren ? (
-          isExpanded ? <FolderOpen size={16} className="text-yellow-500 mr-1" /> : <Folder size={16} className="text-yellow-500 mr-1" />
+          isExpanded ? (
+            <FolderOpen size={16} className="text-yellow-500 mr-1" />
+          ) : (
+            <Folder size={16} className="text-yellow-500 mr-1" />
+          )
         ) : (
           <FileText size={15} className="text-gray-400 mr-1" />
         )}
         {/* Node Name */}
         <span
-          className={`cursor-pointer px-1 py-0.5 font-normal transition-colors duration-100 ${selected === node.fullPath ? 'text-blue-700 dark:text-blue-300 font-semibold' : 'hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-800 dark:text-gray-100'}`}
-          style={{ borderRadius: 2, fontSize: 14, fontFamily: 'Segoe UI, Arial, sans-serif' }}
+          className={`cursor-pointer px-1 py-0.5 font-normal transition-colors duration-100 ${
+            selected === node.fullPath
+              ? 'text-blue-700 dark:text-blue-300 font-semibold'
+              : 'hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-800 dark:text-gray-100'
+          }`}
+          style={{
+            borderRadius: 2,
+            fontSize: 14,
+            fontFamily: 'Segoe UI, Arial, sans-serif',
+          }}
           onClick={() => {
             select(node.fullPath);
             onSelectTopic?.(node.fullPath);
@@ -104,10 +127,17 @@ const TreeNode: FC<{
         {prettyValue !== undefined && (
           <span
             className="ml-2 text-xs font-mono text-gray-700 dark:text-gray-200 whitespace-nowrap max-w-[320px] overflow-x-auto block bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-0.5 shadow-sm"
-            style={{ fontSize: 13, lineHeight: 1.3, marginLeft: 8, marginRight: 2 }}
+            style={{
+              fontSize: 13,
+              lineHeight: 1.3,
+              marginLeft: 8,
+              marginRight: 2,
+            }}
           >
             {'= '}
-            {typeof prettyValue === 'string' ? prettyValue.replace(/\s+/g, ' ') : prettyValue}
+            {typeof prettyValue === 'string'
+              ? prettyValue.replace(/\s+/g, ' ')
+              : prettyValue}
           </span>
         )}
         {/* Counts */}
@@ -153,7 +183,11 @@ function getAllFullPaths(node: TopicNode): string[] {
   return paths;
 }
 
-const MqttTopicTree: FC<MqttTopicTreeProps> = ({ root, messages, onSelectTopic }) => {
+const MqttTopicTree: FC<MqttTopicTreeProps> = ({
+  root,
+  messages,
+  onSelectTopic,
+}) => {
   // Memoize expanded and selected state so the tree doesn't reset on parent re-render
   const expandedRef = useRef<Set<string>>(new Set(getAllFullPaths(root)));
   const selectedRef = useRef<string | null>(null);
@@ -175,9 +209,19 @@ const MqttTopicTree: FC<MqttTopicTreeProps> = ({ root, messages, onSelectTopic }
   return (
     <div
       className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-2 h-full flex flex-col"
-      style={{ minHeight: '400px', height: '55vh', minWidth: '420px', width: '100%' }}
+      style={{
+        minHeight: '400px',
+        height: '55vh',
+        minWidth: '420px',
+        width: '100%',
+      }}
     >
-      <h3 className="text-base font-semibold mb-2 tracking-tight text-gray-700 dark:text-gray-200" style={{ fontFamily: 'Segoe UI, Arial, sans-serif' }}>Topic Tree</h3>
+      <h3
+        className="text-base font-semibold mb-2 tracking-tight text-gray-700 dark:text-gray-200"
+        style={{ fontFamily: 'Segoe UI, Arial, sans-serif' }}
+      >
+        Topic Tree
+      </h3>
       <div className="flex-1 min-h-0 pr-1">
         <ul className="h-full max-h-full overflow-y-auto pr-2">
           <TreeNode

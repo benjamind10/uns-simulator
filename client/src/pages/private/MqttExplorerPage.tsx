@@ -127,7 +127,7 @@ export default function MqttExplorerPage() {
 
       {selectedBroker ? (
         <div className="bg-white dark:bg-gray-800 rounded shadow p-6 flex gap-8 flex-1 min-h-[60vh] w-full">
-          <div className="w-2/5 min-w-[420px] max-w-[700px]">
+          <div className="w-1/2 min-w-[420px] max-w-[700px]">
             {/* Topic selector input */}
             <form
               className="mb-4 flex gap-2"
@@ -159,7 +159,7 @@ export default function MqttExplorerPage() {
               }}
             />
           </div>
-          <div className="w-3/5 min-w-[420px] max-w-full">
+          <div className="w-1/2 min-w-[420px] max-w-full">
             {selectedTopic && (
               <div className="mb-2 flex items-center gap-2">
                 <span className="text-sm text-blue-600 dark:text-blue-400 font-semibold">
