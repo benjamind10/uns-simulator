@@ -12,7 +12,8 @@ export default function SchemaBuilderPage() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const selectedSchemaId = useSelector(selectSelectedSchemaId);
-  const { schemaId } = useParams<{ schemaId: string }>();
+==== BASE ====
+==== BASE ====
 
   // Sync URL param with Redux state
   useEffect(() => {
