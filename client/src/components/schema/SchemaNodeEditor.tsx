@@ -267,7 +267,6 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
               <option value="metric">Metric</option>
             </select>
           </div>
-
           {form.kind === 'metric' && (
             <>
               <div>
@@ -318,7 +317,6 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
             >
               {selectedNode ? 'Add Child Node' : 'Add Root Node'}
             </button>
-
             {selectedNode && (
               <button
                 type="button"
@@ -328,7 +326,6 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                 Clear Selection
               </button>
             )}
-
             {tempNodes.length > 0 && (
               <>
                 <button

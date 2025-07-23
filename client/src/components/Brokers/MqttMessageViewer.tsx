@@ -36,7 +36,8 @@ const MqttMessageViewer: FC<MqttViewerProps> = ({ messages, topics }) => {
                 className="p-3 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
               >
                 <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  {msg.timestamp} | <span className="font-mono">{msg.topic}</span>
+                  {msg.timestamp} |{' '}
+                  <span className="font-mono">{msg.topic}</span>
                 </div>
                 <div className="font-mono break-all">{msg.payload}</div>
               </div>
