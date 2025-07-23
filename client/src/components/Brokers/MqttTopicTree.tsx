@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { FC } from 'react';
 import type { TopicNode } from '../../utils/mqttTopicTree';
 
@@ -30,7 +30,7 @@ const TreeNode: FC<{
   return (
     <li>
       <div
-        className={`flex items-center space-x-1 pl-${level * 4}`}
+        className={`flex items-center space-x- pl-${level * 4}`}
         style={{ paddingLeft: `${level * 16}px` }}
       >
         {hasChildren ? (
@@ -91,9 +91,20 @@ const TreeNode: FC<{
   );
 };
 
+// Helper to recursively collect all fullPath values in the tree
+function getAllFullPaths(node: TopicNode): string[] {
+  let paths = [node.fullPath];
+  for (const child of Object.values(node.children)) {
+    paths = paths.concat(getAllFullPaths(child));
+  }
+  return paths;
+}
+
 const MqttTopicTree: FC<MqttTopicTreeProps> = ({ root, onSelectTopic }) => {
+  // Use a ref to keep the initial expanded state static
+  const initialExpanded = useRef<Set<string>>(new Set(getAllFullPaths(root)));
   const [expanded, setExpanded] = useState<Set<string>>(
-    new Set([root.fullPath])
+    initialExpanded.current
   );
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -109,18 +120,23 @@ const MqttTopicTree: FC<MqttTopicTreeProps> = ({ root, onSelectTopic }) => {
   const select = (id: string) => setSelected(id);
 
   return (
-    <div>
+    <div
+      className="bg-gray-100 dark:bg-gray-900 rounded-lg border border-gray-300 dark:border-gray-700 p-3 h-full shadow-inner flex flex-col"
+      style={{ minHeight: '400px', height: '47vh' }}
+    >
       <h3 className="text-lg font-semibold mb-2">Topic Tree</h3>
-      <ul>
-        <TreeNode
-          node={root}
-          expanded={expanded}
-          toggle={toggle}
-          selected={selected}
-          select={select}
-          onSelectTopic={onSelectTopic}
-        />
-      </ul>
+      <div className="flex-1 min-h-0 pr-1">
+        <ul className="h-full max-h-full overflow-y-auto">
+          <TreeNode
+            node={root}
+            expanded={expanded}
+            toggle={toggle}
+            selected={selected}
+            select={select}
+            onSelectTopic={onSelectTopic}
+          />
+        </ul>
+      </div>
     </div>
   );
 };

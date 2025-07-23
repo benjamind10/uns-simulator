@@ -1,28 +1,82 @@
 [
     {
-        "id": "area-1",
-        "name": "Area 1",
+        "id": "fiberon",
+        "name": "Fiberon",
         "kind": "group",
         "parent": null,
-        "path": "Area 1",
+        "path": "Fiberon",
         "order": 0
     },
     {
-        "id": "line-1",
-        "name": "Line 1",
+        "id": "1nl",
+        "name": "1NL",
         "kind": "group",
-        "parent": "area-1",
-        "path": "Area 1/Line 1",
+        "parent": "fiberon",
+        "path": "Fiberon/1NL/",
         "order": 1
     },
     {
-        "id": "oee-1",
+        "id": "pe",
+        "name": "PE",
+        "kind": "group",
+        "parent": "1nl",
+        "path": "Fiberon/1NL/PE",
+        "order": 2
+    },
+    {
+        "id": "line-24",
+        "name": "Line 24",
+        "kind": "group",
+        "parent": "pe",
+        "path": "Fiberon/1NL/PE/Line 24",
+        "order": 3
+    },
+    {
+        "id": "oee",
+        "name": "OEE",
+        "kind": "group",
+        "parent": "line-24",
+        "path": "Fiberon/1NL/PE/Line 24/OEE",
+        "order": 4
+    },
+    {
+        "id": "oee-metric",
         "name": "OEE",
         "kind": "metric",
-        "parent": "line-1",
+        "parent": "oee",
         "dataType": "Float",
         "unit": "%",
-        "path": "Area 1/Line 1/OEE",
-        "order": 2
+        "path": "Fiberon/1NL/PE/Line 24/OEE/OEE",
+        "order": 5
+    },
+    {
+        "id": "availability-metric",
+        "name": "Availability",
+        "kind": "metric",
+        "parent": "oee",
+        "dataType": "Float",
+        "unit": "%",
+        "path": "Fiberon/1NL/PE/Line 24/OEE/Availability",
+        "order": 6
+    },
+    {
+        "id": "quality-metric",
+        "name": "Quality",
+        "kind": "metric",
+        "parent": "oee",
+        "dataType": "Float",
+        "unit": "%",
+        "path": "Fiberon/1NL/PE/Line 24/OEE/Quality",
+        "order": 7
+    },
+    {
+        "id": "performance-metric",
+        "name": "Performance",
+        "kind": "metric",
+        "parent": "oee",
+        "dataType": "Float",
+        "unit": "%",
+        "path": "Fiberon/1NL/PE/Line 24/OEE/Performance",
+        "order": 8
     }
 ]

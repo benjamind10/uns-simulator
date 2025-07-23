@@ -8,7 +8,7 @@ interface MqttViewerProps {
 
 const MqttMessageViewer: FC<MqttViewerProps> = ({ messages, topics }) => {
   return (
-    <div className="mb-6">
+    <div className="mb-6 h-full flex flex-col">
       <h3 className="text-lg font-semibold mb-2">Subscribed Topics</h3>
       {topics.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400">
@@ -28,18 +28,20 @@ const MqttMessageViewer: FC<MqttViewerProps> = ({ messages, topics }) => {
           No messages received yet.
         </p>
       ) : (
-        <div className="space-y-2">
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className="p-3 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
-            >
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                {msg.timestamp} | <span className="font-mono">{msg.topic}</span>
+        <div className="flex-1 min-h-0">
+          <div className="space-y- h-100 max-h-[80vh] overflow-y-auto pr-1">
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className="p-3 rounded bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700"
+              >
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  {msg.timestamp} | <span className="font-mono">{msg.topic}</span>
+                </div>
+                <div className="font-mono break-all">{msg.payload}</div>
               </div>
-              <div className="font-mono break-all">{msg.payload}</div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
