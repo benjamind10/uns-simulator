@@ -1,40 +1,46 @@
-import { parseSchemaFile } from '../../utils/parseSchemaFile';
-import { toast } from 'react-hot-toast';
+// FileUpload.tsx (drop‑in replacement)
+import { UploadCloud } from 'lucide-react'; // or any icon lib you prefer
+import { useRef } from 'react';
 import type { ISchemaNode } from '../../types';
 
-interface Props {
-  onImport(nodes: ISchemaNode[]): void;
+interface FileUploadProps {
+  onImport: (nodes: ISchemaNode[]) => void;
 }
 
-export default function FileUpload({ onImport }: Props) {
-  const handleFiles = async (files: FileList | null) => {
-    if (!files?.[0]) return;
-    const file = files[0];
-    try {
-      const nodes = await parseSchemaFile(file, []);
-      onImport(nodes);
-      toast.success(`${nodes.length} nodes imported`);
-    } catch (err: unknown) {
-      console.error(err);
-      if (err instanceof Error) {
-        toast.error(err.message || 'Invalid schema file');
-      } else {
-        toast.error('Invalid schema file');
+export default function FileUpload({ onImport }: FileUploadProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    file.text().then((json) => {
+      try {
+        onImport(JSON.parse(json));
+      } catch {
+        /* JSON parse error */
       }
-    }
+    });
+    e.target.value = ''; // allow re‑selecting same file later
   };
 
   return (
-    <label className="cursor-pointer">
+    <>
       <input
+        ref={inputRef}
         type="file"
-        accept=".uns.json,application/json"
+        accept=".uns.json"
         className="hidden"
-        onChange={(e) => handleFiles(e.target.files)}
+        onChange={handleChange}
       />
-      <span className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700">
-        Import .uns.json
-      </span>
-    </label>
+      {/* Visible control */}
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800"
+      >
+        <UploadCloud className="w-4 h-4" />
+        Import&nbsp;.uns.json
+      </button>
+    </>
   );
 }

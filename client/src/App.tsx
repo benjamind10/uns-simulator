@@ -13,6 +13,8 @@ import PrivateLayout from './layout/PrivateLayout';
 import MqttExplorerPage from './pages/private/MqttExplorerPage';
 import SchemaBuilderPage from './pages/private/SchemaBuilderPage';
 import NotFoundPage from './pages/public/NotFoundPage';
+import SchemaPage from './pages/admin/SchemaPage';
+import SimulationPage from './pages/private/SimulationPage';
 
 import type { AppDispatch, RootState } from './types';
 
@@ -40,14 +42,17 @@ export default function App() {
         {/* ---------- ADMIN ROUTES ---------- */}
         <Route element={<AdminLayout />}>
           {/* <Route index element={<Dashboard />} /> */}
-          <Route path="brokers" element={<BrokersPage />} />
-          <Route path="brokers/edit/:brokerId" element={<BrokersPage />} />
+          <Route path="dashboard/brokers" element={<BrokersPage />} />
+          <Route path="dashboard/brokers/:brokerId" element={<BrokersPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="dashboard/schemas" element={<SchemaPage />} />
           {/* <Route path="users"   element={<UsersPage />} /> */}
         </Route>
         <Route element={<PrivateLayout />}>
           <Route path="explorer" element={<MqttExplorerPage />} />
           <Route path="schema-builder" element={<SchemaBuilderPage />} />
+          <Route path="simulator" element={<SimulationPage />} />
+          <Route path="simulator/:simulationId" element={<SimulationPage />} />
           <Route
             path="schema-builder/:schemaId"
             element={<SchemaBuilderPage />}

@@ -35,7 +35,7 @@ export default function BrokerList({ brokers, onDelete }: BrokerListProps) {
 
           <div className="flex gap-2">
             <Link
-              to={`/brokers/edit/${broker.id}`}
+              to={`/dashboard/brokers/${broker.id}`}
               className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
               title="Edit broker"
             >

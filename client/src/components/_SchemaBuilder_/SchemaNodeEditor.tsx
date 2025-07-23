@@ -7,7 +7,7 @@ import {
   fetchSchemasAsync,
 } from '../../store/schema/schemaThunk';
 import { selectSchemas } from '../../store/schema/schemaSlice';
-import type { SchemaNode } from '../../types';
+import type { ISchemaNode } from '../../types';
 import { buildTree } from '../../utils/tree';
 import TreeNode from './TreeNode'; // <-- Import the extracted component
 
@@ -20,8 +20,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   const schemas = useSelector(selectSchemas);
   const schema = schemas.find((s) => s.id === schemaId);
 
-  const [tempNodes, setTempNodes] = useState<SchemaNode[]>([]);
-  const [selectedNode, setSelectedNode] = useState<SchemaNode | null>(null);
+  const [tempNodes, setTempNodes] = useState<ISchemaNode[]>([]);
+  const [selectedNode, setSelectedNode] = useState<ISchemaNode | null>(null);
   const [form, setForm] = useState<{
     name: string;
     kind: 'group' | 'metric';
@@ -35,7 +35,6 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   });
 
   useEffect(() => {
-    dispatch(fetchSchemasAsync());
     setTempNodes([]);
     setSelectedNode(null);
   }, [dispatch, schemaId]);
@@ -59,7 +58,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   const allNodes = [...savedNodes, ...tempNodes];
   const futureTree = buildTree(allNodes, null);
 
-  const handleSelect = (node: SchemaNode) => {
+  const handleSelect = (node: ISchemaNode) => {
     setSelectedNode(node);
     setForm({
       name: node.name,
@@ -70,7 +69,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   };
 
   const handleAddNode = () => {
-    const newNode: SchemaNode = {
+    const newNode: ISchemaNode = {
       id: Date.now().toString(),
       name: form.name,
       kind: form.kind,
@@ -91,9 +90,9 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
 
   const handleDeleteNode = (nodeId: string) => {
     const deleteNodeAndChildren = (
-      nodes: SchemaNode[],
+      nodes: ISchemaNode[],
       targetId: string
-    ): SchemaNode[] => {
+    ): ISchemaNode[] => {
       const filtered = nodes.filter((n) => n.id !== targetId);
       return filtered.filter((n) => n.parent !== targetId);
     };

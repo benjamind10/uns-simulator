@@ -1,4 +1,3 @@
-import { ApolloServer } from 'apollo-server-express';
 import express from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -8,6 +7,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import { jwtDecode } from 'jwt-decode';
+import { ApolloServer } from 'apollo-server-express';
 
 import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
 import { userTypeDefs } from './graphql/schemas/user.schema';
@@ -16,6 +16,8 @@ import { brokerTypeDefs } from './graphql/schemas/broker.schema';
 import { brokerResolvers } from './graphql/resolvers/broker.resolver';
 import { schemaTypeDefs } from './graphql/schemas/schema.schema';
 import { schemaResolvers } from './graphql/resolvers/schema.resolver';
+import { simulationProfileTypeDefs } from './graphql/schemas/simulationProfile.schema';
+import { simulationProfileResolvers } from './graphql/resolvers/simulationProfile.resolver';
 import User from './graphql/models/User';
 
 // Load environment variables
@@ -26,11 +28,13 @@ export const typeDefs = mergeTypeDefs([
   userTypeDefs,
   brokerTypeDefs,
   schemaTypeDefs,
+  simulationProfileTypeDefs,
 ]);
 export const resolvers = mergeResolvers([
   userResolvers,
   brokerResolvers,
   schemaResolvers,
+  simulationProfileResolvers,
 ]);
 
 // Apollo context for auth
@@ -42,11 +46,12 @@ const getContext = async ({ req }: { req: any }) => {
 
   try {
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    console.log('Decoded token:', decoded, 'Now:', Date.now() / 1000);
     const user = await User.findById(decoded.userId);
     if (!user) return {};
     return { user };
   } catch (err) {
-    console.warn('❌ Invalid token:', (err as Error).message);
+    console.warn('❌ Invalid token:', (err as Error).message, 'Token:', token);
     return {};
   }
 };

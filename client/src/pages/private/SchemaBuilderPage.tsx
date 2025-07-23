@@ -1,37 +1,49 @@
 import { useSelector, useDispatch } from 'react-redux';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import {
   selectSelectedSchemaId,
   setSelectedSchemaId,
 } from '../../store/schema/schemaSlice';
 import SchemaManager from '../../components/schema/SchemaManager';
 import SchemaNodeEditor from '../../components/schema/SchemaNodeEditor';
-import { useEffect } from 'react';
 
-/* ------------------------------------------------------------------
- * MAIN PAGE COMPONENT
- * -----------------------------------------------------------------*/
 export default function SchemaBuilderPage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const selectedSchemaId = useSelector(selectSelectedSchemaId);
   const { schemaId } = useParams<{ schemaId: string }>();
 
-  // If schemaId is present in the URL, set it as the selected schema
+  // Sync URL param with Redux state
   useEffect(() => {
     if (schemaId && schemaId !== selectedSchemaId) {
       dispatch(setSelectedSchemaId(schemaId));
     }
   }, [schemaId, selectedSchemaId, dispatch]);
 
+  // Handler for schema selection compatible with React.Dispatch<SetStateAction<string | null>>
+  const handleSchemaSelection: React.Dispatch<
+    React.SetStateAction<string | null>
+  > = (value) => {
+    const id = typeof value === 'function' ? value(selectedSchemaId) : value;
+    dispatch(setSelectedSchemaId(id));
+    if (id) {
+      navigate(`/schema-builder/${id}`);
+    } else {
+      navigate(`/schema-builder`);
+    }
+  };
+
+  /* ─────────── render ─────────── */
   return (
     <div className="flex flex-col max-w-6xl mx-auto py-10 gap-8">
-      {/* Schema CRUD section */}
+      {/* Schema Management Section */}
       <SchemaManager
         selectedSchemaId={selectedSchemaId}
-        setSelectedSchemaId={(id) => dispatch(setSelectedSchemaId(id))}
+        setSelectedSchemaId={handleSchemaSelection}
       />
 
-      {/* Schema Nodes section */}
+      {/* Schema Node Editor Section */}
       {selectedSchemaId ? (
         <SchemaNodeEditor schemaId={selectedSchemaId} />
       ) : (

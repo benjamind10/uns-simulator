@@ -4,12 +4,12 @@ import { selectBrokers, fetchBrokersAsync } from '../../store/brokers';
 import { selectBrokerStatus } from '../../store/mqtt/mqttSlice';
 import { connectToBrokerAsync } from '../../store/mqtt/mqttThunk';
 import { getClient } from '../../store/mqtt/mqttClientManager';
-import MqttMessageViewer from '../../components/brokers/MqttMessageViewer';
-import MqttTopicTree from '../../components/brokers/MqttTopicTree';
 import { buildTopicTree } from '../../utils/mqttTopicTree';
 
 import type { AppDispatch, RootState } from '../../store/store';
 import type { MqttMessage } from '../../types';
+import MqttMessageViewer from '../../components/brokers/MqttMessageViewer';
+import MqttTopicTree from '../../components/brokers/MqttTopicTree';
 
 export default function MqttExplorerPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -84,7 +84,7 @@ export default function MqttExplorerPage() {
     : messages;
 
   return (
-    <div className="max-w-5xl mx-auto py-10">
+    <div className="w-full max-w-[1600px] mx-auto py-10 min-h-[80vh] flex flex-col">
       <h1 className="text-3xl font-bold mb-6">MQTT Explorer</h1>
 
       {/* Broker Picker */}
@@ -126,8 +126,8 @@ export default function MqttExplorerPage() {
       </div>
 
       {selectedBroker ? (
-        <div className="bg-white dark:bg-gray-800 rounded shadow p-6 flex gap-8">
-          <div className="w-1/2 overflow-auto">
+        <div className="bg-white dark:bg-gray-800 rounded shadow p-6 flex gap-8 flex-1 min-h-[60vh] w-full">
+          <div className="w-1/2 min-w-[420px] max-w-[700px]">
             {/* Topic selector input */}
             <form
               className="mb-4 flex gap-2"
@@ -152,13 +152,14 @@ export default function MqttExplorerPage() {
             </form>
             <MqttTopicTree
               root={topicTreeRoot}
+              messages={messages}
               onSelectTopic={(topic) => {
                 setSelectedTopic(topic);
                 setTopicInput(topic);
               }}
             />
           </div>
-          <div className="w-1/2">
+          <div className="w-1/2 min-w-[420px] max-w-full">
             {selectedTopic && (
               <div className="mb-2 flex items-center gap-2">
                 <span className="text-sm text-blue-600 dark:text-blue-400 font-semibold">

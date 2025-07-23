@@ -40,7 +40,7 @@ export default function BrokersPage() {
           ?.scrollIntoView({ behavior: 'smooth' });
       } else if (!loading) {
         // If broker not found and not loading, redirect to main brokers page
-        navigate('/brokers');
+        navigate('/dashboard/brokers');
         toast.error('Broker not found');
       }
     } else {
@@ -66,7 +66,7 @@ export default function BrokersPage() {
           })
         ).unwrap();
         toast.success('Broker updated successfully');
-        navigate('/brokers'); // Return to main broker list after update
+        navigate('/dashboard/brokers'); // Return to main broker list after update
       } else {
         await dispatch(createBrokerAsync(broker)).unwrap();
         toast.success('Broker added successfully');
@@ -80,7 +80,7 @@ export default function BrokersPage() {
   };
 
   const handleCancelEdit = () => {
-    navigate('/brokers'); // Return to main broker list on cancel
+    navigate('/dashboard/brokers'); // Return to main broker list on cancel
   };
 
   const handleDeleteBroker = async (id: string) => {
@@ -88,7 +88,7 @@ export default function BrokersPage() {
       await dispatch(deleteBrokerAsync(id)).unwrap();
       toast.success('Broker deleted successfully');
       if (editingBroker?.id === id) {
-        navigate('/brokers'); // Return to main list if deleting currently edited broker
+        navigate('/dashboard/brokers'); // Return to main list if deleting currently edited broker
       }
     } catch (error) {
       toast.error('Failed to delete broker');
@@ -97,28 +97,26 @@ export default function BrokersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-100 px-4 pt-10 transition-colors duration-300">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">
-          {brokerId ? 'Edit MQTT Broker' : 'Add MQTT Broker'}
-        </h1>
+    <div className="max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6">
+        {brokerId ? 'Edit MQTT Broker' : 'Add MQTT Broker'}
+      </h1>
 
-        <div className="broker-form bg-white text-gray-900 dark:bg-gray-900 dark:text-white px-4 py-6 rounded-lg shadow-md">
-          <BrokerForm
-            onSubmit={handleAddBroker}
-            initialData={editingBroker}
-            onCancel={handleCancelEdit}
-          />
-        </div>
+      <div className="broker-form bg-white text-gray-900 dark:bg-gray-900 dark:text-white px-4 py-6 rounded-lg shadow-md">
+        <BrokerForm
+          onSubmit={handleAddBroker}
+          initialData={editingBroker}
+          onCancel={handleCancelEdit}
+        />
+      </div>
 
-        <div className="mt-8">
-          {error && <p className="text-red-500 mb-4">{error}</p>}
-          {loading ? (
-            <p>Loading brokers...</p>
-          ) : (
-            <BrokerList brokers={brokers} onDelete={handleDeleteBroker} />
-          )}
-        </div>
+      <div className="mt-8">
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+        {loading ? (
+          <p>Loading brokers...</p>
+        ) : (
+          <BrokerList brokers={brokers} onDelete={handleDeleteBroker} />
+        )}
       </div>
     </div>
   );

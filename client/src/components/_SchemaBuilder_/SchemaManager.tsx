@@ -89,14 +89,17 @@ export default function SchemaManager({
         <select
           id="schema-select"
           value={selectedSchemaId || ''}
-          onChange={(e) => setSelectedSchemaId(e.target.value || null)}
+          onChange={(e) => {
+            const value = e.target.value;
+            const newValue = value === '' ? null : value;
+            setSelectedSchemaId(newValue);
+          }}
           className="p-2 border rounded w-64 bg-white dark:bg-gray-800"
         >
           <option value="">-- Choose a schema --</option>
           {schemas.map((schema) => (
             <option key={schema.id} value={schema.id}>
               {schema.name}
-              {schema.description ? ` - ${schema.description}` : ''}
             </option>
           ))}
         </select>

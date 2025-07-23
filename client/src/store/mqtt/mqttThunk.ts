@@ -3,10 +3,11 @@ import { setConnectionStatus, removeConnection } from './mqttSlice';
 import { connectBroker, disconnectBroker } from './mqttClientManager';
 import type { IBroker } from '../../types';
 import type { RootState } from '../store';
+import { MQTT_ACTIONS } from '../constants';
 
 // Connect to a single broker and manage its status in Redux
 export const connectToBrokerAsync = createAsyncThunk(
-  'mqtt/connectToBroker',
+  MQTT_ACTIONS.CONNECT_TO_BROKER,
   async (broker: IBroker, { dispatch, getState }) => {
     const state = getState() as RootState;
     const existing = state.mqtt.connections[broker.id];
@@ -27,7 +28,7 @@ export const connectToBrokerAsync = createAsyncThunk(
 
 // Disconnect from a broker
 export const disconnectFromBrokerAsync = createAsyncThunk(
-  'mqtt/disconnectFromBroker',
+  MQTT_ACTIONS.DISCONNECT_FROM_BROKER,
   async (brokerId: string, { dispatch }) => {
     disconnectBroker(brokerId);
     dispatch(removeConnection(brokerId));
@@ -37,7 +38,7 @@ export const disconnectFromBrokerAsync = createAsyncThunk(
 
 // Connect to multiple brokers
 export const connectToMultipleBrokersAsync = createAsyncThunk(
-  'mqtt/connectToMultipleBrokers',
+  MQTT_ACTIONS.CONNECT_TO_MULTIPLE_BROKERS,
   async (brokers: IBroker[], { dispatch }) => {
     const promises = brokers.map((broker) =>
       dispatch(connectToBrokerAsync(broker))
