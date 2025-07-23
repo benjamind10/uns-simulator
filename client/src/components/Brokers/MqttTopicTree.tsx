@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import type { FC } from 'react';
 import type { TopicNode } from '../../utils/mqttTopicTree';
+import { ChevronDown, ChevronRight } from 'lucide-react'; // Add this icon lib
 
 interface MqttTopicTreeProps {
   root: TopicNode;
@@ -30,29 +31,42 @@ const TreeNode: FC<{
   return (
     <li>
       <div
-        className={`flex items-center space-x- pl-${level * 4}`}
-        style={{ paddingLeft: `${level * 16}px` }}
+        className="flex items-center"
+        style={{ paddingLeft: `${level * 20}px`, position: 'relative' }}
       >
-        {hasChildren ? (
-          <button
-            onClick={() => toggle(node.fullPath)}
-            className="w-4 h-4 flex items-center justify-center focus:outline-none"
-            aria-label={isExpanded ? 'Collapse' : 'Expand'}
-            tabIndex={-1}
-          >
-            <span className="text-xs select-none">
-              {isExpanded ? '▼' : '▶'}
-            </span>
-          </button>
-        ) : (
-          <span className="inline-block w-4" />
+        {/* Indentation line */}
+        {level > 0 && (
+          <span
+            className="absolute left-0 top-0 h-full border-l border-gray-400 dark:border-gray-700"
+            style={{ left: `${(level - 1) * 20 + 10}px`, width: '1px' }}
+          />
         )}
+        {/* Expand/Collapse Button */}
+        <button
+          onClick={() => hasChildren && toggle(node.fullPath)}
+          className="w-6 h-6 flex items-center justify-center focus:outline-none"
+          aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          tabIndex={-1}
+          style={{ minWidth: 24 }}
+        >
+          {hasChildren ? (
+            isExpanded ? (
+              <ChevronDown size={16} />
+            ) : (
+              <ChevronRight size={16} />
+            )
+          ) : (
+            <span className="inline-block w-4" />
+          )}
+        </button>
+        {/* Node Name */}
         <span
-          className={`cursor-pointer rounded px-1 ${
-            selected === node.fullPath
-              ? 'bg-blue-500 text-white'
-              : 'hover:underline'
-          }`}
+          className={`cursor-pointer rounded px-2 py-1 transition
+            ${
+              selected === node.fullPath
+                ? 'bg-blue-500 text-white font-bold shadow'
+                : 'hover:bg-blue-100 dark:hover:bg-blue-900'
+            }`}
           onClick={() => {
             select(node.fullPath);
             onSelectTopic?.(node.fullPath);
@@ -60,9 +74,9 @@ const TreeNode: FC<{
         >
           {node.name}
         </span>
-        {/* Example: show counts if available */}
+        {/* Counts */}
         {typeof node.topicCount === 'number' && (
-          <span className="ml-1 text-xs text-blue-400">
+          <span className="ml-2 text-xs text-blue-400">
             ({node.topicCount} topics
             {typeof node.messageCount === 'number'
               ? `, ${node.messageCount} messages`
