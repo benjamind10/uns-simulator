@@ -82,6 +82,14 @@ export default function Navbar() {
               >
                 Schema Builder
               </NavLink>
+              <NavLink
+                to="/simulator"
+                className={({ isActive }) =>
+                  isActive ? 'font-semibold text-blue-500' : ''
+                }
+              >
+                Simulator
+              </NavLink>
               <button
                 onClick={handleLogout}
                 className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"

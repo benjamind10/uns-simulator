@@ -58,6 +58,18 @@ export default function BrokerForm({
     }
   };
 
+  const handleCancel = () => {
+    setFormData({
+      name: '',
+      url: '',
+      port: 1883,
+      clientId: '',
+      username: '',
+      password: '',
+    });
+    if (onCancel) onCancel();
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -92,7 +104,7 @@ export default function BrokerForm({
         {onCancel && (
           <button
             type="button"
-            onClick={onCancel}
+            onClick={handleCancel}
             className="px-4 py-2 text-gray-600 hover:text-gray-800 dark:text-gray-300 dark:hover:text-white"
           >
             Cancel

@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { loginUser } from '../../api/auth';
 import type { User } from '../../types/auth';
+import { AUTH_ACTIONS } from '../constants';
 
 // Helper function to persist auth data
 const persistAuthData = (token: string, user: User) => {
@@ -9,7 +10,7 @@ const persistAuthData = (token: string, user: User) => {
 };
 
 export const loginAsync = createAsyncThunk(
-  'auth/login',
+  AUTH_ACTIONS.LOGIN,
   async ({ email, password }: { email: string; password: string }) => {
     const response = await loginUser(email, password);
 
@@ -26,7 +27,7 @@ export const loginAsync = createAsyncThunk(
   }
 );
 
-export const logoutAsync = createAsyncThunk('auth/logout', async () => {
+export const logoutAsync = createAsyncThunk(AUTH_ACTIONS.LOGOUT, async () => {
   sessionStorage.removeItem('authToken');
   sessionStorage.removeItem('authUser');
   return null;
