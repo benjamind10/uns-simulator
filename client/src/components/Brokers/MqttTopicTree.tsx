@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import type { FC } from 'react';
 import type { TopicNode } from '../../utils/mqttTopicTree';
-import { ChevronDown, ChevronRight } from 'lucide-react'; // Add this icon lib
+import { ChevronDown, ChevronRight } from 'lucide-react'; 
 
 interface MqttTopicTreeProps {
   root: TopicNode;

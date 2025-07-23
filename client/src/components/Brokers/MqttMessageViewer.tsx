@@ -29,7 +29,7 @@ const MqttMessageViewer: FC<MqttViewerProps> = ({ messages, topics }) => {
         </p>
       ) : (
         <div className="flex-1 min-h-0">
-          <div className="space-y- h-100 max-h-[80vh] overflow-y-auto pr-1">
+          <div className="space-y- h-110 max-h-[100vh] overflow-y-auto pr-1">
             {messages.map((msg, idx) => (
               <div
                 key={idx}
