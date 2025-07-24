@@ -1,128 +1,200 @@
+import { useEffect, useState } from 'react';
+import {
+  fetchSimulationProfilesAsync,
+  createSimulationProfileAsync,
+} from '../../store/simulationProfile/simulationProfieThunk';
+import SimulationCard from '../../components/simulator/SimulationCard';
+import { useDispatch, useSelector } from 'react-redux';
+import type {
+  AppDispatch,
+  IBroker,
+  ISchema,
+  ISimulationProfile,
+  RootState,
+} from '../../types';
+
+// Import selectors for schemas and brokers
+import { selectSchemas } from '../../store/schema/schemaSlice';
+import { selectBrokers } from '../../store/brokers';
+import ProfilesCardContent from '../../components/simulator/ProfilesCardContent';
+import RunLogCardContent from '../../components/simulator/RunLogCardContent';
+import SimulatorCardContent from '../../components/simulator/SimulatorCardContent';
+
 export default function SimulationPage() {
+  const dispatch = useDispatch<AppDispatch>();
+  const profiles = useSelector(
+    (state: RootState) =>
+      state.simulationProfile.profiles as unknown as ISimulationProfile[]
+  );
+  const loading = useSelector(
+    (state: RootState) => state.simulationProfile.loading
+  );
+  const error = useSelector(
+    (state: RootState) => state.simulationProfile.error as string | null
+  );
+
+  // Get schemas and brokers from redux
+  const schemas = useSelector(selectSchemas);
+  const brokers = useSelector(selectBrokers);
+
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    schemaId: '',
+    brokerId: '',
+  });
+
+  useEffect(() => {
+    dispatch(fetchSimulationProfilesAsync());
+    // Optionally: dispatch(fetchSchemasAsync()); dispatch(fetchBrokersAsync());
+  }, [dispatch]);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleCreateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Dispatch the thunk to create the profile
+    await dispatch(
+      createSimulationProfileAsync({
+        ...form,
+        globalSettings: {
+          defaultUpdateFrequency: 0,
+          timeScale: 0,
+        }, // Provide default or initial globalSettings as required by your type
+      })
+    );
+    setShowModal(false);
+    setForm({ name: '', description: '', schemaId: '', brokerId: '' });
+    // Optionally, re-fetch profiles if your thunk doesn't update the list automatically
+    // dispatch(fetchSimulationProfilesAsync());
+  };
+
   return (
-    <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 py-12 px-4 flex justify-center items-start">
-      <div className="w-full max-w-6xl grid grid-cols-3 gap-8">
+    <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 py-12 px-4">
+      <div className="max-w-6xl mx-auto grid grid-cols-3 gap-8">
         {/* Profiles Section */}
         <div className="col-span-1 flex flex-col gap-6">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6">
-            <h2 className="text-xl font-bold mb-4 dark:text-white text-gray-900">
-              Profiles
-            </h2>
-            <div className="mb-4">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-2 w-full font-semibold">
-                + Create Profile
-              </button>
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-2 shadow-sm">
-                <div className="font-semibold dark:text-white text-gray-900">
-                  Test Profile A
-                </div>
-                <div className="text-gray-500 dark:text-gray-400 text-sm">
-                  Lorem ipsum dolor sit amet
-                </div>
-                <div className="flex justify-between text-xs mt-2">
-                  <span className="dark:text-gray-300 text-gray-600">
-                    Schema 1
-                  </span>
-                  <span className="dark:text-gray-300 text-gray-600">
-                    2 days ago
-                  </span>
-                </div>
-              </div>
-              <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 shadow-sm">
-                <div className="font-semibold dark:text-white text-gray-900">
-                  Another Test
-                </div>
-                <div className="text-gray-500 dark:text-gray-400 text-sm">
-                  Schema 2
-                </div>
-                <div className="flex justify-between text-xs mt-2">
-                  <span className="dark:text-gray-300 text-gray-600">
-                    Schema 2
-                  </span>
-                  <span className="dark:text-gray-300 text-gray-600">
-                    2 days ago
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6">
-            <h2 className="text-xl font-bold mb-4 dark:text-white text-gray-900">
-              Run Log
-            </h2>
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 text-xs shadow-sm">
-              <div className="dark:text-gray-300 text-gray-600">
-                09:14:08 INFO Topic A ...
-              </div>
-              <div className="dark:text-gray-300 text-gray-600">
-                09:14:06 INFO ...
-              </div>
-              <div className="dark:text-gray-300 text-gray-600">
-                09:14:04 INFO ...
-              </div>
-            </div>
-          </div>
+          <SimulationCard title="Profiles">
+            <ProfilesCardContent
+              profiles={profiles}
+              loading={loading}
+              error={error}
+              onCreateProfileClick={() => setShowModal(true)}
+              schemas={schemas}
+            />
+          </SimulationCard>
+          <SimulationCard title="Run Log">
+            <RunLogCardContent />
+          </SimulationCard>
         </div>
 
         {/* Simulator Section */}
         <div className="col-span-2 flex flex-col gap-6">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6">
-            <h2 className="text-xl font-bold mb-4 dark:text-white text-gray-900">
-              Simulator
-            </h2>
-            {/* Tabs */}
-            <div className="flex gap-8 border-b border-gray-300 dark:border-gray-700 mb-4">
-              <button className="pb-2 border-b-2 border-blue-600 text-blue-600 font-semibold">
-                Details
-              </button>
-              <button className="pb-2 text-gray-500 dark:text-gray-400">
-                Scenarios
-              </button>
-              <button className="pb-2 text-gray-500 dark:text-gray-400">
-                Behavior
-              </button>
-            </div>
-            {/* Status & Controls */}
-            <div className="mb-6">
-              <div className="text-lg font-semibold mb-2 dark:text-white text-gray-900">
-                Status
-              </div>
-              <div className="text-3xl font-bold text-green-500 mb-4">
-                Running
-              </div>
-              <div className="flex gap-4">
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold">
-                  Start
-                </button>
-                <button className="bg-gray-400 dark:bg-gray-700 text-white px-4 py-2 rounded font-semibold">
-                  Pause
-                </button>
-                <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold">
-                  Stop
-                </button>
-              </div>
-            </div>
-            {/* Placeholder for chart */}
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6 h-40 flex items-center justify-center shadow-sm">
-              <span className="text-gray-500 dark:text-gray-400">
-                [Chart Placeholder]
-              </span>
-            </div>
-            {/* Rec Log */}
-            <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 text-xs shadow-sm">
-              <div className="dark:text-gray-300 text-gray-600">
-                09:14:08 INFO Topic A ...
-              </div>
-              <div className="dark:text-gray-300 text-gray-600">
-                09:14:06 INFO ...
-              </div>
-              <div className="dark:text-gray-300 text-gray-600">
-                09:14:04 INFO ...
-              </div>
-            </div>
-          </div>
+          <SimulationCard title="Simulator">
+            <SimulatorCardContent />
+          </SimulationCard>
         </div>
       </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4 dark:text-white text-gray-900">
+              Create Simulation Profile
+            </h3>
+            <form onSubmit={handleCreateProfile} className="space-y-4">
+              <div>
+                <label className="block mb-1 font-medium" htmlFor="name">
+                  Name
+                </label>
+                <input
+                  id="name"
+                  name="name"
+                  value={form.name}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium" htmlFor="description">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={form.description}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  rows={2}
+                />
+              </div>
+              <div>
+                <label className="block mb-1 font-medium" htmlFor="schemaId">
+                  Schema
+                </label>
+                <select
+                  id="schemaId"
+                  name="schemaId"
+                  value={form.schemaId}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  required
+                >
+                  <option value="">Select a schema...</option>
+                  {schemas.map((schema: ISchema) => (
+                    <option key={schema.id} value={schema.id}>
+                      {schema.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block mb-1 font-medium" htmlFor="brokerId">
+                  Broker
+                </label>
+                <select
+                  id="brokerId"
+                  name="brokerId"
+                  value={form.brokerId}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                >
+                  <option value="">Select a broker...</option>
+                  {brokers.map((broker: IBroker) => (
+                    <option key={broker.id} value={broker.id}>
+                      {broker.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
+                  onClick={() => setShowModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                >
+                  Create Profile
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

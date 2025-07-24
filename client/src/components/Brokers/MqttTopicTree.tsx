@@ -141,7 +141,7 @@ const TreeNode: FC<{
           </span>
         )}
         {/* Counts */}
-        {typeof node.topicCount === 'number' && (
+        {/* {typeof node.topicCount === 'number' && (
           <span className="ml-2 text-xs text-gray-400">
             ({node.topicCount} topics
             {typeof node.messageCount === 'number'
@@ -149,7 +149,7 @@ const TreeNode: FC<{
               : ''}
             )
           </span>
-        )}
+        )} */}
       </div>
       {hasChildren && isExpanded && (
         <ul>

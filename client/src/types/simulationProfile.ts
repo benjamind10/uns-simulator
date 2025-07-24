@@ -23,6 +23,10 @@ export interface NodeSettings {
 }
 
 export interface ISimulationProfile {
+  selectedProfileId: string;
+  profiles: Record<string, unknown>;
+  loading: boolean;
+  error: unknown;
   id: string;
   name: string;
   description?: string;

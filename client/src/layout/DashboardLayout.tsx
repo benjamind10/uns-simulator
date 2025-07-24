@@ -83,7 +83,7 @@ export default function DashboardLayout() {
                 to="/dashboard"
                 className="hover:underline text-gray-600 dark:text-gray-300"
               >
-                Admin
+                Dashboard
               </Link>
               {crumbs.map(({ label, to, last }) => (
                 <Fragment key={to}>

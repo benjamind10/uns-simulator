@@ -78,12 +78,12 @@ export default function MqttExplorerPage() {
     : messages;
 
   return (
-    <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col gap-8">
+    <div className="w-full min-h-full bg-gray-100 dark:bg-gray-900">
+      <div className="max-w-6xl mx-auto flex flex-col">
         <h1 className="text-3xl font-bold mb-6">MQTT Explorer</h1>
 
         {/* Broker Picker */}
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6 mb-4">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6 mb-6">
           <label htmlFor="broker-select" className="block mb-2 font-medium">
             Select Broker
           </label>
