@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import SimulatorConfigForm from './SimulatorConfigForm'; // Adjust the import path as necessary
 
+type TabType = 'details' | 'config' | 'behavior' | 'global';
+
 const SimulatorCardContent: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'details' | 'config' | 'behavior'>(
-    'details'
-  );
+  const [activeTab, setActiveTab] = useState<TabType>('details');
 
   return (
     <>
@@ -18,6 +18,16 @@ const SimulatorCardContent: React.FC = () => {
           onClick={() => setActiveTab('details')}
         >
           Details
+        </button>
+        <button
+          className={`pb-2 font-semibold ${
+            activeTab === 'global'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+          onClick={() => setActiveTab('global')}
+        >
+          Global Settings
         </button>
         <button
           className={`pb-2 font-semibold ${
@@ -100,6 +110,12 @@ const SimulatorCardContent: React.FC = () => {
       {activeTab === 'behavior' && (
         <div className="py-8 text-center text-gray-500 dark:text-gray-400">
           <span>[Behavior content goes here]</span>
+        </div>
+      )}
+
+      {activeTab === 'global' && (
+        <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+          <span>[Global settings content goes here]</span>
         </div>
       )}
     </>

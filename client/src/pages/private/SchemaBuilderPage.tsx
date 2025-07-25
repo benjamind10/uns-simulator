@@ -36,8 +36,8 @@ export default function SchemaBuilderPage() {
 
   /* ─────────── render ─────────── */
   return (
-    <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 py-12 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col gap-8">
+    <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 py-3 px-4">
+      <div className="max-w-6xl mx-auto flex flex-col gap-2">
         {/* Schema Management Section */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6">
           <SchemaManager
