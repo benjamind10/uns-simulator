@@ -1,11 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useEffect } from 'react';
-import { connectToMultipleBrokersAsync } from './store/mqtt/mqttThunk';
 
+import { connectToMultipleBrokersAsync } from './store/mqtt/mqttThunk';
 import PublicLayout from './layout/PublicLayout';
 import DashboardLayout from './layout/DashboardLayout';
-
 import LandingPage from './pages/public/LandingPage';
 import BrokersPage from './pages/dashboard/BrokersPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
@@ -15,7 +14,6 @@ import SchemaBuilderPage from './pages/private/SchemaBuilderPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 import SchemaPage from './pages/dashboard/SchemaPage';
 import SimulationPage from './pages/private/SimulationPage';
-
 import type { AppDispatch, RootState } from './types';
 
 export default function App() {

@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+
 import SchemaManager from '../../components/schema/SchemaManager';
 import SchemaNodeEditor from '../../components/schema/SchemaNodeEditor';
 

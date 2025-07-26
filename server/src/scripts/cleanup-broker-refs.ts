@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+
 import Broker from '../graphql/models/Broker';
 import SchemaModel from '../graphql/models/Schema';
 import User from '../graphql/models/User';

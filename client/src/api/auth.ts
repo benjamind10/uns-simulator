@@ -1,7 +1,8 @@
 import { GraphQLClient } from 'graphql-request';
 
-import { LOGIN_MUTATION } from './mutations/auth.mutations';
 import type { User } from '../types/auth';
+
+import { LOGIN_MUTATION } from './mutations/auth.mutations';
 
 const endpoint = import.meta.env.VITE_API_URL;
 

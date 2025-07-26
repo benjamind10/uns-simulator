@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { toast } from 'react-hot-toast';
+
 import type { AppDispatch } from '../../store/store';
 import {
   fetchSchemasAsync,
@@ -10,7 +12,6 @@ import {
   selectSchemas,
   selectSchemaLoading,
 } from '../../store/schema/schemaSlice';
-import { toast } from 'react-hot-toast';
 
 interface SchemaManagerProps {
   selectedSchemaId: string | null;

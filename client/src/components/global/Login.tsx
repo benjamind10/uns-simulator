@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { loginAsync } from '../../store/auth';
 
+import { loginAsync } from '../../store/auth';
 import type { AppDispatch, RootState } from '../../store/store';
 
 interface LoginProps {

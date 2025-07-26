@@ -1,6 +1,7 @@
-import type { IBroker, ISimulationProfile } from '.';
 import type { AuthState } from './auth';
 import type { ISchema } from './schema';
+
+import type { IBroker, ISimulationProfile } from '.';
 
 export interface RootState {
   auth: AuthState;

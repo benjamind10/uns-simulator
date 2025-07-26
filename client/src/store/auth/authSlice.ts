@@ -1,7 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { loginAsync, logoutAsync } from './authThunks';
+
 import type { RootState } from '../store';
 import type { AuthState } from '../../types/auth';
+
+import { loginAsync, logoutAsync } from './authThunks';
 
 const initialState: AuthState = {
   user: JSON.parse(sessionStorage.getItem('authUser') || 'null'),

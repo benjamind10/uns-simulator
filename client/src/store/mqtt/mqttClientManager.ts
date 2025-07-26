@@ -1,6 +1,7 @@
 import type { MqttClient } from 'mqtt';
-import type { IBroker } from '../../types';
 import mqtt from 'mqtt';
+
+import type { IBroker } from '../../types';
 
 const clientMap = new Map<string, MqttClient>();
 

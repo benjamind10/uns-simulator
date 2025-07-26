@@ -1,7 +1,5 @@
 import { useState, useRef } from 'react';
 import type { FC } from 'react';
-import type { TopicNode } from '../../utils/mqttTopicTree';
-import type { MqttMessage } from '../../types';
 import {
   ChevronDown,
   ChevronRight,
@@ -9,6 +7,9 @@ import {
   FolderOpen,
   FileText,
 } from 'lucide-react';
+
+import type { TopicNode } from '../../utils/mqttTopicTree';
+import type { MqttMessage } from '../../types';
 
 interface MqttTopicTreeProps {
   root: TopicNode;

@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+
 import type { ISchema } from '../../types';
 
 interface SchemaTableProps {

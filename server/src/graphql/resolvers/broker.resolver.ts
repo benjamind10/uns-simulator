@@ -1,4 +1,5 @@
 import { Schema, Types } from 'mongoose';
+
 import User from '../models/User';
 import Broker, { IBroker } from '../models/Broker';
 import SchemaModel from '../models/Schema';

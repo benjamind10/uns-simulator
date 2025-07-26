@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+
 import {
   fetchSimulationProfilesAsync,
   createSimulationProfileAsync,
 } from '../../store/simulationProfile/simulationProfieThunk';
 import SimulationCard from '../../components/simulator/SimulationCard';
-import { useDispatch, useSelector } from 'react-redux';
 import type {
   AppDispatch,
   IBroker,
@@ -12,8 +13,6 @@ import type {
   ISimulationProfile,
   RootState,
 } from '../../types';
-
-// Import selectors for schemas and brokers
 import { selectSchemas } from '../../store/schema/schemaSlice';
 import { selectBrokers } from '../../store/brokers';
 import ProfilesCardContent from '../../components/simulator/ProfilesCardContent';

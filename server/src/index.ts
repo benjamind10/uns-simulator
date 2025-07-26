@@ -8,8 +8,8 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import { jwtDecode } from 'jwt-decode';
 import { ApolloServer } from 'apollo-server-express';
-
 import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
+
 import { userTypeDefs } from './graphql/schemas/user.schema';
 import { userResolvers } from './graphql/resolvers/user.resolver';
 import { brokerTypeDefs } from './graphql/schemas/broker.schema';

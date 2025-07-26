@@ -1,11 +1,13 @@
 import { GraphQLClient } from 'graphql-request';
+
+import type { ISchema, ISchemaNode } from '../types';
+
 import {
   CREATE_SCHEMA,
   UPDATE_SCHEMA,
   DELETE_SCHEMA,
   SAVE_NODES_TO_SCHEMA,
 } from './mutations/schema.mutations';
-import type { ISchema, ISchemaNode } from '../types';
 import { GET_SCHEMAS, GET_SCHEMA } from './queries/schema.queries';
 
 const endpoint = import.meta.env.VITE_API_URL;

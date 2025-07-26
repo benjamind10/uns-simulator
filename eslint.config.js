@@ -1,18 +1,17 @@
-import eslintPluginReact from 'eslint-plugin-react';
-import eslintPluginHooks from 'eslint-plugin-react-hooks';
-import eslintPluginImport from 'eslint-plugin-import';
-import tsParser from '@typescript-eslint/parser';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
+const eslintPluginReact = require('eslint-plugin-react');
+const eslintPluginHooks = require('eslint-plugin-react-hooks');
+const eslintPluginImport = require('eslint-plugin-import');
+const tsParser = require('@typescript-eslint/parser');
+const tsPlugin = require('@typescript-eslint/eslint-plugin');
 
-export default [
+module.exports = [
     {
-        // ⬇ Glob of files to lint
         files: ['**/*.{ts,tsx,js,jsx}'],
         ignores: [
-            'node_modules/**',
-            'dist/**',
-            'build/**',
-            'coverage/**',
+            'node_modules/',
+            'dist/',
+            'build/',
+            'coverage/',
         ],
 
         languageOptions: {
@@ -32,20 +31,20 @@ export default [
         },
 
         rules: {
-            /* ------- base ------------- */
-            'no-unused-vars': 'off',                     // delegate to TS rule
+            'no-unused-vars': 'off',
             '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-
-            /* ------- React ------------ */
-            'react/react-in-jsx-scope': 'off',          // React 17+
-
-            /* ------- import order ----- */
+            'react/react-in-jsx-scope': 'off',
             'import/order': ['warn', { 'newlines-between': 'always' }],
         },
 
         settings: {
             react: { version: 'detect' },
-            'import/resolver': { typescript: {} },
+            'import/resolver': {
+                typescript: {
+                    alwaysTryTypes: true,
+                    project: ['./tsconfig.json'],
+                },
+            },
         },
     },
 ];
