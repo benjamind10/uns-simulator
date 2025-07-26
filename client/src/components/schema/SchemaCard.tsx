@@ -1,4 +1,5 @@
 import { Edit, Trash2, FileText } from 'lucide-react';
+
 import type { ISchema } from '../../types';
 
 interface SchemaCardProps {

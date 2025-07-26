@@ -1,5 +1,6 @@
-import Schema, { ISchema, ISchemaNode } from '../models/Schema';
 import { Types } from 'mongoose';
+
+import Schema, { ISchema, ISchemaNode } from '../models/Schema';
 
 interface Context {
   user?: any;

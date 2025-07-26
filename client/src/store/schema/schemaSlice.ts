@@ -1,5 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit';
+
 import type { RootState } from '../store';
+import type { ISchema } from '../../types';
+
 import {
   fetchSchemasAsync,
   createSchemaAsync,
@@ -7,7 +10,6 @@ import {
   deleteSchemaAsync,
   saveNodesToSchemaAsync,
 } from './schemaThunk';
-import type { ISchema } from '../../types';
 
 export interface SchemaState {
   schemas: ISchema[];

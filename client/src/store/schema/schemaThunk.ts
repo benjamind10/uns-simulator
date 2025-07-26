@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+
 import * as api from '../../api/schema';
 import type { ISchemaNode, ISchema } from '../../types';
 import { SCHEMA_ACTIONS, SCHEMA_ERRORS } from '../constants';

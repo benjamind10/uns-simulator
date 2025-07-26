@@ -1,4 +1,5 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
+
 import { loginUser } from '../../api/auth';
 import type { User } from '../../types/auth';
 import { AUTH_ACTIONS } from '../constants';

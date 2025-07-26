@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import type { GlobalSettings } from '../../types';
 
 interface SimulatorConfigFormProps {

@@ -1,6 +1,7 @@
-import User, { IUser } from '../models/User';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+
+import User, { IUser } from '../models/User';
 import Broker from '../models/Broker';
 
 dotenv.config();

@@ -1,9 +1,11 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { setConnectionStatus, removeConnection } from './mqttSlice';
-import { connectBroker, disconnectBroker } from './mqttClientManager';
+
 import type { IBroker } from '../../types';
 import type { RootState } from '../store';
 import { MQTT_ACTIONS } from '../constants';
+
+import { connectBroker, disconnectBroker } from './mqttClientManager';
+import { setConnectionStatus, removeConnection } from './mqttSlice';
 
 // Connect to a single broker and manage its status in Redux
 export const connectToBrokerAsync = createAsyncThunk(

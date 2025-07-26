@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
+
 import type { AppDispatch } from '../../store/store';
 import {
   saveNodesToSchemaAsync,
@@ -9,9 +10,10 @@ import {
 import { selectSchemas } from '../../store/schema/schemaSlice';
 import type { ISchemaNode } from '../../types';
 import { buildTree } from '../../utils/tree';
+import ConfirmDialog from '../global/ConfirmDialog'; // confirm modal
+
 import TreeNode from './TreeNode';
 import FileUpload from './FileUpload';
-import ConfirmDialog from '../global/ConfirmDialog'; // confirm modal
 
 /* ------------------------------------------------------------------ */
 interface SchemaNodeEditorProps {

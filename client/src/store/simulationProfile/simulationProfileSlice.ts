@@ -1,5 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+
 import type { ISimulationProfile, RootState } from '../../types';
+
 import {
   fetchSimulationProfilesAsync,
   fetchSimulationProfileAsync,
