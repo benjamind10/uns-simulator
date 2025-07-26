@@ -1,15 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
-import {
-  updateSimulationProfileAsync,
-  fetchSimulationProfileAsync,
-} from '../../store/simulationProfile/simulationProfieThunk';
-import {
-  selectSelectedProfileId,
-  selectProfiles,
-} from '../../store/simulationProfile/simulationProfileSlice';
+import { updateSimulationProfileAsync } from '../../store/simulationProfile/simulationProfieThunk';
+import { selectProfiles } from '../../store/simulationProfile/simulationProfileSlice';
 import type { AppDispatch } from '../../store/store';
 
 import SimulatorGlobalForm from './SimulatorGlobalForm';
@@ -31,20 +26,13 @@ type Profile = {
 const SimulatorCardContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('details');
   const dispatch = useDispatch<AppDispatch>();
-  const selectedProfileId = useSelector(selectSelectedProfileId);
+  const { profileId } = useParams<{ profileId?: string }>();
   const profiles = Object.values(useSelector(selectProfiles)) as Profile[];
 
-  // Find the selected profile from the store
+  // Find the selected profile from the store using URL param
   const selectedProfile = profiles.find(
-    (p: { id: string }) => p.id === selectedProfileId
+    (p: { id: string }) => p.id === profileId
   );
-
-  // Load profile from DB when selectedProfileId changes
-  useEffect(() => {
-    if (selectedProfileId) {
-      dispatch(fetchSimulationProfileAsync(selectedProfileId));
-    }
-  }, [selectedProfileId, dispatch]);
 
   // If no profile is selected, show a card prompting the user to select one
   if (!selectedProfile) {

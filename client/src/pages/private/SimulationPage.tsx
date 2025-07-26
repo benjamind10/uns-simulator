@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import {
   fetchSimulationProfilesAsync,
   createSimulationProfileAsync,
+  deleteSimulationProfileAsync, // <-- import delete thunk
 } from '../../store/simulationProfile/simulationProfieThunk';
 import SimulationCard from '../../components/simulator/SimulationCard';
 import type {
@@ -21,10 +23,13 @@ import SimulatorCardContent from '../../components/simulator/SimulatorCardConten
 
 export default function SimulationPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const profiles = useSelector(
-    (state: RootState) =>
-      state.simulationProfile.profiles as unknown as ISimulationProfile[]
-  );
+  const profiles = useSelector((state: RootState) => {
+    // If profiles is a Record, convert to array
+    const rawProfiles = state.simulationProfile.profiles;
+    return Array.isArray(rawProfiles)
+      ? rawProfiles
+      : (Object.values(rawProfiles) as ISimulationProfile[]);
+  });
   const loading = useSelector(
     (state: RootState) => state.simulationProfile.loading
   );
@@ -44,10 +49,31 @@ export default function SimulationPage() {
     brokerId: '',
   });
 
+  const { profileId } = useParams<{ profileId?: string }>();
+  const navigate = useNavigate();
+
+  // NEW: Delete handler
+  const handleDeleteProfile = async (id: string) => {
+    if (
+      window.confirm('Are you sure you want to delete this simulation profile?')
+    ) {
+      await dispatch(deleteSimulationProfileAsync(id));
+      if (profileId === id) {
+        navigate('/simulator'); // Redirect if deleted profile was selected
+      }
+    }
+  };
+
   useEffect(() => {
     dispatch(fetchSimulationProfilesAsync());
-    // Optionally: dispatch(fetchSchemasAsync()); dispatch(fetchBrokersAsync());
   }, [dispatch]);
+
+  // Redirect if profileId is not found in profiles
+  useEffect(() => {
+    if (profileId && !profiles.some((p) => p.id === profileId)) {
+      navigate('/simulator');
+    }
+  }, [profileId, profiles, navigate]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -87,6 +113,7 @@ export default function SimulationPage() {
               error={error}
               onCreateProfileClick={() => setShowModal(true)}
               schemas={schemas}
+              onDeleteProfile={handleDeleteProfile} // <-- pass delete handler
             />
           </SimulationCard>
           <SimulationCard title="Run Log">

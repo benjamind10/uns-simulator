@@ -1,14 +1,7 @@
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
 
-import type { ISimulationProfile } from '../../types';
-import { setSelectedProfileId } from '../../store/simulationProfile/simulationProfileSlice';
-import type { RootState } from '../../types';
-
-interface ISchema {
-  id: string;
-  name: string;
-}
+import type { ISchema, ISimulationProfile } from '../../types';
 
 interface ProfilesCardContentProps {
   profiles: ISimulationProfile[];
@@ -16,6 +9,7 @@ interface ProfilesCardContentProps {
   error: string | null;
   onCreateProfileClick: () => void;
   schemas: ISchema[];
+  onDeleteProfile?: (id: string) => void; // <-- add this
 }
 
 const ProfilesCardContent: React.FC<ProfilesCardContentProps> = ({
@@ -24,11 +18,10 @@ const ProfilesCardContent: React.FC<ProfilesCardContentProps> = ({
   schemas,
   error,
   onCreateProfileClick,
+  onDeleteProfile,
 }) => {
-  const dispatch = useDispatch();
-  const selectedProfileId = useSelector(
-    (state: RootState) => state.simulationProfile.selectedProfileId
-  );
+  const navigate = useNavigate();
+  const { profileId } = useParams<{ profileId?: string }>();
 
   return (
     <div className="mb-4">
@@ -55,11 +48,11 @@ const ProfilesCardContent: React.FC<ProfilesCardContentProps> = ({
             key={profile.id}
             className={`bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-2 shadow-sm cursor-pointer transition
               ${
-                selectedProfileId === profile.id
+                profileId === profile.id
                   ? 'ring-2 ring-blue-500'
                   : 'hover:ring-2 hover:ring-blue-400'
               }`}
-            onClick={() => dispatch(setSelectedProfileId(profile.id))}
+            onClick={() => navigate(`/simulator/${profile.id}`)}
           >
             <div className="font-semibold dark:text-white text-gray-900">
               {profile.name}
@@ -78,6 +71,12 @@ const ProfilesCardContent: React.FC<ProfilesCardContentProps> = ({
                   : ''}
               </span>
             </div>
+            <button
+              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs mt-2"
+              onClick={() => onDeleteProfile?.(profile.id)}
+            >
+              Delete
+            </button>
           </div>
         ))}
     </div>

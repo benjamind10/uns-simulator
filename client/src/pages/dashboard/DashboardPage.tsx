@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import StatCard from '../../components/dashboard/StatCard';
 import SchemaCard from '../../components/schema/SchemaCard';
 import BrokerCard from '../../components/brokers/BrokerCard';
+import SimulatorCard from '../../components/simulator/SimulatorCard';
 import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokers';
 import {
   fetchSchemasAsync,
@@ -17,8 +18,13 @@ import {
   selectConnectedBrokersCount,
   selectBrokerStatuses,
 } from '../../store/mqtt/mqttSlice';
+import {
+  deleteSimulationProfileAsync,
+  fetchSimulationProfilesAsync,
+} from '../../store/simulationProfile/simulationProfieThunk';
 import type { AppDispatch, RootState } from '../../store/store';
-import type { IBroker, ISchema } from '../../types';
+import type { IBroker, ISchema, ISimulationProfile } from '../../types';
+import { selectProfiles } from '../../store/simulationProfile/simulationProfileSlice';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -35,9 +41,15 @@ export default function DashboardPage() {
   // Get all broker statuses in one go
   const brokerStatuses = useSelector(selectBrokerStatuses);
 
+  // Get simulators from redux
+  const simulators = Object.values(
+    useSelector(selectProfiles)
+  ) as ISimulationProfile[];
+
   useEffect(() => {
     dispatch(fetchBrokersAsync());
     dispatch(fetchSchemasAsync());
+    dispatch(fetchSimulationProfilesAsync());
   }, [dispatch]);
 
   useEffect(() => {
@@ -101,12 +113,28 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteSimulator = async (id: string) => {
+    try {
+      await dispatch(deleteSimulationProfileAsync(id)).unwrap();
+      toast.success('Simulator deleted successfully', {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+    } catch {
+      toast.error('Failed to delete simulator');
+    }
+  };
+
   const handleEditBroker = (broker: IBroker) => {
     navigate(`/dashboard/brokers/${broker.id}`);
   };
 
   const handleEditSchema = (schema: ISchema) => {
     navigate(`/schema-builder/${schema.id}`);
+  };
+
+  const handleOpenSimulator = (sim: ISimulationProfile) => {
+    navigate(`/simulator/${sim.id}`);
   };
 
   return (
@@ -116,6 +144,31 @@ export default function DashboardPage() {
         {stats.map((s) => (
           <StatCard key={s.title} {...s} />
         ))}
+      </section>
+
+      {/* --- simulators preview row --- */}
+      <section>
+        <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
+          Simulators Overview
+        </h2>
+        {simulators.length === 0 ? (
+          <p className="text-gray-500 dark:text-gray-400">
+            No simulators created yet.
+          </p>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {simulators.map((sim) => (
+              <SimulatorCard
+                key={sim.id}
+                brokers={brokers}
+                schemas={schemas}
+                simulator={sim}
+                onDelete={handleDeleteSimulator}
+                onOpen={() => handleOpenSimulator(sim)}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* --- brokers preview row --- */}
