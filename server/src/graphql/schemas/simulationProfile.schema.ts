@@ -2,11 +2,7 @@
 import { gql } from 'apollo-server-express';
 
 export const simulationProfileTypeDefs = gql`
-  """
-  ------------------------------------------------------------------
-   ENUMS
-  ------------------------------------------------------------------
-  """
+  # ENUMS
   enum SimulationMode {
     static
     random
@@ -32,22 +28,18 @@ export const simulationProfileTypeDefs = gql`
     failed
   }
 
-  """
-  ------------------------------------------------------------------
-   BEHAVIOUR INTERFACES & IMPLEMENTATIONS
-   (Discriminator-style — each mode has its own input)
-  ------------------------------------------------------------------
-  """
+  # BEHAVIOR INTERFACE
   interface NodeBehaviorBase {
-    id: ID! # Mongo _id of behaviour doc
+    id: ID!
     profileId: ID!
     nodeId: ID!
     enabled: Boolean!
     mode: SimulationMode!
-    updateFrequency: Int! # updates / minute (0 ⇒ use default)
+    updateFrequency: Int! # updates/minute (0 = use default)
     failureProbability: Float!
   }
 
+  # BEHAVIOR TYPES
   type StaticBehavior implements NodeBehaviorBase {
     id: ID!
     profileId: ID!
@@ -56,7 +48,7 @@ export const simulationProfileTypeDefs = gql`
     mode: SimulationMode!
     updateFrequency: Int!
     failureProbability: Float!
-    value: JSON # Mixed scalar
+    value: JSON!
   }
 
   type RandomBehavior implements NodeBehaviorBase {
@@ -91,21 +83,13 @@ export const simulationProfileTypeDefs = gql`
     customPoints: [JSON!]
   }
 
-  # (Add DriftBehavior, ReplayBehavior, FormulaBehavior types in same style)
+  # Add more behaviors as needed (Drift, Replay, Formula...)
 
-  """
-  ------------------------------------------------------------------
-   UNION to return any behaviour concrete type
-  ------------------------------------------------------------------
-  """
+  # UNION for all behaviors
   union NodeBehavior = StaticBehavior | RandomBehavior | PatternBehavior
   # | DriftBehavior | ReplayBehavior | FormulaBehavior
 
-  """
-  ------------------------------------------------------------------
-   MAIN PROFILE
-  ------------------------------------------------------------------
-  """
+  # MAIN PROFILE
   type SimulationProfile {
     id: ID!
     name: String!
@@ -116,7 +100,9 @@ export const simulationProfileTypeDefs = gql`
     defaultScenario: String
     createdAt: String!
     updatedAt: String!
-    nodeBehaviors: [NodeBehavior!]! # resolver populates from collection
+    nodeBehaviors: [NodeBehavior!]!
+    nodeSettings: [NodeSettings!]!
+    userId: ID! # <-- Add this line
   }
 
   type GlobalSettings {
@@ -125,13 +111,10 @@ export const simulationProfileTypeDefs = gql`
     publishRoot: String
     startDelay: Int
     simulationLength: Int
+    defaultPayload: JSON
   }
 
-  """
-  ------------------------------------------------------------------
-   RUN RECORD
-  ------------------------------------------------------------------
-  """
+  # RUN RECORD
   type SimulationRun {
     id: ID!
     profileId: ID!
@@ -151,17 +134,14 @@ export const simulationProfileTypeDefs = gql`
     message: String!
   }
 
-  """
-  ------------------------------------------------------------------
-   INPUTS
-  ------------------------------------------------------------------
-  """
+  # INPUTS
   input GlobalSettingsInput {
     defaultUpdateFrequency: Int
     timeScale: Float
     publishRoot: String
     startDelay: Int
     simulationLength: Int
+    defaultPayload: JSON
   }
 
   input SimulationProfileInput {
@@ -173,7 +153,6 @@ export const simulationProfileTypeDefs = gql`
     defaultScenario: String
   }
 
-  # For brevity only Static + Random shown – replicate others as needed
   input StaticBehaviorInput {
     nodeId: ID!
     enabled: Boolean = true
@@ -195,18 +174,40 @@ export const simulationProfileTypeDefs = gql`
     seed: Int
   }
 
+  input PatternBehaviorInput {
+    nodeId: ID!
+    enabled: Boolean = true
+    updateFrequency: Int = 0
+    failureProbability: Float = 0
+    patternType: PatternType!
+    minValue: Float!
+    maxValue: Float!
+    period: Int!
+    phaseShift: Float
+    customPoints: [JSON!]
+  }
+
   input UpsertBehaviorsInput {
     profileId: ID!
     staticBehaviors: [StaticBehaviorInput!]
     randomBehaviors: [RandomBehaviorInput!]
-    # patternBehaviors, driftBehaviors, ...
+    patternBehaviors: [PatternBehaviorInput!]
+    # driftBehaviors, replayBehaviors, formulaBehaviors...
   }
 
-  """
-  ------------------------------------------------------------------
-   ROOT OPERATIONS
-  ------------------------------------------------------------------
-  """
+  input NodeSettingsInput {
+    frequency: Int
+    failRate: Float
+    payload: PayloadInput
+  }
+
+  input PayloadInput {
+    quality: String
+    value: JSON
+    timestamp: Int
+  }
+
+  # ROOT OPERATIONS
   type Query {
     simulationProfiles: [SimulationProfile!]!
     simulationProfile(id: ID!): SimulationProfile
@@ -223,5 +224,25 @@ export const simulationProfileTypeDefs = gql`
 
     upsertNodeBehaviors(input: UpsertBehaviorsInput!): Boolean!
     deleteNodeBehavior(profileId: ID!, nodeId: ID!): Boolean!
+
+    upsertNodeSettings(
+      profileId: ID!
+      nodeId: ID!
+      settings: NodeSettingsInput!
+    ): NodeSettings!
+    deleteNodeSettings(profileId: ID!, nodeId: ID!): Boolean!
+  }
+
+  type Payload {
+    quality: String
+    value: JSON
+    timestamp: Int
+  }
+
+  type NodeSettings {
+    nodeId: ID!
+    frequency: Int
+    failRate: Float
+    payload: Payload
   }
 `;

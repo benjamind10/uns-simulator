@@ -64,7 +64,7 @@ export default function Navbar() {
                   isActive ? 'font-semibold text-blue-500' : ''
                 }
               >
-                Admin
+                Dashboard
               </NavLink>
               <NavLink
                 to="/explorer"

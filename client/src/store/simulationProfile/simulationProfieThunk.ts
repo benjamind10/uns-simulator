@@ -1,13 +1,19 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import type { ISimulationProfile } from '../../types/simulationProfile';
+import type {
+  ISimulationProfile,
+  NodeSettings,
+} from '../../types/simulationProfile';
 import {
   fetchSimulationProfiles,
   fetchSimulationProfile,
   createSimulationProfile,
   updateSimulationProfile,
   deleteSimulationProfile,
+  upsertNodeSettings,
+  deleteNodeSettings,
   type CreateSimulationProfileInput,
   type UpdateSimulationProfileInput,
+  type NodeSettingsInput,
 } from '../../api/simulationProfile';
 import { SIMULATION_PROFILE_ACTIONS } from '../constants';
 
@@ -48,5 +54,29 @@ export const deleteSimulationProfileAsync = createAsyncThunk<string, string>(
   async (id) => {
     await deleteSimulationProfile(id);
     return id;
+  }
+);
+
+// Upsert node settings for a profile
+export const upsertNodeSettingsAsync = createAsyncThunk<
+  NodeSettings,
+  { profileId: string; nodeId: string; settings: NodeSettingsInput }
+>(
+  SIMULATION_PROFILE_ACTIONS.UPSERT_NODE_SETTINGS,
+  async ({ profileId, nodeId, settings }) => {
+    const result = await upsertNodeSettings(profileId, nodeId, settings);
+    return { nodeId, ...result };
+  }
+);
+
+// Delete node settings for a profile
+export const deleteNodeSettingsAsync = createAsyncThunk<
+  string,
+  { profileId: string; nodeId: string }
+>(
+  SIMULATION_PROFILE_ACTIONS.DELETE_NODE_SETTINGS,
+  async ({ profileId, nodeId }) => {
+    await deleteNodeSettings(profileId, nodeId);
+    return nodeId;
   }
 );

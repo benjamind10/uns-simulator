@@ -5,6 +5,8 @@ import {
   DELETE_SIMULATION_PROFILE,
   GET_SIMULATION_PROFILE,
   GET_SIMULATION_PROFILES,
+  UPSERT_NODE_SETTINGS,
+  DELETE_NODE_SETTINGS,
 } from './mutations/simulationProfile.mutation';
 import type { ISimulationProfile } from '../types/simulationProfile';
 
@@ -35,6 +37,20 @@ type UpdateSimulationProfileResponse = {
 };
 type DeleteSimulationProfileResponse = { deleteSimulationProfile: boolean };
 
+type UpsertNodeSettingsResponse = {
+  upsertNodeSettings: {
+    frequency?: number;
+    failRate?: number;
+    payload?: {
+      quality?: string;
+      value?: string | number;
+      timestamp?: number;
+    };
+  };
+};
+
+type DeleteNodeSettingsResponse = { deleteNodeSettings: boolean };
+
 export type CreateSimulationProfileInput = {
   name: string;
   description?: string;
@@ -46,12 +62,27 @@ export type CreateSimulationProfileInput = {
     publishRoot?: string;
     startDelay?: number;
     simulationLength?: number;
+    defaultPayload?: {
+      quality: string;
+      value: string | number;
+      timestamp: number;
+    };
   };
   defaultScenario?: string;
 };
 
 export type UpdateSimulationProfileInput =
   Partial<CreateSimulationProfileInput>;
+
+export type NodeSettingsInput = {
+  frequency?: number;
+  failRate?: number;
+  payload?: {
+    quality?: string;
+    value?: string | number;
+    timestamp?: number;
+  };
+};
 
 // Fetch all simulation profiles
 export async function fetchSimulationProfiles(): Promise<ISimulationProfile[]> {
@@ -110,4 +141,33 @@ export async function deleteSimulationProfile(id: string): Promise<boolean> {
     variables
   );
   return data.deleteSimulationProfile;
+}
+
+// Upsert node settings for a profile
+export async function upsertNodeSettings(
+  profileId: string,
+  nodeId: string,
+  settings: NodeSettingsInput
+): Promise<UpsertNodeSettingsResponse['upsertNodeSettings']> {
+  const client = getClient();
+  const variables = { profileId, nodeId, settings };
+  const data: UpsertNodeSettingsResponse = await client.request(
+    UPSERT_NODE_SETTINGS,
+    variables
+  );
+  return data.upsertNodeSettings;
+}
+
+// Delete node settings
+export async function deleteNodeSettings(
+  profileId: string,
+  nodeId: string
+): Promise<boolean> {
+  const client = getClient();
+  const variables = { profileId, nodeId };
+  const data: DeleteNodeSettingsResponse = await client.request(
+    DELETE_NODE_SETTINGS,
+    variables
+  );
+  return data.deleteNodeSettings;
 }

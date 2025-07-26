@@ -1,5 +1,6 @@
 import { gql } from 'graphql-request';
 
+// Create a simulation profile
 export const CREATE_SIMULATION_PROFILE = gql`
   mutation CreateSimulationProfile($input: SimulationProfileInput!) {
     createSimulationProfile(input: $input) {
@@ -14,6 +15,17 @@ export const CREATE_SIMULATION_PROFILE = gql`
         publishRoot
         startDelay
         simulationLength
+        defaultPayload
+      }
+      nodeSettings {
+        nodeId
+        frequency
+        failRate
+        payload {
+          quality
+          value
+          timestamp
+        }
       }
       defaultScenario
       userId
@@ -23,6 +35,7 @@ export const CREATE_SIMULATION_PROFILE = gql`
   }
 `;
 
+// Update a simulation profile
 export const UPDATE_SIMULATION_PROFILE = gql`
   mutation UpdateSimulationProfile($id: ID!, $input: SimulationProfileInput!) {
     updateSimulationProfile(id: $id, input: $input) {
@@ -37,6 +50,17 @@ export const UPDATE_SIMULATION_PROFILE = gql`
         publishRoot
         startDelay
         simulationLength
+        defaultPayload
+      }
+      nodeSettings {
+        nodeId
+        frequency
+        failRate
+        payload {
+          quality
+          value
+          timestamp
+        }
       }
       defaultScenario
       userId
@@ -46,14 +70,44 @@ export const UPDATE_SIMULATION_PROFILE = gql`
   }
 `;
 
+// Delete a simulation profile
 export const DELETE_SIMULATION_PROFILE = gql`
   mutation DeleteSimulationProfile($id: ID!) {
     deleteSimulationProfile(id: $id)
   }
 `;
 
-// --- Missing Queries ---
+// Upsert node settings for a profile
+export const UPSERT_NODE_SETTINGS = gql`
+  mutation UpsertNodeSettings(
+    $profileId: ID!
+    $nodeId: ID!
+    $settings: NodeSettingsInput!
+  ) {
+    upsertNodeSettings(
+      profileId: $profileId
+      nodeId: $nodeId
+      settings: $settings
+    ) {
+      frequency
+      failRate
+      payload {
+        quality
+        value
+        timestamp
+      }
+    }
+  }
+`;
 
+// Delete node settings for a profile
+export const DELETE_NODE_SETTINGS = gql`
+  mutation DeleteNodeSettings($profileId: ID!, $nodeId: ID!) {
+    deleteNodeSettings(profileId: $profileId, nodeId: $nodeId)
+  }
+`;
+
+// Get all simulation profiles
 export const GET_SIMULATION_PROFILES = gql`
   query GetSimulationProfiles {
     simulationProfiles {
@@ -68,6 +122,17 @@ export const GET_SIMULATION_PROFILES = gql`
         publishRoot
         startDelay
         simulationLength
+        defaultPayload
+      }
+      nodeSettings {
+        nodeId
+        frequency
+        failRate
+        payload {
+          quality
+          value
+          timestamp
+        }
       }
       defaultScenario
       userId
@@ -77,6 +142,7 @@ export const GET_SIMULATION_PROFILES = gql`
   }
 `;
 
+// Get a single simulation profile
 export const GET_SIMULATION_PROFILE = gql`
   query GetSimulationProfile($id: ID!) {
     simulationProfile(id: $id) {
@@ -91,6 +157,17 @@ export const GET_SIMULATION_PROFILE = gql`
         publishRoot
         startDelay
         simulationLength
+        defaultPayload
+      }
+      nodeSettings {
+        nodeId
+        frequency
+        failRate
+        payload {
+          quality
+          value
+          timestamp
+        }
       }
       defaultScenario
       userId

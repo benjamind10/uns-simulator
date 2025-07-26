@@ -1,4 +1,4 @@
-import type { IBroker } from '.';
+import type { IBroker, ISimulationProfile } from '.';
 import type { AuthState } from './auth';
 import type { ISchema } from './schema';
 
@@ -6,6 +6,7 @@ export interface RootState {
   auth: AuthState;
   brokers: BrokersState;
   schema: SchemaState;
+  simulationProfile: ISimulationProfile;
 }
 
 export interface BrokersState {

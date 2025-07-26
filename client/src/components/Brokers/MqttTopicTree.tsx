@@ -126,7 +126,7 @@ const TreeNode: FC<{
         {/* Value for leaf nodes as single-line JSON with horizontal scroll */}
         {prettyValue !== undefined && (
           <span
-            className="ml-2 text-xs font-mono text-gray-700 dark:text-gray-200 whitespace-nowrap max-w-[320px] overflow-x-auto block bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 py-0.5 shadow-sm"
+            className="ml-2 text-xs font-mono text-gray-700 dark:text-gray-200 whitespace-nowrap max-w-[320px] overflow-x-auto block bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-2 py-0.5 shadow-sm"
             style={{
               fontSize: 13,
               lineHeight: 1.3,
@@ -141,7 +141,7 @@ const TreeNode: FC<{
           </span>
         )}
         {/* Counts */}
-        {typeof node.topicCount === 'number' && (
+        {/* {typeof node.topicCount === 'number' && (
           <span className="ml-2 text-xs text-gray-400">
             ({node.topicCount} topics
             {typeof node.messageCount === 'number'
@@ -149,7 +149,7 @@ const TreeNode: FC<{
               : ''}
             )
           </span>
-        )}
+        )} */}
       </div>
       {hasChildren && isExpanded && (
         <ul>
@@ -208,10 +208,10 @@ const MqttTopicTree: FC<MqttTopicTreeProps> = ({
 
   return (
     <div
-      className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 p-2 h-full flex flex-col"
+      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-800 p-2 h-full flex flex-col"
       style={{
         minHeight: '400px',
-        height: '55vh',
+        height: '47vh',
         minWidth: '420px',
         width: '100%',
       }}
