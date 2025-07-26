@@ -1,4 +1,5 @@
 import { Cpu, Edit, Trash2 } from 'lucide-react';
+
 import type { ISimulationProfile, IBroker, ISchema } from '../../types';
 
 interface SimulatorCardProps {
