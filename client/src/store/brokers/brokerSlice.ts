@@ -10,7 +10,6 @@ import {
   createBrokerAsync,
 } from './brokerThunks';
 
-
 const brokersSlice = createSlice({
   name: 'brokers',
   initialState,

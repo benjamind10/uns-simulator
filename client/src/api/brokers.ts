@@ -1,6 +1,5 @@
 import { GraphQLClient } from 'graphql-request';
 
-
 import type { IBroker } from '../types';
 import type {
   BrokersResponse,

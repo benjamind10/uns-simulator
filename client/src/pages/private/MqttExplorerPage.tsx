@@ -108,10 +108,10 @@ export default function MqttExplorerPage() {
                   brokerStatus === 'connected'
                     ? 'text-green-600'
                     : brokerStatus === 'connecting'
-                    ? 'text-yellow-600'
-                    : brokerStatus === 'error'
-                    ? 'text-red-600'
-                    : 'text-gray-600'
+                      ? 'text-yellow-600'
+                      : brokerStatus === 'error'
+                        ? 'text-red-600'
+                        : 'text-gray-600'
                 }
               >
                 {brokerStatus}
