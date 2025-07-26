@@ -169,5 +169,8 @@ export const selectSelectedProfile = (
   );
 };
 
+export const selectProfiles = (state: RootState) =>
+  state.simulationProfile.profiles;
+
 export const { setSelectedProfileId } = simulationProfileSlice.actions;
 export default simulationProfileSlice.reducer;

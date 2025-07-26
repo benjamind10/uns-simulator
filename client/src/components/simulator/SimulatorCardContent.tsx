@@ -1,10 +1,97 @@
-import React, { useState } from 'react';
-import SimulatorConfigForm from './SimulatorConfigForm'; // Adjust the import path as necessary
+import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { toast } from 'react-hot-toast';
+import SimulatorGlobalForm from './SimulatorGlobalForm';
+import {
+  updateSimulationProfileAsync,
+  fetchSimulationProfileAsync,
+} from '../../store/simulationProfile/simulationProfieThunk';
+import {
+  selectSelectedProfileId,
+  selectProfiles,
+} from '../../store/simulationProfile/simulationProfileSlice';
+import type { AppDispatch } from '../../store/store';
 
-type TabType = 'details' | 'config' | 'behavior' | 'global';
+type TabType = 'details' | 'global_settings' | 'behavior' | 'global';
+type Profile = {
+  id: string;
+  name: string;
+  description?: string;
+  schemaId?: string;
+  brokerId?: string;
+  globalSettings?: {
+    defaultUpdateFrequency: number;
+    timeScale: number;
+  };
+  defaultScenario?: string;
+};
 
 const SimulatorCardContent: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('details');
+  const dispatch = useDispatch<AppDispatch>();
+  const selectedProfileId = useSelector(selectSelectedProfileId);
+  const profiles = Object.values(useSelector(selectProfiles)) as Profile[];
+
+  // Find the selected profile from the store
+  const selectedProfile = profiles.find(
+    (p: { id: string }) => p.id === selectedProfileId
+  );
+
+  // Load profile from DB when selectedProfileId changes
+  useEffect(() => {
+    if (selectedProfileId) {
+      dispatch(fetchSimulationProfileAsync(selectedProfileId));
+    }
+  }, [selectedProfileId, dispatch]);
+
+  // If no profile is selected, show a card prompting the user to select one
+  if (!selectedProfile) {
+    return (
+      <div className="bg-white dark:bg-gray-900 p-8 flex items-center justify-center min-h-[300px]">
+        <div className="text-center">
+          <div className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">
+            No Simulation Profile Selected
+          </div>
+          <div className="text-gray-500 dark:text-gray-400 mb-6">
+            Please select a profile from the left panel to configure and run the
+            simulator.
+          </div>
+          <div>
+            <span className="inline-block bg-blue-100 text-blue-700 px-4 py-2 rounded">
+              ← Select a profile to begin
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  type GlobalSettings = {
+    defaultUpdateFrequency: number;
+    timeScale: number;
+  };
+
+  const handleSaveGlobalSettings = async (settings: GlobalSettings) => {
+    if (!selectedProfile) return;
+    try {
+      await dispatch(
+        updateSimulationProfileAsync({
+          id: selectedProfile.id,
+          input: {
+            name: selectedProfile.name,
+            description: selectedProfile.description,
+            schemaId: selectedProfile.schemaId,
+            brokerId: selectedProfile.brokerId,
+            globalSettings: settings,
+            defaultScenario: selectedProfile.defaultScenario,
+          },
+        })
+      ).unwrap();
+      toast.success('Global settings saved!');
+    } catch {
+      toast.error('Failed to save global settings');
+    }
+  };
 
   return (
     <>
@@ -21,23 +108,23 @@ const SimulatorCardContent: React.FC = () => {
         </button>
         <button
           className={`pb-2 font-semibold ${
+            activeTab === 'global_settings'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+          onClick={() => setActiveTab('global_settings')}
+        >
+          Global Settings
+        </button>
+        <button
+          className={`pb-2 font-semibold ${
             activeTab === 'global'
               ? 'border-b-2 border-blue-600 text-blue-600'
               : 'text-gray-500 dark:text-gray-400'
           }`}
           onClick={() => setActiveTab('global')}
         >
-          Global Settings
-        </button>
-        <button
-          className={`pb-2 font-semibold ${
-            activeTab === 'config'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-500 dark:text-gray-400'
-          }`}
-          onClick={() => setActiveTab('config')}
-        >
-          Config
+          Pass
         </button>
         <button
           className={`pb-2 font-semibold ${
@@ -92,17 +179,16 @@ const SimulatorCardContent: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'config' && (
+      {activeTab === 'global_settings' && (
         <div className="py-8">
-          <SimulatorConfigForm
-            initialSettings={{
-              defaultUpdateFrequency: 1000, // TODO: Replace with actual value from profile
-              timeScale: 1, // TODO: Replace with actual value from profile
-            }} // TODO: Replace with actual globalSettings from profile when available
-            onSave={() => {
-              // Dispatch updateSimulationProfileAsync({ ...profile, globalSettings: settings })
-              // or handle save logic here
-            }}
+          <SimulatorGlobalForm
+            initialSettings={
+              selectedProfile?.globalSettings || {
+                defaultUpdateFrequency: 1000,
+                timeScale: 1,
+              }
+            }
+            onSave={handleSaveGlobalSettings}
           />
         </div>
       )}

@@ -6,7 +6,7 @@ interface SimulatorConfigFormProps {
   onSave: (settings: GlobalSettings) => void;
 }
 
-const SimulatorConfigForm: React.FC<SimulatorConfigFormProps> = ({
+const SimulatorGlobalForm: React.FC<SimulatorConfigFormProps> = ({
   initialSettings,
   onSave,
 }) => {
@@ -98,4 +98,4 @@ const SimulatorConfigForm: React.FC<SimulatorConfigFormProps> = ({
   );
 };
 
-export default SimulatorConfigForm;
+export default SimulatorGlobalForm;

@@ -14,7 +14,7 @@ import { toast } from 'react-hot-toast';
 
 interface SchemaManagerProps {
   selectedSchemaId: string | null;
-  setSelectedSchemaId: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedSchemaId: (id: string | null) => void;
 }
 
 export default function SchemaManager({
