@@ -14,7 +14,7 @@ import { toast } from 'react-hot-toast';
 
 interface SchemaManagerProps {
   selectedSchemaId: string | null;
-  setSelectedSchemaId: React.Dispatch<React.SetStateAction<string | null>>;
+  setSelectedSchemaId: (id: string | null) => void;
 }
 
 export default function SchemaManager({
@@ -61,7 +61,7 @@ export default function SchemaManager({
           placeholder="Schema name"
           value={form.name}
           onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          className="p-2 border rounded w-48"
+          className="p-2 border rounded w-48 dark:bg-gray-800"
         />
         <input
           type="text"
@@ -70,7 +70,7 @@ export default function SchemaManager({
           onChange={(e) =>
             setForm((f) => ({ ...f, description: e.target.value }))
           }
-          className="p-2 border rounded w-64"
+          className="p-2 border rounded w-64 dark:bg-gray-800"
         />
         <button
           onClick={handleCreate}

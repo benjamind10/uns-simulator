@@ -1,6 +1,17 @@
 /* models/SimulationProfile.ts */
 import { Schema, model, Types, Document } from 'mongoose';
 
+export interface ISimulationNodeSettings {
+  frequency?: number; // Hz or ms
+  failRate?: number; // 0-1 (probability of failure)
+  payload?: {
+    quality?: string;
+    value?: string | number;
+    timestamp?: number;
+    [key: string]: any;
+  };
+}
+
 export interface ISimulationProfile extends Document {
   name: string;
   description?: string;
@@ -12,11 +23,29 @@ export interface ISimulationProfile extends Document {
     publishRoot?: string;
     startDelay?: number;
     simulationLength?: number;
+    defaultPayload?: {
+      quality: string;
+      value: string | number;
+      timestamp: number;
+    };
   };
+  nodeSettings?: Record<string, ISimulationNodeSettings>; // key: nodeId
   defaultScenario?: string;
   userId: Types.ObjectId;
-  // nodeBehaviors removed!
 }
+
+const SimulationNodeSettingsSchema = new Schema<ISimulationNodeSettings>(
+  {
+    frequency: Number,
+    failRate: Number,
+    payload: {
+      quality: String,
+      value: Schema.Types.Mixed,
+      timestamp: Number,
+    },
+  },
+  { _id: false }
+);
 
 const SimulationProfileSchema = new Schema<ISimulationProfile>(
   {
@@ -30,6 +59,16 @@ const SimulationProfileSchema = new Schema<ISimulationProfile>(
       publishRoot: String,
       startDelay: { type: Number, default: 0 },
       simulationLength: { type: Number, default: 0 },
+      defaultPayload: {
+        quality: { type: String, default: 'good' },
+        value: { type: Schema.Types.Mixed, default: 0 },
+        timestamp: { type: Number, default: Date.now },
+      },
+    },
+    nodeSettings: {
+      type: Map,
+      of: SimulationNodeSettingsSchema,
+      default: {},
     },
     defaultScenario: String,
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },

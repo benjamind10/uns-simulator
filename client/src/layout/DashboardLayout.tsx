@@ -6,7 +6,7 @@ import clsx from 'clsx';
 import { useDarkMode } from '../hooks/useDarkMode';
 import Toast from '../components/global/Toast';
 
-export default function AdminLayout() {
+export default function DashboardLayout() {
   const [open, setOpen] = useState(true); // side-nav expanded?
   const location = useLocation();
   const [darkMode, toggleDarkMode] = useDarkMode(); // custom hook
@@ -83,7 +83,7 @@ export default function AdminLayout() {
                 to="/dashboard"
                 className="hover:underline text-gray-600 dark:text-gray-300"
               >
-                Admin
+                Dashboard
               </Link>
               {crumbs.map(({ label, to, last }) => (
                 <Fragment key={to}>

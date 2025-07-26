@@ -5,6 +5,8 @@ export const SIMULATION_PROFILE_ACTIONS = {
   CREATE: 'simulationProfile/create',
   UPDATE: 'simulationProfile/update',
   DELETE: 'simulationProfile/delete',
+  UPSERT_NODE_SETTINGS: 'simulationProfile/upsertNodeSettings',
+  DELETE_NODE_SETTINGS: 'simulationProfile/deleteNodeSettings',
 } as const;
 
 // Action type constants for schema thunks
@@ -44,6 +46,8 @@ export const SIMULATION_PROFILE_ERRORS = {
   CREATE_FAILED: 'Failed to create simulation profile',
   UPDATE_FAILED: 'Failed to update simulation profile',
   DELETE_FAILED: 'Failed to delete simulation profile',
+  UPSERT_NODE_SETTINGS_FAILED: 'Failed to upsert node settings',
+  DELETE_NODE_SETTINGS_FAILED: 'Failed to delete node settings',
 } as const;
 
 export const SCHEMA_ERRORS = {

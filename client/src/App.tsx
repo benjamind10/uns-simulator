@@ -4,16 +4,16 @@ import { useEffect } from 'react';
 import { connectToMultipleBrokersAsync } from './store/mqtt/mqttThunk';
 
 import PublicLayout from './layout/PublicLayout';
-import AdminLayout from './layout/AdminLayout';
+import DashboardLayout from './layout/DashboardLayout';
 
 import LandingPage from './pages/public/LandingPage';
-import BrokersPage from './pages/admin/BrokersPage';
-import DashboardPage from './pages/admin/DashboardPage';
+import BrokersPage from './pages/dashboard/BrokersPage';
+import DashboardPage from './pages/dashboard/DashboardPage';
 import PrivateLayout from './layout/PrivateLayout';
 import MqttExplorerPage from './pages/private/MqttExplorerPage';
 import SchemaBuilderPage from './pages/private/SchemaBuilderPage';
 import NotFoundPage from './pages/public/NotFoundPage';
-import SchemaPage from './pages/admin/SchemaPage';
+import SchemaPage from './pages/dashboard/SchemaPage';
 import SimulationPage from './pages/private/SimulationPage';
 
 import type { AppDispatch, RootState } from './types';
@@ -39,12 +39,13 @@ export default function App() {
           {/* add more marketing / help pages here */}
         </Route>
 
-        {/* ---------- ADMIN ROUTES ---------- */}
-        <Route element={<AdminLayout />}>
+        {/* ---------- Dashboard ROUTES ---------- */}
+        <Route element={<DashboardLayout />}>
           {/* <Route index element={<Dashboard />} /> */}
           <Route path="dashboard/brokers" element={<BrokersPage />} />
           <Route path="dashboard/brokers/:brokerId" element={<BrokersPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="dashboard/schemas" element={<SchemaPage />} />
           <Route path="dashboard/schemas" element={<SchemaPage />} />
           {/* <Route path="users"   element={<UsersPage />} /> */}
         </Route>

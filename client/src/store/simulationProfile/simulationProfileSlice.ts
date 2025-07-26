@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { ISimulationProfile } from '../../types';
+import type { ISimulationProfile, RootState } from '../../types';
 import {
   fetchSimulationProfilesAsync,
   fetchSimulationProfileAsync,
@@ -11,6 +11,7 @@ import {
 interface SimulationProfileState {
   profiles: ISimulationProfile[];
   selectedProfile: ISimulationProfile | null;
+  selectedProfileId: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -18,6 +19,7 @@ interface SimulationProfileState {
 const initialState: SimulationProfileState = {
   profiles: [],
   selectedProfile: null,
+  selectedProfileId: null,
   loading: false,
   error: null,
 };
@@ -28,6 +30,9 @@ const simulationProfileSlice = createSlice({
   reducers: {
     setProfiles(state, action: PayloadAction<ISimulationProfile[]>) {
       state.profiles = action.payload;
+    },
+    setSelectedProfileId(state, action) {
+      state.selectedProfileId = action.payload;
     },
     setSelectedProfile(
       state,
@@ -150,4 +155,22 @@ export const {
   removeProfile,
 } = simulationProfileSlice.actions;
 
+export const selectSelectedProfileId = (state: RootState) =>
+  state.simulationProfile.selectedProfileId;
+
+export const selectSelectedProfile = (
+  state: RootState
+): ISimulationProfile | null => {
+  const id = state.simulationProfile.selectedProfileId;
+  return (
+    (state.simulationProfile.profiles as unknown as ISimulationProfile[]).find(
+      (p) => p.id === id
+    ) || null
+  );
+};
+
+export const selectProfiles = (state: RootState) =>
+  state.simulationProfile.profiles;
+
+export const { setSelectedProfileId } = simulationProfileSlice.actions;
 export default simulationProfileSlice.reducer;

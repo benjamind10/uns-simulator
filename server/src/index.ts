@@ -155,11 +155,4 @@ process.on('SIGTERM', async () => {
   process.exit(0);
 });
 
-// When app loads or before requests:
-const authHeader = ''; // Get this from your request headers
-const token = authHeader.split(' ')[1];
-if (isTokenExpired(token)) {
-  // Log out user, clear token, redirect to login, etc.
-}
-
 startServer();

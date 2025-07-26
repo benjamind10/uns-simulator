@@ -4,7 +4,7 @@ import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
-import StatCard from '../../components/admin/StatCard';
+import StatCard from '../../components/dashboard/StatCard';
 import SchemaCard from '../../components/schema/SchemaCard';
 import BrokerCard from '../../components/brokers/BrokerCard';
 import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokers';
