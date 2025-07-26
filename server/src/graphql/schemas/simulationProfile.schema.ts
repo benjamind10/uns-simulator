@@ -102,7 +102,7 @@ export const simulationProfileTypeDefs = gql`
     updatedAt: String!
     nodeBehaviors: [NodeBehavior!]!
     nodeSettings: [NodeSettings!]!
-    userId: ID! # <-- Add this line
+    userId: ID!
   }
 
   type GlobalSettings {

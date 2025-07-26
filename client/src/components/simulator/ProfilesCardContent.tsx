@@ -1,6 +1,7 @@
 import React from 'react';
-import type { ISimulationProfile } from '../../types';
 import { useDispatch, useSelector } from 'react-redux';
+
+import type { ISimulationProfile } from '../../types';
 import { setSelectedProfileId } from '../../store/simulationProfile/simulationProfileSlice';
 import type { RootState } from '../../types';
 

@@ -17,7 +17,6 @@ import {
   selectConnectedBrokersCount,
   selectBrokerStatuses,
 } from '../../store/mqtt/mqttSlice';
-
 import type { AppDispatch, RootState } from '../../store/store';
 import type { IBroker, ISchema } from '../../types';
 

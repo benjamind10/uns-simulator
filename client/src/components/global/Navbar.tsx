@@ -5,7 +5,6 @@ import { Sun, Moon, Menu, X } from 'lucide-react';
 
 import { useDarkMode } from '../../hooks/useDarkMode';
 import { logoutAsync, selectIsAuthenticated } from '../../store/auth';
-
 import type { AppDispatch } from '../../store/store';
 
 export default function Navbar() {

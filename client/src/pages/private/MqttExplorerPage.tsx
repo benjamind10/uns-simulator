@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+
 import { selectBrokers, fetchBrokersAsync } from '../../store/brokers';
 import { selectBrokerStatus } from '../../store/mqtt/mqttSlice';
 import { connectToBrokerAsync } from '../../store/mqtt/mqttThunk';
 import { getClient } from '../../store/mqtt/mqttClientManager';
 import { buildTopicTree } from '../../utils/mqttTopicTree';
-
 import type { AppDispatch, RootState } from '../../store/store';
 import type { MqttMessage } from '../../types';
 import MqttMessageViewer from '../../components/brokers/MqttMessageViewer';
@@ -108,10 +108,10 @@ export default function MqttExplorerPage() {
                   brokerStatus === 'connected'
                     ? 'text-green-600'
                     : brokerStatus === 'connecting'
-                    ? 'text-yellow-600'
-                    : brokerStatus === 'error'
-                    ? 'text-red-600'
-                    : 'text-gray-600'
+                      ? 'text-yellow-600'
+                      : brokerStatus === 'error'
+                        ? 'text-red-600'
+                        : 'text-gray-600'
                 }
               >
                 {brokerStatus}

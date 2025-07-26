@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
-import SimulatorGlobalForm from './SimulatorGlobalForm';
+
 import {
   updateSimulationProfileAsync,
   fetchSimulationProfileAsync,
@@ -11,6 +11,8 @@ import {
   selectProfiles,
 } from '../../store/simulationProfile/simulationProfileSlice';
 import type { AppDispatch } from '../../store/store';
+
+import SimulatorGlobalForm from './SimulatorGlobalForm';
 
 type TabType = 'details' | 'global_settings' | 'behavior' | 'global';
 type Profile = {

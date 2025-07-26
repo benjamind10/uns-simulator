@@ -1,14 +1,18 @@
 import { GraphQLClient } from 'graphql-request';
+
+import type { ISimulationProfile } from '../types/simulationProfile';
+
 import {
   CREATE_SIMULATION_PROFILE,
   UPDATE_SIMULATION_PROFILE,
   DELETE_SIMULATION_PROFILE,
-  GET_SIMULATION_PROFILE,
-  GET_SIMULATION_PROFILES,
   UPSERT_NODE_SETTINGS,
   DELETE_NODE_SETTINGS,
 } from './mutations/simulationProfile.mutation';
-import type { ISimulationProfile } from '../types/simulationProfile';
+import {
+  GET_SIMULATION_PROFILES,
+  GET_SIMULATION_PROFILE,
+} from './queries/simulationProfile.queries';
 
 const endpoint = import.meta.env.VITE_API_URL;
 
