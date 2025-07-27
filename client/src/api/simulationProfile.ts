@@ -73,6 +73,7 @@ export type CreateSimulationProfileInput = {
     };
   };
   defaultScenario?: string;
+  nodeSettings?: Record<string, NodeSettingsInput>; // <-- Add this line
 };
 
 export type UpdateSimulationProfileInput =

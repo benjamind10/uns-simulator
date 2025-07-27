@@ -6,7 +6,6 @@ import compression from 'compression';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
-import { jwtDecode } from 'jwt-decode';
 import { ApolloServer } from 'apollo-server-express';
 import { mergeTypeDefs, mergeResolvers } from '@graphql-tools/merge';
 
@@ -37,15 +36,21 @@ export const resolvers = mergeResolvers([
   simulationProfileResolvers,
 ]);
 
-// Apollo context for auth
-const getContext = async ({ req }: { req: any }) => {
+interface JwtPayload {
+  userId: string;
+  exp?: number;
+  iat?: number;
+  // Add other fields as needed
+}
+
+const getContext = async ({ req }: { req: express.Request }) => {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.split(' ')[1];
 
   if (!token) return {};
 
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
     console.log('Decoded token:', decoded, 'Now:', Date.now() / 1000);
     const user = await User.findById(decoded.userId);
     if (!user) return {};
@@ -55,16 +60,6 @@ const getContext = async ({ req }: { req: any }) => {
     return {};
   }
 };
-
-function isTokenExpired(token: string) {
-  try {
-    const decoded: any = jwtDecode(token);
-    if (!decoded.exp) return false;
-    return decoded.exp * 1000 < Date.now();
-  } catch {
-    return true;
-  }
-}
 
 // Add allowed origins based on environment
 const allowedOrigins = [

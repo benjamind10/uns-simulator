@@ -8,18 +8,29 @@ dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
+interface CreateUserInput {
+  username: string;
+  email: string;
+  password: string;
+}
+
+interface LoginInput {
+  email: string;
+  password: string;
+}
+
 export const userResolvers = {
   Query: {
     users: async () => await User.find(),
-    user: async (_: any, { id }: { id: string }) => await User.findById(id),
+    user: async (_: {}, { id }: { id: string }) => await User.findById(id),
   },
   Mutation: {
-    createUser: async (_: any, { input }: any) => {
+    createUser: async (_: {}, { input }: { input: CreateUserInput }) => {
       const newUser = new User(input);
       await newUser.save();
       return newUser;
     },
-    login: async (_: any, { input }: any) => {
+    login: async (_: {}, { input }: { input: LoginInput }) => {
       const { email, password } = input;
       const user = await User.findOne({ email });
       if (!user) throw new Error('Invalid credentials');

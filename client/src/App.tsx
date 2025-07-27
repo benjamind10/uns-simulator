@@ -45,9 +45,10 @@ export default function App() {
           <Route path="dashboard/simulators" element={<SimulatorsPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="dashboard/schemas" element={<SchemaPage />} />
-          <Route path="dashboard/schemas" element={<SchemaPage />} />
           {/* <Route path="users"   element={<UsersPage />} /> */}
         </Route>
+
+        {/* ---------- PRIVATE ROUTES ---------- */}
         <Route element={<PrivateLayout />}>
           <Route path="explorer" element={<MqttExplorerPage />} />
           <Route path="schema-builder" element={<SchemaBuilderPage />} />

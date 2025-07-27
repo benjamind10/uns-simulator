@@ -1,5 +1,3 @@
-import { Types } from 'mongoose';
-
 import SimulationProfile, {
   ISimulationProfile,
 } from '../../graphql/models/SimulationProfile';
@@ -8,17 +6,27 @@ interface Context {
   user?: { _id: string };
 }
 
+interface NodeSettingsInput {
+  frequency?: number;
+  failRate?: number;
+  payload?: {
+    quality?: string;
+    value?: any;
+    timestamp?: number;
+  };
+}
+
 const requireAuth = (ctx: Context) => {
   if (!ctx.user) throw new Error('Unauthenticated');
 };
 
 export const simulationProfileResolvers = {
   Query: {
-    simulationProfiles: async (_: any, __: any, ctx: Context) => {
+    simulationProfiles: async (_: {}, __: {}, ctx: Context) => {
       requireAuth(ctx);
       return SimulationProfile.find({ userId: ctx.user!._id }).exec();
     },
-    simulationProfile: async (_: any, { id }: { id: string }, ctx: Context) => {
+    simulationProfile: async (_: {}, { id }: { id: string }, ctx: Context) => {
       requireAuth(ctx);
       const profile = await SimulationProfile.findOne({
         _id: id,
@@ -31,7 +39,7 @@ export const simulationProfileResolvers = {
 
   Mutation: {
     createSimulationProfile: async (
-      _: any,
+      _: {},
       { input }: { input: Omit<ISimulationProfile, 'userId'> },
       ctx: Context
     ) => {
@@ -44,7 +52,7 @@ export const simulationProfileResolvers = {
     },
 
     updateSimulationProfile: async (
-      _: any,
+      _: {},
       { id, input }: { id: string; input: Partial<ISimulationProfile> },
       ctx: Context
     ) => {
@@ -59,7 +67,7 @@ export const simulationProfileResolvers = {
     },
 
     deleteSimulationProfile: async (
-      _: any,
+      _: {},
       { id }: { id: string },
       ctx: Context
     ) => {
@@ -68,9 +76,8 @@ export const simulationProfileResolvers = {
       return true;
     },
 
-    // Upsert node settings for a profile (add or update per-node settings)
     upsertNodeSettings: async (
-      _: any,
+      _: {},
       {
         profileId,
         nodeId,
@@ -78,15 +85,7 @@ export const simulationProfileResolvers = {
       }: {
         profileId: string;
         nodeId: string;
-        settings: {
-          frequency?: number;
-          failRate?: number;
-          payload?: {
-            quality?: string;
-            value?: string | number;
-            timestamp?: number;
-          };
-        };
+        settings: NodeSettingsInput;
       },
       ctx: Context
     ) => {
@@ -105,9 +104,8 @@ export const simulationProfileResolvers = {
       return profile.nodeSettings[nodeId];
     },
 
-    // Remove node settings for a profile
     deleteNodeSettings: async (
-      _: any,
+      _: {},
       { profileId, nodeId }: { profileId: string; nodeId: string },
       ctx: Context
     ) => {
