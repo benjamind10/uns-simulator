@@ -51,7 +51,6 @@ const getContext = async ({ req }: { req: express.Request }) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    console.log('Decoded token:', decoded, 'Now:', Date.now() / 1000);
     const user = await User.findById(decoded.userId);
     if (!user) return {};
     return { user };

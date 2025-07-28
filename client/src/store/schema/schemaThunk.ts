@@ -33,6 +33,25 @@ export const fetchSchemasAsync = createAsyncThunk<ISchema[]>(
   }
 );
 
+export const fetchNodesAsync = createAsyncThunk<ISchemaNode[], string>(
+  SCHEMA_ACTIONS.FETCH_NODES,
+  async (schemaId, { rejectWithValue }) => {
+    try {
+      const nodes = await api.fetchNodes(schemaId);
+      return nodes.map((node) => ({
+        ...node,
+        id: String(node.id),
+        parent: node.parent === undefined ? null : String(node.parent),
+      })) as ISchemaNode[];
+    } catch (err) {
+      if (err instanceof Error) {
+        return rejectWithValue(err.message);
+      }
+      return rejectWithValue(SCHEMA_ERRORS.FETCH_NODES_FAILED);
+    }
+  }
+);
+
 export const createSchemaAsync = createAsyncThunk<ISchema, SchemaInput>(
   SCHEMA_ACTIONS.CREATE,
   async (input, { rejectWithValue }) => {

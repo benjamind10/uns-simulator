@@ -49,3 +49,19 @@ export const GET_SCHEMA = gql`
     }
   }
 `;
+
+export const GET_NODES = gql`
+  query GetNodes($schemaId: ID!) {
+    getNodes(schemaId: $schemaId) {
+      id
+      name
+      kind
+      parent
+      path
+      order
+      dataType
+      unit
+      engineering
+    }
+  }
+`;

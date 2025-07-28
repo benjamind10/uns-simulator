@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 
-import Schema, { ISchema } from '../models/Schema';
+import Schema, { ISchema, ISchemaNode } from '../models/Schema';
 
 interface Context {
   user?: { _id: string };
@@ -43,6 +43,16 @@ export const schemaResolvers = {
     ): Promise<ISchema | null> => {
       requireAuth(context);
       return await Schema.findById(args.id);
+    },
+    getNodes: async (
+      _: {},
+      args: { schemaId: string },
+      context: Context
+    ): Promise<ISchemaNode[]> => {
+      requireAuth(context);
+      const schema = await Schema.findById(args.schemaId);
+      if (!schema) throw new Error('Schema not found');
+      return schema.nodes;
     },
   },
 

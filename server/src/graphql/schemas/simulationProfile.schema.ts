@@ -204,7 +204,7 @@ export const simulationProfileTypeDefs = gql`
   input PayloadInput {
     quality: String
     value: JSON
-    timestamp: Int
+    timestamp: Float
   }
 
   # ROOT OPERATIONS
@@ -236,7 +236,7 @@ export const simulationProfileTypeDefs = gql`
   type Payload {
     quality: String
     value: JSON
-    timestamp: Int
+    timestamp: Float
   }
 
   type NodeSettings {

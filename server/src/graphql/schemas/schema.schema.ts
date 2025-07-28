@@ -63,6 +63,10 @@ export const schemaTypeDefs = gql`
     schema(id: ID!): Schema
   }
 
+  type Query {
+    getNodes(schemaId: ID!): [SchemaNode!]!
+  }
+
   type Mutation {
     createSchema(input: SchemaInput!): Schema!
     updateSchema(id: ID!, input: SchemaInput!): Schema!

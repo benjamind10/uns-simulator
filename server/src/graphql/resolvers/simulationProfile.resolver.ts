@@ -90,18 +90,27 @@ export const simulationProfileResolvers = {
       ctx: Context
     ) => {
       requireAuth(ctx);
-      const profile = await SimulationProfile.findOne({
-        _id: profileId,
-        userId: ctx.user!._id,
-      });
-      if (!profile) throw new Error('Profile not found');
-      profile.nodeSettings = profile.nodeSettings || {};
-      profile.nodeSettings[nodeId] = {
-        ...profile.nodeSettings[nodeId],
-        ...settings,
+      await SimulationProfile.findOneAndUpdate(
+        { _id: profileId, userId: ctx.user!._id }, // <-- add userId here
+        { $set: { [`nodeSettings.${nodeId}`]: settings } },
+        { new: true }
+      );
+      const updatedProfile = await SimulationProfile.findById(profileId);
+      console.log('Updated profile:', updatedProfile); // Debug
+      if (
+        !updatedProfile ||
+        !updatedProfile.nodeSettings ||
+        !updatedProfile.nodeSettings[nodeId]
+      ) {
+        throw new Error('Node settings not found');
+      }
+      const nodeSetting = updatedProfile.nodeSettings[nodeId];
+      return {
+        nodeId,
+        frequency: nodeSetting.frequency ?? null,
+        failRate: nodeSetting.failRate ?? null,
+        payload: nodeSetting.payload ?? null,
       };
-      await profile.save();
-      return profile.nodeSettings[nodeId];
     },
 
     deleteNodeSettings: async (
@@ -120,6 +129,24 @@ export const simulationProfileResolvers = {
         await profile.save();
       }
       return true;
+    },
+  },
+
+  SimulationProfile: {
+    nodeSettings: (profile: ISimulationProfile) => {
+      // Mongoose Map support
+      const nodeSettingsMap =
+        profile.nodeSettings instanceof Map
+          ? profile.nodeSettings
+          : new Map(Object.entries(profile.nodeSettings || {}));
+      return Array.from(nodeSettingsMap.entries()).map(
+        ([nodeId, settings]) => ({
+          nodeId,
+          frequency: settings.frequency ?? null,
+          failRate: settings.failRate ?? null,
+          payload: settings.payload ?? null,
+        })
+      );
     },
   },
 };

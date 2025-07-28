@@ -36,12 +36,12 @@ export interface ISimulationProfile extends Document {
 
 const SimulationNodeSettingsSchema = new Schema<ISimulationNodeSettings>(
   {
-    frequency: Number,
-    failRate: Number,
+    frequency: { type: Number, default: 30 }, // Default frequency
+    failRate: { type: Number, default: 0 }, // Default fail rate
     payload: {
-      quality: String,
-      value: Schema.Types.Mixed,
-      timestamp: Number,
+      quality: { type: String, default: 'good' }, // Default quality
+      value: { type: Schema.Types.Mixed, default: 0 }, // Default value
+      timestamp: { type: Number, default: () => Date.now() }, // Default timestamp
     },
   },
   { _id: false }
@@ -62,7 +62,7 @@ const SimulationProfileSchema = new Schema<ISimulationProfile>(
       defaultPayload: {
         quality: { type: String, default: 'good' },
         value: { type: Schema.Types.Mixed, default: 0 },
-        timestamp: { type: Number, default: Date.now },
+        timestamp: { type: Number, default: () => Date.now() },
       },
     },
     nodeSettings: {

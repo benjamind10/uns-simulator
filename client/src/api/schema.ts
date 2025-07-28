@@ -8,7 +8,7 @@ import {
   DELETE_SCHEMA,
   SAVE_NODES_TO_SCHEMA,
 } from './mutations/schema.mutations';
-import { GET_SCHEMAS, GET_SCHEMA } from './queries/schema.queries';
+import { GET_SCHEMAS, GET_SCHEMA, GET_NODES } from './queries/schema.queries';
 
 const endpoint = import.meta.env.VITE_API_URL;
 
@@ -56,6 +56,15 @@ export async function fetchSchema(id: string): Promise<ISchema> {
   const client = getClient();
   const data: SchemaResponse = await client.request(GET_SCHEMA, { id });
   return data.schema;
+}
+
+export async function fetchNodes(schemaId: string): Promise<ISchemaNode[]> {
+  const client = getClient();
+  const data: { getNodes: ISchemaNode[] } = await client.request(GET_NODES, {
+    schemaId,
+  });
+
+  return data.getNodes;
 }
 
 // Create a new schema

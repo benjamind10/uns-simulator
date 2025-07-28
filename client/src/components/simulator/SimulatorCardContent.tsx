@@ -3,10 +3,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
-import { updateSimulationProfileAsync } from '../../store/simulationProfile/simulationProfieThunk';
+import {
+  fetchSimulationProfilesAsync,
+  updateSimulationProfileAsync,
+  upsertNodeSettingsAsync,
+} from '../../store/simulationProfile/simulationProfieThunk';
 import { selectProfiles } from '../../store/simulationProfile/simulationProfileSlice';
 import type { AppDispatch, RootState } from '../../store/store';
-import type { ISchema, ISimulationProfile, NodeSettings } from '../../types';
+import type {
+  ISchema,
+  ISimulationProfile,
+  NodeSettings,
+  ISchemaNode,
+} from '../../types';
 
 import SimulatorGlobalForm from './SimulatorGlobalForm';
 import SimulatorNodeSettings from './SimulatorNodeSettings';
@@ -18,7 +27,14 @@ type TabType =
   | 'global'
   | 'behavior';
 
-const SimulatorCardContent: React.FC = () => {
+// Accept fetchNodesByIds as a prop
+type SimulatorCardContentProps = {
+  fetchNodesByIds?: (ids: string[]) => Promise<ISchemaNode[]>;
+};
+
+const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
+  fetchNodesByIds,
+}) => {
   const [activeTab, setActiveTab] = useState<TabType>('details');
   const dispatch = useDispatch<AppDispatch>();
   const { profileId } = useParams<{ profileId?: string }>();
@@ -26,8 +42,6 @@ const SimulatorCardContent: React.FC = () => {
     useSelector(selectProfiles)
   ) as ISimulationProfile[];
   const schemas = useSelector((state: RootState) => state.schema.schemas); // <-- always called
-
-  console.log('Schemas in SimulatorCardContent:', schemas);
 
   // Find the selected profile from the store using URL param
   const selectedProfile = profiles.find(
@@ -94,15 +108,19 @@ const SimulatorCardContent: React.FC = () => {
   ) => {
     if (!selectedProfile) return;
     try {
-      await dispatch(
-        updateSimulationProfileAsync({
-          id: selectedProfile.id,
-          input: {
-            ...selectedProfile,
-            nodeSettings: settings,
-          },
-        })
-      ).unwrap();
+      // Save each node's settings using the dedicated mutation
+      await Promise.all(
+        Object.entries(settings).map(([nodeId, nodeSetting]) =>
+          dispatch(
+            upsertNodeSettingsAsync({
+              profileId: selectedProfile.id,
+              nodeId,
+              settings: nodeSetting,
+            })
+          )
+        )
+      );
+      await dispatch(fetchSimulationProfilesAsync());
       toast.success('Node settings saved!');
     } catch {
       toast.error('Failed to save node settings');
@@ -219,6 +237,7 @@ const SimulatorCardContent: React.FC = () => {
             }
             nodeIds={nodeIds}
             onSave={handleSaveNodeSettings}
+            fetchNodesByIds={fetchNodesByIds}
           />
         </div>
       )}
