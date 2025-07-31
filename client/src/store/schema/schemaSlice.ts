@@ -9,6 +9,7 @@ import {
   updateSchemaAsync,
   deleteSchemaAsync,
   saveNodesToSchemaAsync,
+  fetchNodesAsync,
 } from './schemaThunk';
 
 export interface SchemaState {
@@ -63,6 +64,21 @@ const schemaSlice = createSlice({
       .addCase(saveNodesToSchemaAsync.fulfilled, (state, action) => {
         const idx = state.schemas.findIndex((s) => s.id === action.payload.id);
         if (idx !== -1) state.schemas[idx] = action.payload;
+      })
+      .addCase(fetchNodesAsync.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchNodesAsync.fulfilled, (state, action) => {
+        const idx = state.schemas.findIndex((s) => s.id === action.meta.arg);
+        if (idx !== -1) {
+          state.schemas[idx].nodes = action.payload;
+        }
+        state.loading = false;
+      })
+      .addCase(fetchNodesAsync.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch nodes';
       });
   },
 });

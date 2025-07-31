@@ -1,4 +1,4 @@
-import { Schema, Types } from 'mongoose';
+import { Types } from 'mongoose';
 
 import User from '../models/User';
 import Broker, { IBroker } from '../models/Broker';
@@ -22,7 +22,7 @@ interface Context {
 export const brokerResolvers = {
   Query: {
     // Get all brokers associated with the authenticated user
-    brokers: async (_parent: any, _args: any, context: Context) => {
+    brokers: async (_parent: {}, _args: {}, context: Context) => {
       if (!context.user) throw new Error('Unauthorized');
       const user = await User.findById(context.user._id).populate('brokers');
       return user?.brokers || [];
@@ -30,18 +30,17 @@ export const brokerResolvers = {
 
     // Get a specific broker if the authenticated user has access to it
     broker: async (
-      _parent: any,
-      { id }: { id: string },
+      _parent: {},
+      args: { id: string },
       context: Context
     ): Promise<IBroker | null> => {
       if (!context.user) throw new Error('Unauthorized');
-      const broker = await Broker.findById(id);
+      const broker = await Broker.findById(args.id);
       if (!broker) throw new Error('Broker not found');
 
       const userIds = (broker.users as Types.ObjectId[]).map((u) =>
         u.toString()
       );
-
       if (!userIds.includes(context.user._id)) {
         throw new Error('Forbidden');
       }
@@ -53,19 +52,18 @@ export const brokerResolvers = {
   Mutation: {
     // Create a new broker and associate it with the current user
     createBroker: async (
-      _parent: any,
-      { input }: { input: CreateBrokerInput },
+      _parent: {},
+      args: { input: CreateBrokerInput },
       context: Context
     ): Promise<IBroker> => {
       if (!context.user) throw new Error('Unauthorized');
 
       const broker = new Broker({
-        ...input,
+        ...args.input,
         users: [context.user._id],
       });
 
       await broker.save();
-
       // Also push the broker ID into the user's list
       await User.findByIdAndUpdate(context.user._id, {
         $push: { brokers: broker._id },
@@ -76,22 +74,25 @@ export const brokerResolvers = {
 
     // Delete a broker
     deleteBroker: async (
-      _: unknown,
-      { id }: { id: string },
+      _parent: {},
+      args: { id: string },
       context: Context
     ): Promise<boolean> => {
       requireAuth(context);
 
       // Delete the broker
-      await Broker.findByIdAndDelete(id);
+      await Broker.findByIdAndDelete(args.id);
 
       // Remove broker reference from all users
-      await User.updateMany({ brokers: id }, { $pull: { brokers: id } });
+      await User.updateMany(
+        { brokers: args.id },
+        { $pull: { brokers: args.id } }
+      );
 
       // Remove broker reference from all schemas (if applicable)
       await SchemaModel.updateMany(
-        { brokerIds: id },
-        { $pull: { brokerIds: id } }
+        { brokerIds: args.id },
+        { $pull: { brokerIds: args.id } }
       );
 
       return true;
@@ -99,16 +100,15 @@ export const brokerResolvers = {
 
     // Update a broker
     updateBroker: async (
-      _parent: any,
-      { id, input }: { id: string; input: Partial<CreateBrokerInput> },
+      _parent: {},
+      args: { id: string; input: Partial<CreateBrokerInput> },
       context: Context
     ): Promise<IBroker> => {
       if (!context.user) throw new Error('Unauthorized');
 
-      const broker = await Broker.findById(id);
+      const broker = await Broker.findById(args.id);
       if (!broker) throw new Error('Broker not found');
 
-      // Convert both to strings for comparison, just like in deleteBroker
       const userIds = (broker.users as Types.ObjectId[]).map((u) =>
         u.toString()
       );
@@ -118,10 +118,9 @@ export const brokerResolvers = {
         throw new Error('Forbidden');
       }
 
-      // Update the broker
       const updatedBroker = await Broker.findByIdAndUpdate(
-        id,
-        { $set: input },
+        args.id,
+        { $set: args.input },
         { new: true }
       );
 
@@ -131,6 +130,7 @@ export const brokerResolvers = {
     },
   },
 };
+
 function requireAuth(context: Context) {
   if (!context.user || !context.user._id) {
     throw new Error('Unauthorized');

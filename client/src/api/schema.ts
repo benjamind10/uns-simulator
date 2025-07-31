@@ -8,7 +8,7 @@ import {
   DELETE_SCHEMA,
   SAVE_NODES_TO_SCHEMA,
 } from './mutations/schema.mutations';
-import { GET_SCHEMAS, GET_SCHEMA } from './queries/schema.queries';
+import { GET_SCHEMAS, GET_SCHEMA, GET_NODES } from './queries/schema.queries';
 
 const endpoint = import.meta.env.VITE_API_URL;
 
@@ -37,12 +37,25 @@ type SaveNodesToSchemaResponse = { saveNodesToSchema: ISchema };
 export type CreateSchemaInput = {
   name: string;
   description?: string;
-  nodes?: Omit<ISchemaNode, 'id'>[];
+  nodes?: SchemaNodeInput[]; // <-- Use SchemaNodeInput for full support
   brokerIds?: string[];
   users?: string[];
 };
 
-export type SaveNodesToSchemaInput = Omit<ISchemaNode, 'id'>;
+export type SchemaNodeInput = {
+  id: string;
+  name: string;
+  kind: 'group' | 'metric' | 'object';
+  parent?: string | null;
+  path: string;
+  order: number;
+  dataType?: 'Int' | 'Float' | 'Bool' | 'String';
+  unit?: string;
+  engineering?: Record<string, unknown>;
+  objectData?: Record<string, unknown>; // <-- Support custom object data
+};
+
+export type SaveNodesToSchemaInput = SchemaNodeInput;
 
 // Fetch all schemas
 export async function fetchSchemas(): Promise<ISchema[]> {
@@ -56,6 +69,15 @@ export async function fetchSchema(id: string): Promise<ISchema> {
   const client = getClient();
   const data: SchemaResponse = await client.request(GET_SCHEMA, { id });
   return data.schema;
+}
+
+export async function fetchNodes(schemaId: string): Promise<ISchemaNode[]> {
+  const client = getClient();
+  const data: { getNodes: ISchemaNode[] } = await client.request(GET_NODES, {
+    schemaId,
+  });
+
+  return data.getNodes;
 }
 
 // Create a new schema

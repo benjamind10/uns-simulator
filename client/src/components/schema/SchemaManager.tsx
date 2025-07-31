@@ -46,6 +46,7 @@ export default function SchemaManager({
   const handleDelete = async (id: string) => {
     try {
       await dispatch(deleteSchemaAsync(id)).unwrap();
+      await dispatch(fetchSchemasAsync());
       toast.success('Schema deleted!');
       if (selectedSchemaId === id) setSelectedSchemaId(null);
     } catch {

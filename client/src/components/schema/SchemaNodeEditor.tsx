@@ -66,7 +66,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     setSelectedNode(node);
     setForm({
       name: node.name,
-      kind: node.kind,
+      kind:
+        node.kind === 'group' || node.kind === 'metric' ? node.kind : 'group',
       dataType: node.dataType ?? '',
       unit: node.unit ?? '',
     });

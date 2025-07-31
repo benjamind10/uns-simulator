@@ -6,6 +6,7 @@ import { Sun, Moon, Menu, X } from 'lucide-react';
 import { useDarkMode } from '../../hooks/useDarkMode';
 import { logoutAsync, selectIsAuthenticated } from '../../store/auth';
 import type { AppDispatch } from '../../store/store';
+import logo from '../../assets/logo.webp';
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -35,6 +36,7 @@ export default function Navbar() {
           to="/"
           className="text-xl font-bold text-blue-600 dark:text-white hover:underline"
         >
+          <img src={logo} alt="Logo" className="h-8 w-8 inline-block mr-2" />
           UNS Simulator
         </NavLink>
 

@@ -16,6 +16,7 @@ export const SCHEMA_ACTIONS = {
   UPDATE: 'schema/update',
   DELETE: 'schema/delete',
   SAVE_NODES: 'schema/saveNodes',
+  FETCH_NODES: 'schema/fetchNodes',
 } as const;
 
 // Action type constants for MQTT thunks
@@ -56,6 +57,7 @@ export const SCHEMA_ERRORS = {
   UPDATE_FAILED: 'Failed to update schema',
   DELETE_FAILED: 'Failed to delete schema',
   SAVE_NODES_FAILED: 'Failed to save nodes',
+  FETCH_NODES_FAILED: 'Failed to fetch nodes',
 } as const;
 
 export const MQTT_ERRORS = {
