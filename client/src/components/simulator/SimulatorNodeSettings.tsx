@@ -19,10 +19,6 @@ export default function SimulatorNodeSettings({
   const [settings, setSettings] = useState<Record<string, NodeSettings>>({});
   const didInit = useRef(false);
 
-  console.log(nodes, 'nodes in SimulatorNodeSettings');
-  console.log(settings, 'local settings in SimulatorNodeSettings');
-  console.log(nodeSettings, 'props nodeSettings in SimulatorNodeSettings');
-
   // Fetch nodes by IDs
   useEffect(() => {
     if (fetchNodesByIds && nodeIds.length > 0) {

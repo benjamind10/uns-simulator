@@ -96,7 +96,6 @@ export const simulationProfileResolvers = {
         { new: true }
       );
       const updatedProfile = await SimulationProfile.findById(profileId);
-      console.log('Updated profile:', updatedProfile); // Debug
       if (
         !updatedProfile ||
         !updatedProfile.nodeSettings ||
