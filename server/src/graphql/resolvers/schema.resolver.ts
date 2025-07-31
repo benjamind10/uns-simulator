@@ -17,13 +17,14 @@ interface SchemaInput {
 interface SchemaNodeInput {
   id: string;
   name: string;
-  kind: 'group' | 'metric';
+  kind: 'group' | 'metric' | 'object'; // <-- add 'object'
   parent?: string | null;
   path: string;
   order: number;
   dataType?: 'Int' | 'Float' | 'Bool' | 'String';
   unit?: string;
   engineering?: Record<string, unknown>;
+  objectData?: Record<string, unknown>; // <-- add this for custom JSON
 }
 
 function requireAuth(context: Context): void {
@@ -66,7 +67,10 @@ export const schemaResolvers = {
       const schema = new Schema({
         name: args.input.name,
         description: args.input.description,
-        nodes: args.input.nodes || [],
+        nodes: (args.input.nodes || []).map((n) => ({
+          ...n,
+          objectData: n.objectData ?? {}, // ensure objectData is present
+        })),
         brokerIds: args.input.brokerIds || [],
         users:
           args.input.users && args.input.users.length > 0
@@ -103,30 +107,27 @@ export const schemaResolvers = {
       const { user } = context;
       if (!user) throw new Error('Unauthenticated');
 
-      // 1️⃣ Create a tempId -> real Mongo ObjectId map
       const tempToReal = new Map<string, Types.ObjectId>();
       args.nodes.forEach((n) => tempToReal.set(n.id, new Types.ObjectId()));
 
-      // 2️⃣ Build the array with correct _id + parent
       const docs = args.nodes.map((n) => ({
-        _id: tempToReal.get(n.id), // generated Mongo id
+        _id: tempToReal.get(n.id),
         name: n.name,
         kind: n.kind,
         parent:
           n.parent && tempToReal.has(n.parent)
-            ? tempToReal.get(n.parent) // replace temp id with real id
-            : n.parent || null, // keep as-is if not in this batch
+            ? tempToReal.get(n.parent)
+            : n.parent || null,
         path: n.path,
         order: n.order ?? 0,
         dataType: n.dataType,
         unit: n.unit,
         engineering: n.engineering ?? {},
+        objectData: n.objectData ?? {}, // <-- support objectData
       }));
 
-      // 3️⃣ Remove all old nodes for this schema (optional, if you want to replace)
       await Schema.findByIdAndUpdate(args.schemaId, { $set: { nodes: [] } });
 
-      // 4️⃣ Push the new nodes
       const updated = await Schema.findOneAndUpdate(
         { _id: args.schemaId, users: user._id },
         { $push: { nodes: { $each: docs } } },
@@ -146,7 +147,11 @@ export const schemaResolvers = {
 
       const schema = await Schema.findByIdAndUpdate(
         args.schemaId,
-        { $push: { nodes: args.node } },
+        {
+          $push: {
+            nodes: { ...args.node, objectData: args.node.objectData ?? {} },
+          },
+        }, // <-- support objectData
         { new: true }
       );
 
@@ -162,7 +167,11 @@ export const schemaResolvers = {
 
       const schema = await Schema.findOneAndUpdate(
         { _id: args.schemaId, 'nodes._id': args.nodeId },
-        { $set: { 'nodes.$': args.node } },
+        {
+          $set: {
+            'nodes.$': { ...args.node, objectData: args.node.objectData ?? {} },
+          },
+        }, // <-- support objectData
         { new: true }
       );
 

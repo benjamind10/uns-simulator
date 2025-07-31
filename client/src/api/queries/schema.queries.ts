@@ -16,6 +16,7 @@ export const GET_SCHEMAS = gql`
         dataType
         unit
         engineering
+        objectData
       }
       brokerIds
       users
@@ -41,6 +42,7 @@ export const GET_SCHEMA = gql`
         dataType
         unit
         engineering
+        objectData
       }
       brokerIds
       users
@@ -62,6 +64,7 @@ export const GET_NODES = gql`
       dataType
       unit
       engineering
+      objectData
     }
   }
 `;

@@ -1,24 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 import type { NodeSettings } from '../../types';
 
 interface NodeSettingsTabProps {
-  nodeSettings: Record<string, NodeSettings>;
   onSave: (settings: Record<string, NodeSettings>) => void;
   nodeIds: string[];
   fetchNodesByIds?: (ids: string[]) => Promise<any[]>;
+  nodeSettings?: Record<string, NodeSettings>; // <-- Add this prop for initial settings
 }
 
 export default function SimulatorNodeSettings({
-  nodeSettings,
   onSave,
   nodeIds,
   fetchNodesByIds,
+  nodeSettings = {}, // <-- Default to empty object
 }: NodeSettingsTabProps) {
-  const [settings, setSettings] =
-    useState<Record<string, NodeSettings>>(nodeSettings);
   const [nodes, setNodes] = useState<any[]>([]);
+  const [settings, setSettings] = useState<Record<string, NodeSettings>>({});
+  const didInit = useRef(false);
 
+  // Fetch nodes by IDs
   useEffect(() => {
     if (fetchNodesByIds && nodeIds.length > 0) {
       fetchNodesByIds(nodeIds).then((fetched) => {
@@ -28,15 +29,30 @@ export default function SimulatorNodeSettings({
       setNodes(nodeIds.map((id) => ({ id })));
     }
   }, [nodeIds, fetchNodesByIds]);
+  console.log('Fetched nodes:', nodes);
+  console.log('Node settings:', nodeSettings);
 
+  // Sync settings with nodeSettings and nodes ONLY ON FIRST LOAD
   useEffect(() => {
-    setSettings(nodeSettings);
-  }, [nodeSettings]);
+    if (!didInit.current) {
+      const metricNodeIds = nodes
+        .filter((node) => node.kind === 'metric')
+        .map((node) => node.id);
+      const merged: Record<string, NodeSettings> = {};
+      metricNodeIds.forEach((id) => {
+        merged[id] = nodeSettings[id] ?? {
+          frequency: '',
+          failRate: '',
+          payload: { quality: '', value: '', timestamp: '' },
+        };
+      });
+      setSettings(merged);
+      didInit.current = true;
+    }
+  }, [nodes, nodeSettings]);
 
   // Only show nodes with kind === 'metric'
   const metricNodes = nodes.filter((node) => node.kind === 'metric');
-
-  console.log('Settings:', settings);
 
   const handleChange = (
     nodeId: string,
@@ -52,6 +68,7 @@ export default function SimulatorNodeSettings({
     }));
   };
 
+  // Uncomment and use if you want to edit payload fields
   // const handlePayloadChange = (
   //   nodeId: string,
   //   key: string,

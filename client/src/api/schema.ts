@@ -37,12 +37,25 @@ type SaveNodesToSchemaResponse = { saveNodesToSchema: ISchema };
 export type CreateSchemaInput = {
   name: string;
   description?: string;
-  nodes?: Omit<ISchemaNode, 'id'>[];
+  nodes?: SchemaNodeInput[]; // <-- Use SchemaNodeInput for full support
   brokerIds?: string[];
   users?: string[];
 };
 
-export type SaveNodesToSchemaInput = Omit<ISchemaNode, 'id'>;
+export type SchemaNodeInput = {
+  id: string;
+  name: string;
+  kind: 'group' | 'metric' | 'object';
+  parent?: string | null;
+  path: string;
+  order: number;
+  dataType?: 'Int' | 'Float' | 'Bool' | 'String';
+  unit?: string;
+  engineering?: Record<string, unknown>;
+  objectData?: Record<string, unknown>; // <-- Support custom object data
+};
+
+export type SaveNodesToSchemaInput = SchemaNodeInput;
 
 // Fetch all schemas
 export async function fetchSchemas(): Promise<ISchema[]> {

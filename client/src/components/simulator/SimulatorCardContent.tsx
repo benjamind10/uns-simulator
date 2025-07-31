@@ -230,11 +230,6 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
       {activeTab === 'node_settings' && (
         <div className="py-8">
           <SimulatorNodeSettings
-            nodeSettings={
-              Array.isArray(selectedProfile?.nodeSettings)
-                ? {}
-                : selectedProfile?.nodeSettings ?? {}
-            }
             nodeIds={nodeIds}
             onSave={handleSaveNodeSettings}
             fetchNodesByIds={fetchNodesByIds}
