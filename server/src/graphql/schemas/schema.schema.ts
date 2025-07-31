@@ -4,6 +4,7 @@ export const schemaTypeDefs = gql`
   enum SchemaNodeKind {
     group
     metric
+    object # <-- Add 'object' kind
   }
 
   enum SchemaNodeDataType {
@@ -25,10 +26,11 @@ export const schemaTypeDefs = gql`
     dataType: SchemaNodeDataType
     unit: String
     engineering: JSON
+    objectData: JSON # <-- Add this field for custom object nodes
   }
 
   input SchemaNodeInput {
-    id: String! # Add this line
+    id: String!
     name: String!
     kind: SchemaNodeKind!
     parent: ID
@@ -37,6 +39,7 @@ export const schemaTypeDefs = gql`
     dataType: SchemaNodeDataType
     unit: String
     engineering: JSON
+    objectData: JSON # <-- Add this field for input
   }
 
   type Schema {
@@ -61,6 +64,7 @@ export const schemaTypeDefs = gql`
   type Query {
     schemas: [Schema!]!
     schema(id: ID!): Schema
+    getNodes(schemaId: ID!): [SchemaNode!]!
   }
 
   type Mutation {

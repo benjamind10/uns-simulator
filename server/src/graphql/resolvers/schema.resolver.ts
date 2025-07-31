@@ -3,7 +3,7 @@ import { Types } from 'mongoose';
 import Schema, { ISchema, ISchemaNode } from '../models/Schema';
 
 interface Context {
-  user?: any;
+  user?: { _id: string };
 }
 
 interface SchemaInput {
@@ -15,14 +15,16 @@ interface SchemaInput {
 }
 
 interface SchemaNodeInput {
+  id: string;
   name: string;
-  kind: 'group' | 'metric';
+  kind: 'group' | 'metric' | 'object'; // <-- add 'object'
   parent?: string | null;
   path: string;
   order: number;
   dataType?: 'Int' | 'Float' | 'Bool' | 'String';
   unit?: string;
   engineering?: Record<string, unknown>;
+  objectData?: Record<string, unknown>; // <-- add this for custom JSON
 }
 
 function requireAuth(context: Context): void {
@@ -31,97 +33,103 @@ function requireAuth(context: Context): void {
 
 export const schemaResolvers = {
   Query: {
-    schemas: async (
-      _: unknown,
-      __: unknown,
-      context: Context
-    ): Promise<ISchema[]> => {
+    schemas: async (_: {}, __: {}, context: Context): Promise<ISchema[]> => {
       requireAuth(context);
       return await Schema.find();
     },
     schema: async (
-      _: unknown,
-      { id }: { id: string },
+      _: {},
+      args: { id: string },
       context: Context
     ): Promise<ISchema | null> => {
       requireAuth(context);
-      return await Schema.findById(id);
+      return await Schema.findById(args.id);
+    },
+    getNodes: async (
+      _: {},
+      args: { schemaId: string },
+      context: Context
+    ): Promise<ISchemaNode[]> => {
+      requireAuth(context);
+      const schema = await Schema.findById(args.schemaId);
+      if (!schema) throw new Error('Schema not found');
+      return schema.nodes;
     },
   },
 
   Mutation: {
     createSchema: async (
-      _: unknown,
-      { input }: { input: SchemaInput },
+      _: {},
+      args: { input: SchemaInput },
       context: Context
     ): Promise<ISchema> => {
       requireAuth(context);
       const schema = new Schema({
-        name: input.name,
-        description: input.description,
-        nodes: input.nodes || [],
-        brokerIds: input.brokerIds || [],
+        name: args.input.name,
+        description: args.input.description,
+        nodes: (args.input.nodes || []).map((n) => ({
+          ...n,
+          objectData: n.objectData ?? {}, // ensure objectData is present
+        })),
+        brokerIds: args.input.brokerIds || [],
         users:
-          input.users && input.users.length > 0
-            ? input.users
-            : [context.user._id],
+          args.input.users && args.input.users.length > 0
+            ? args.input.users
+            : [context.user?._id ?? ''],
       });
       return await schema.save();
     },
 
     updateSchema: async (
-      _: unknown,
-      { id, input }: { id: string; input: Partial<SchemaInput> },
+      _: {},
+      args: { id: string; input: Partial<SchemaInput> },
       context: Context
     ): Promise<ISchema | null> => {
       requireAuth(context);
-      return await Schema.findByIdAndUpdate(id, input, { new: true });
+      return await Schema.findByIdAndUpdate(args.id, args.input, { new: true });
     },
 
     deleteSchema: async (
-      _: unknown,
-      { id }: { id: string },
+      _: {},
+      args: { id: string },
       context: Context
     ): Promise<boolean> => {
       requireAuth(context);
-      await Schema.findByIdAndDelete(id);
+      await Schema.findByIdAndDelete(args.id);
       return true;
     },
 
     saveNodesToSchema: async (
-      _: unknown,
-      { schemaId, nodes }: { schemaId: string; nodes: any[] },
+      _: {},
+      args: { schemaId: string; nodes: SchemaNodeInput[] },
       context: Context
-    ) => {
+    ): Promise<ISchema | null> => {
       const { user } = context;
       if (!user) throw new Error('Unauthenticated');
 
-      // 1️⃣ Create a tempId -> real Mongo ObjectId map
       const tempToReal = new Map<string, Types.ObjectId>();
-      nodes.forEach((n) => tempToReal.set(n.id, new Types.ObjectId()));
+      args.nodes.forEach((n) => tempToReal.set(n.id, new Types.ObjectId()));
 
-      // 2️⃣ Build the array with correct _id + parent
-      const docs = nodes.map((n) => ({
-        _id: tempToReal.get(n.id), // generated Mongo id
+      const docs = args.nodes.map((n) => ({
+        _id: tempToReal.get(n.id),
         name: n.name,
         kind: n.kind,
         parent:
           n.parent && tempToReal.has(n.parent)
-            ? tempToReal.get(n.parent) // replace temp id with real id
-            : n.parent || null, // keep as-is if not in this batch
+            ? tempToReal.get(n.parent)
+            : n.parent || null,
         path: n.path,
         order: n.order ?? 0,
         dataType: n.dataType,
         unit: n.unit,
         engineering: n.engineering ?? {},
+        objectData: n.objectData ?? {}, // <-- support objectData
       }));
 
-      // 3️⃣ Remove all old nodes for this schema (optional, if you want to replace)
-      await Schema.findByIdAndUpdate(schemaId, { $set: { nodes: [] } });
+      await Schema.findByIdAndUpdate(args.schemaId, { $set: { nodes: [] } });
 
-      // 4️⃣ Push the new nodes
       const updated = await Schema.findOneAndUpdate(
-        { _id: schemaId, users: user._id },
+        { _id: args.schemaId, users: user._id },
         { $push: { nodes: { $each: docs } } },
         { new: true }
       );
@@ -131,15 +139,39 @@ export const schemaResolvers = {
     },
 
     addNodeToSchema: async (
-      _: unknown,
-      { schemaId, node }: { schemaId: string; node: SchemaNodeInput },
+      _: {},
+      args: { schemaId: string; node: SchemaNodeInput },
       context: Context
     ): Promise<ISchema | null> => {
       requireAuth(context);
 
       const schema = await Schema.findByIdAndUpdate(
-        schemaId,
-        { $push: { nodes: node } },
+        args.schemaId,
+        {
+          $push: {
+            nodes: { ...args.node, objectData: args.node.objectData ?? {} },
+          },
+        }, // <-- support objectData
+        { new: true }
+      );
+
+      return schema;
+    },
+
+    updateNodeInSchema: async (
+      _: {},
+      args: { schemaId: string; nodeId: string; node: SchemaNodeInput },
+      context: Context
+    ): Promise<ISchema | null> => {
+      requireAuth(context);
+
+      const schema = await Schema.findOneAndUpdate(
+        { _id: args.schemaId, 'nodes._id': args.nodeId },
+        {
+          $set: {
+            'nodes.$': { ...args.node, objectData: args.node.objectData ?? {} },
+          },
+        }, // <-- support objectData
         { new: true }
       );
 
@@ -147,15 +179,15 @@ export const schemaResolvers = {
     },
 
     deleteNodeFromSchema: async (
-      _: unknown,
-      { schemaId, nodeId }: { schemaId: string; nodeId: string },
+      _: {},
+      args: { schemaId: string; nodeId: string },
       context: Context
     ): Promise<ISchema | null> => {
       requireAuth(context);
 
       const schema = await Schema.findByIdAndUpdate(
-        schemaId,
-        { $pull: { nodes: { _id: nodeId } } },
+        args.schemaId,
+        { $pull: { nodes: { _id: args.nodeId } } },
         { new: true }
       );
 

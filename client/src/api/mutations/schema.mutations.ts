@@ -16,6 +16,7 @@ export const CREATE_SCHEMA = gql`
         dataType
         unit
         engineering
+        objectData
       }
       brokerIds
       users
@@ -41,6 +42,7 @@ export const UPDATE_SCHEMA = gql`
         dataType
         unit
         engineering
+        objectData
       }
       brokerIds
       users
@@ -72,6 +74,7 @@ export const SAVE_NODES_TO_SCHEMA = gql`
         dataType
         unit
         engineering
+        objectData
       }
       brokerIds
       users
@@ -97,6 +100,7 @@ export const ADD_NODE_TO_SCHEMA = gql`
         dataType
         unit
         engineering
+        objectData
       }
       brokerIds
       users
@@ -122,6 +126,60 @@ export const DELETE_NODE_FROM_SCHEMA = gql`
         dataType
         unit
         engineering
+        objectData
+      }
+      brokerIds
+      users
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+// Queries
+export const GET_SCHEMAS = gql`
+  query GetSchemas {
+    schemas {
+      id
+      name
+      description
+      nodes {
+        id
+        name
+        kind
+        parent
+        path
+        order
+        dataType
+        unit
+        engineering
+        objectData
+      }
+      brokerIds
+      users
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_SCHEMA = gql`
+  query GetSchema($id: ID!) {
+    schema(id: $id) {
+      id
+      name
+      description
+      nodes {
+        id
+        name
+        kind
+        parent
+        path
+        order
+        dataType
+        unit
+        engineering
+        objectData
       }
       brokerIds
       users

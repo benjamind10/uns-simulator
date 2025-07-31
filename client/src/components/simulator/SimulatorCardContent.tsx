@@ -1,50 +1,52 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 
 import {
+  fetchSimulationProfilesAsync,
   updateSimulationProfileAsync,
-  fetchSimulationProfileAsync,
+  upsertNodeSettingsAsync,
 } from '../../store/simulationProfile/simulationProfieThunk';
-import {
-  selectSelectedProfileId,
-  selectProfiles,
-} from '../../store/simulationProfile/simulationProfileSlice';
-import type { AppDispatch } from '../../store/store';
+import { selectProfiles } from '../../store/simulationProfile/simulationProfileSlice';
+import type { AppDispatch, RootState } from '../../store/store';
+import type {
+  ISchema,
+  ISimulationProfile,
+  NodeSettings,
+  ISchemaNode,
+} from '../../types';
 
 import SimulatorGlobalForm from './SimulatorGlobalForm';
+import SimulatorNodeSettings from './SimulatorNodeSettings';
 
-type TabType = 'details' | 'global_settings' | 'behavior' | 'global';
-type Profile = {
-  id: string;
-  name: string;
-  description?: string;
-  schemaId?: string;
-  brokerId?: string;
-  globalSettings?: {
-    defaultUpdateFrequency: number;
-    timeScale: number;
-  };
-  defaultScenario?: string;
+type TabType =
+  | 'details'
+  | 'global_settings'
+  | 'node_settings'
+  | 'global'
+  | 'behavior';
+
+// Accept fetchNodesByIds as a prop
+type SimulatorCardContentProps = {
+  fetchNodesByIds?: (ids: string[]) => Promise<ISchemaNode[]>;
 };
 
-const SimulatorCardContent: React.FC = () => {
+const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
+  fetchNodesByIds,
+}) => {
   const [activeTab, setActiveTab] = useState<TabType>('details');
   const dispatch = useDispatch<AppDispatch>();
-  const selectedProfileId = useSelector(selectSelectedProfileId);
-  const profiles = Object.values(useSelector(selectProfiles)) as Profile[];
+  const { profileId } = useParams<{ profileId?: string }>();
+  const profiles = Object.values(
+    useSelector(selectProfiles)
+  ) as ISimulationProfile[];
+  const schemas = useSelector((state: RootState) => state.schema.schemas); // <-- always called
 
-  // Find the selected profile from the store
+  // Find the selected profile from the store using URL param
   const selectedProfile = profiles.find(
-    (p: { id: string }) => p.id === selectedProfileId
+    (p: { id: string }) => p.id === profileId
   );
-
-  // Load profile from DB when selectedProfileId changes
-  useEffect(() => {
-    if (selectedProfileId) {
-      dispatch(fetchSimulationProfileAsync(selectedProfileId));
-    }
-  }, [selectedProfileId, dispatch]);
 
   // If no profile is selected, show a card prompting the user to select one
   if (!selectedProfile) {
@@ -68,12 +70,17 @@ const SimulatorCardContent: React.FC = () => {
     );
   }
 
-  type GlobalSettings = {
-    defaultUpdateFrequency: number;
-    timeScale: number;
-  };
+  // Get selected schema and node IDs for Node Settings tab
+  const selectedSchema = schemas?.find(
+    (s: ISchema) => s.id === selectedProfile.schemaId
+  );
+  const nodeIds =
+    selectedSchema?.nodes?.map((node: ISchema['nodes'][number]) => node.id) ??
+    [];
 
-  const handleSaveGlobalSettings = async (settings: GlobalSettings) => {
+  const handleSaveGlobalSettings = async (
+    settings: ISimulationProfile['globalSettings']
+  ) => {
     if (!selectedProfile) return;
     try {
       await dispatch(
@@ -92,6 +99,56 @@ const SimulatorCardContent: React.FC = () => {
       toast.success('Global settings saved!');
     } catch {
       toast.error('Failed to save global settings');
+    }
+  };
+
+  function sanitizeNodeSettings(settings: Record<string, NodeSettings>) {
+    const sanitizeNumber = (val: any) =>
+      val === '' || val === undefined ? null : val;
+
+    const sanitized: Record<string, NodeSettings> = {};
+    for (const [nodeId, nodeSetting] of Object.entries(settings)) {
+      sanitized[nodeId] = {
+        ...nodeSetting,
+        frequency: sanitizeNumber(nodeSetting.frequency),
+        failRate: sanitizeNumber(nodeSetting.failRate),
+        payload: nodeSetting.payload
+          ? {
+              ...nodeSetting.payload,
+              value: sanitizeNumber(nodeSetting.payload.value),
+              timestamp: sanitizeNumber(nodeSetting.payload.timestamp),
+            }
+          : undefined,
+      };
+    }
+    return sanitized;
+  }
+
+  // Handler for saving node settings
+  const handleSaveNodeSettings = async (
+    settings: Record<string, NodeSettings>
+  ) => {
+    if (!selectedProfile) return;
+    try {
+      const sanitizedSettings = sanitizeNodeSettings(settings);
+      await Promise.all(
+        Object.entries(sanitizedSettings).map(([nodeId, nodeSetting]) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { nodeId: _omit, ...settingsWithoutNodeId } =
+            nodeSetting as any;
+          return dispatch(
+            upsertNodeSettingsAsync({
+              profileId: selectedProfile.id,
+              nodeId, // pass nodeId separately
+              settings: settingsWithoutNodeId, // only the fields expected by NodeSettingsInput
+            })
+          );
+        })
+      );
+      await dispatch(fetchSimulationProfilesAsync());
+      toast.success('Node settings saved!');
+    } catch {
+      toast.error('Failed to save node settings');
     }
   };
 
@@ -120,6 +177,16 @@ const SimulatorCardContent: React.FC = () => {
         </button>
         <button
           className={`pb-2 font-semibold ${
+            activeTab === 'node_settings'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-500 dark:text-gray-400'
+          }`}
+          onClick={() => setActiveTab('node_settings')}
+        >
+          Node Settings
+        </button>
+        <button
+          className={`pb-2 font-semibold ${
             activeTab === 'global'
               ? 'border-b-2 border-blue-600 text-blue-600'
               : 'text-gray-500 dark:text-gray-400'
@@ -127,16 +194,6 @@ const SimulatorCardContent: React.FC = () => {
           onClick={() => setActiveTab('global')}
         >
           Pass
-        </button>
-        <button
-          className={`pb-2 font-semibold ${
-            activeTab === 'behavior'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-500 dark:text-gray-400'
-          }`}
-          onClick={() => setActiveTab('behavior')}
-        >
-          Behavior
         </button>
       </div>
 
@@ -191,6 +248,23 @@ const SimulatorCardContent: React.FC = () => {
               }
             }
             onSave={handleSaveGlobalSettings}
+          />
+        </div>
+      )}
+
+      {activeTab === 'node_settings' && (
+        <div className="py-8">
+          <SimulatorNodeSettings
+            nodeIds={nodeIds}
+            onSave={handleSaveNodeSettings}
+            fetchNodesByIds={fetchNodesByIds}
+            nodeSettings={
+              selectedProfile?.nodeSettings
+                ? Object.fromEntries(
+                    selectedProfile.nodeSettings.map((ns) => [ns.nodeId, ns])
+                  )
+                : {}
+            } // <-- Convert array to object mapping
           />
         </div>
       )}

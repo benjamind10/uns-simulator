@@ -1,18 +1,9 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
 import * as api from '../../api/schema';
-import type { ISchemaNode, ISchema } from '../../types';
+import type { ISchemaNode, ISchema, SchemaInput } from '../../types';
 import { SCHEMA_ACTIONS, SCHEMA_ERRORS } from '../constants';
-
-// Input types for mutations
-type SchemaNodeInput = Omit<ISchemaNode, 'id'>;
-type SchemaInput = {
-  name: string;
-  description?: string;
-  nodes?: SchemaNodeInput[];
-  brokerIds?: string[];
-  users?: string[];
-};
+import type { SchemaNodeInput } from '../../api/schema';
 
 // Fetch all schemas
 export const fetchSchemasAsync = createAsyncThunk<ISchema[]>(
@@ -33,6 +24,26 @@ export const fetchSchemasAsync = createAsyncThunk<ISchema[]>(
   }
 );
 
+export const fetchNodesAsync = createAsyncThunk<ISchemaNode[], string>(
+  SCHEMA_ACTIONS.FETCH_NODES,
+  async (schemaId, { rejectWithValue }) => {
+    try {
+      const nodes = await api.fetchNodes(schemaId);
+      return nodes.map((node) => ({
+        ...node,
+        id: String(node.id),
+        parent: node.parent === undefined ? null : String(node.parent),
+        objectData: node.objectData ?? {}, // <-- ensure objectData is present
+      })) as ISchemaNode[];
+    } catch (err) {
+      if (err instanceof Error) {
+        return rejectWithValue(err.message);
+      }
+      return rejectWithValue(SCHEMA_ERRORS.FETCH_NODES_FAILED);
+    }
+  }
+);
+
 export const createSchemaAsync = createAsyncThunk<ISchema, SchemaInput>(
   SCHEMA_ACTIONS.CREATE,
   async (input, { rejectWithValue }) => {
@@ -41,7 +52,11 @@ export const createSchemaAsync = createAsyncThunk<ISchema, SchemaInput>(
         ...input,
         nodes: input.nodes?.map((node) => ({
           ...node,
+          id: node.id ?? '', // Ensure id is always a string
           parent: node.parent === undefined ? null : node.parent,
+          path: node.path ?? '', // Ensure path is always a string
+          order: node.order ?? 0, // Ensure order is always a number
+          objectData: node.objectData ?? {}, // <-- ensure objectData is present
         })),
       };
       const schema = await api.createSchema(normalizedInput);
@@ -68,7 +83,11 @@ export const updateSchemaAsync = createAsyncThunk<
       ...input,
       nodes: input.nodes?.map((node) => ({
         ...node,
+        id: node.id ?? '', // Ensure id is always a string
         parent: node.parent === undefined ? null : node.parent,
+        path: node.path ?? '', // Ensure path is always a string
+        order: node.order ?? 0, // Ensure order is always a number
+        objectData: node.objectData ?? {}, // <-- ensure objectData is present
       })),
     };
     const schema = await api.updateSchema(id, normalizedInput);

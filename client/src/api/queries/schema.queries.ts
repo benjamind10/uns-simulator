@@ -16,6 +16,7 @@ export const GET_SCHEMAS = gql`
         dataType
         unit
         engineering
+        objectData
       }
       brokerIds
       users
@@ -41,11 +42,29 @@ export const GET_SCHEMA = gql`
         dataType
         unit
         engineering
+        objectData
       }
       brokerIds
       users
       createdAt
       updatedAt
+    }
+  }
+`;
+
+export const GET_NODES = gql`
+  query GetNodes($schemaId: ID!) {
+    getNodes(schemaId: $schemaId) {
+      id
+      name
+      kind
+      parent
+      path
+      order
+      dataType
+      unit
+      engineering
+      objectData
     }
   }
 `;

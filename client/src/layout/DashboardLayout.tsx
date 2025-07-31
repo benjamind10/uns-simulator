@@ -1,6 +1,15 @@
 import { useState, Fragment } from 'react';
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
-import { Menu, X, Home, User, Server, Sun, Moon, FileCode } from 'lucide-react';
+import {
+  Menu,
+  X,
+  Home,
+  Server,
+  Sun,
+  Moon,
+  FileCode,
+  Computer,
+} from 'lucide-react';
 import clsx from 'clsx';
 
 import { useDarkMode } from '../hooks/useDarkMode';
@@ -45,6 +54,7 @@ export default function DashboardLayout() {
               <NavLink
                 key={to}
                 to={to}
+                end={to === '/dashboard'} // Only exact match for dashboard
                 className={({ isActive }) =>
                   clsx(
                     'mx-2 flex items-center gap-3 rounded px-3 py-2 hover:bg-blue-500/10 transition-colors',
@@ -131,7 +141,7 @@ export default function DashboardLayout() {
 /* -------- navigation items -------- */
 const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: Home },
-  { to: '/dashboard/profile', label: 'Profile', icon: User },
+  { to: '/dashboard/simulators', label: 'Simulators', icon: Computer },
   { to: '/dashboard/brokers', label: 'Brokers', icon: Server },
   { to: '/dashboard/schemas', label: 'Schemas', icon: FileCode },
 ] as const;

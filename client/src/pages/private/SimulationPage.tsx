@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import {
   fetchSimulationProfilesAsync,
   createSimulationProfileAsync,
+  deleteSimulationProfileAsync, // <-- import delete thunk
 } from '../../store/simulationProfile/simulationProfieThunk';
 import SimulationCard from '../../components/simulator/SimulationCard';
 import type {
@@ -14,17 +16,21 @@ import type {
   RootState,
 } from '../../types';
 import { selectSchemas } from '../../store/schema/schemaSlice';
-import { selectBrokers } from '../../store/brokers';
+import { fetchBrokersAsync, selectBrokers } from '../../store/brokers';
 import ProfilesCardContent from '../../components/simulator/ProfilesCardContent';
 import RunLogCardContent from '../../components/simulator/RunLogCardContent';
 import SimulatorCardContent from '../../components/simulator/SimulatorCardContent';
+import { fetchSchemasAsync } from '../../store/schema/schemaThunk';
 
 export default function SimulationPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const profiles = useSelector(
-    (state: RootState) =>
-      state.simulationProfile.profiles as unknown as ISimulationProfile[]
-  );
+  const profiles = useSelector((state: RootState) => {
+    // If profiles is a Record, convert to array
+    const rawProfiles = state.simulationProfile.profiles;
+    return Array.isArray(rawProfiles)
+      ? rawProfiles
+      : (Object.values(rawProfiles) as ISimulationProfile[]);
+  });
   const loading = useSelector(
     (state: RootState) => state.simulationProfile.loading
   );
@@ -44,10 +50,33 @@ export default function SimulationPage() {
     brokerId: '',
   });
 
+  const { profileId } = useParams<{ profileId?: string }>();
+  const navigate = useNavigate();
+
+  // NEW: Delete handler
+  const handleDeleteProfile = async (id: string) => {
+    if (
+      window.confirm('Are you sure you want to delete this simulation profile?')
+    ) {
+      await dispatch(deleteSimulationProfileAsync(id));
+      if (profileId === id) {
+        navigate('/simulator'); // Redirect if deleted profile was selected
+      }
+    }
+  };
+
   useEffect(() => {
     dispatch(fetchSimulationProfilesAsync());
-    // Optionally: dispatch(fetchSchemasAsync()); dispatch(fetchBrokersAsync());
+    dispatch(fetchSchemasAsync());
+    dispatch(fetchBrokersAsync());
   }, [dispatch]);
+
+  // Redirect if profileId is not found in profiles
+  useEffect(() => {
+    if (profileId && !profiles.some((p) => p.id === profileId)) {
+      navigate('/simulator');
+    }
+  }, [profileId, profiles, navigate]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -75,6 +104,13 @@ export default function SimulationPage() {
     // dispatch(fetchSimulationProfilesAsync());
   };
 
+  // Fetch nodes by IDs utility
+  const fetchNodesByIds = async (ids: string[]) => {
+    // Find all nodes in all schemas that match the given IDs
+    const allNodes = schemas.flatMap((schema) => schema.nodes ?? []);
+    return allNodes.filter((node) => ids.includes(node.id));
+  };
+
   return (
     <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 py-12 px-4">
       <div className="max-w-6xl mx-auto grid grid-cols-3 gap-8">
@@ -87,6 +123,7 @@ export default function SimulationPage() {
               error={error}
               onCreateProfileClick={() => setShowModal(true)}
               schemas={schemas}
+              onDeleteProfile={handleDeleteProfile} // <-- pass delete handler
             />
           </SimulationCard>
           <SimulationCard title="Run Log">
@@ -97,7 +134,7 @@ export default function SimulationPage() {
         {/* Simulator Section */}
         <div className="col-span-2 flex flex-col gap-6">
           <SimulationCard title="Simulator">
-            <SimulatorCardContent />
+            <SimulatorCardContent fetchNodesByIds={fetchNodesByIds} />
           </SimulationCard>
         </div>
       </div>
