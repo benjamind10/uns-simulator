@@ -102,23 +102,48 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
     }
   };
 
+  function sanitizeNodeSettings(settings: Record<string, NodeSettings>) {
+    const sanitizeNumber = (val: any) =>
+      val === '' || val === undefined ? null : val;
+
+    const sanitized: Record<string, NodeSettings> = {};
+    for (const [nodeId, nodeSetting] of Object.entries(settings)) {
+      sanitized[nodeId] = {
+        ...nodeSetting,
+        frequency: sanitizeNumber(nodeSetting.frequency),
+        failRate: sanitizeNumber(nodeSetting.failRate),
+        payload: nodeSetting.payload
+          ? {
+              ...nodeSetting.payload,
+              value: sanitizeNumber(nodeSetting.payload.value),
+              timestamp: sanitizeNumber(nodeSetting.payload.timestamp),
+            }
+          : undefined,
+      };
+    }
+    return sanitized;
+  }
+
   // Handler for saving node settings
   const handleSaveNodeSettings = async (
     settings: Record<string, NodeSettings>
   ) => {
     if (!selectedProfile) return;
     try {
-      // Save each node's settings using the dedicated mutation
+      const sanitizedSettings = sanitizeNodeSettings(settings);
       await Promise.all(
-        Object.entries(settings).map(([nodeId, nodeSetting]) =>
-          dispatch(
+        Object.entries(sanitizedSettings).map(([nodeId, nodeSetting]) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { nodeId: _omit, ...settingsWithoutNodeId } =
+            nodeSetting as any;
+          return dispatch(
             upsertNodeSettingsAsync({
               profileId: selectedProfile.id,
-              nodeId,
-              settings: nodeSetting,
+              nodeId, // pass nodeId separately
+              settings: settingsWithoutNodeId, // only the fields expected by NodeSettingsInput
             })
-          )
-        )
+          );
+        })
       );
       await dispatch(fetchSimulationProfilesAsync());
       toast.success('Node settings saved!');
@@ -233,6 +258,13 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
             nodeIds={nodeIds}
             onSave={handleSaveNodeSettings}
             fetchNodesByIds={fetchNodesByIds}
+            nodeSettings={
+              selectedProfile?.nodeSettings
+                ? Object.fromEntries(
+                    selectedProfile.nodeSettings.map((ns) => [ns.nodeId, ns])
+                  )
+                : {}
+            } // <-- Convert array to object mapping
           />
         </div>
       )}

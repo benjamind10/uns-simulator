@@ -19,6 +19,10 @@ export default function SimulatorNodeSettings({
   const [settings, setSettings] = useState<Record<string, NodeSettings>>({});
   const didInit = useRef(false);
 
+  console.log(nodes, 'nodes in SimulatorNodeSettings');
+  console.log(settings, 'local settings in SimulatorNodeSettings');
+  console.log(nodeSettings, 'props nodeSettings in SimulatorNodeSettings');
+
   // Fetch nodes by IDs
   useEffect(() => {
     if (fetchNodesByIds && nodeIds.length > 0) {
@@ -29,15 +33,14 @@ export default function SimulatorNodeSettings({
       setNodes(nodeIds.map((id) => ({ id })));
     }
   }, [nodeIds, fetchNodesByIds]);
-  console.log('Fetched nodes:', nodes);
-  console.log('Node settings:', nodeSettings);
 
-  // Sync settings with nodeSettings and nodes ONLY ON FIRST LOAD
+  // Initialize settings from nodeSettings prop ONLY ONCE when nodes are loaded
   useEffect(() => {
-    if (!didInit.current) {
+    if (nodes.length > 0 && !didInit.current) {
       const metricNodeIds = nodes
         .filter((node) => node.kind === 'metric')
         .map((node) => node.id);
+
       const merged: Record<string, NodeSettings> = {};
       metricNodeIds.forEach((id) => {
         merged[id] = nodeSettings[id] ?? {
@@ -46,6 +49,7 @@ export default function SimulatorNodeSettings({
           payload: { quality: '', value: '', timestamp: '' },
         };
       });
+
       setSettings(merged);
       didInit.current = true;
     }
@@ -67,24 +71,6 @@ export default function SimulatorNodeSettings({
       },
     }));
   };
-
-  // Uncomment and use if you want to edit payload fields
-  // const handlePayloadChange = (
-  //   nodeId: string,
-  //   key: string,
-  //   value: string | number
-  // ) => {
-  //   setSettings((prev) => ({
-  //     ...prev,
-  //     [nodeId]: {
-  //       ...prev[nodeId],
-  //       payload: {
-  //         ...prev[nodeId]?.payload,
-  //         [key]: value,
-  //       },
-  //     },
-  //   }));
-  // };
 
   return (
     <div>
