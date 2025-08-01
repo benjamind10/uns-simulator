@@ -4,11 +4,6 @@ export interface GlobalSettings {
   publishRoot?: string;
   startDelay?: number;
   simulationLength?: number;
-  defaultPayload?: {
-    quality: string;
-    value: string | number;
-    timestamp: number;
-  };
 }
 
 export interface NodeSettings {
@@ -19,7 +14,9 @@ export interface NodeSettings {
     quality?: string;
     value?: string | number;
     timestamp?: number;
+    [key: string]: any;
   };
+  [key: string]: any;
 }
 
 export interface ISimulationProfile {

@@ -30,7 +30,7 @@ const SimulatorGlobalForm: React.FC<SimulatorConfigFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-4 max-w-lg mx-auto">
       <div>
         <label className="block mb-1 font-medium">
-          Default Update Frequency
+          Default Update Frequency (s)
         </label>
         <input
           type="number"
@@ -43,7 +43,9 @@ const SimulatorGlobalForm: React.FC<SimulatorConfigFormProps> = ({
         />
       </div>
       <div>
-        <label className="block mb-1 font-medium">Time Scale</label>
+        <label className="block mb-1 font-medium">
+          Time Scale (multiplier)
+        </label>
         <input
           type="number"
           name="timeScale"
@@ -66,7 +68,7 @@ const SimulatorGlobalForm: React.FC<SimulatorConfigFormProps> = ({
         />
       </div>
       <div>
-        <label className="block mb-1 font-medium">Start Delay (ms)</label>
+        <label className="block mb-1 font-medium">Start Delay (s)</label>
         <input
           type="number"
           name="startDelay"
@@ -77,7 +79,7 @@ const SimulatorGlobalForm: React.FC<SimulatorConfigFormProps> = ({
         />
       </div>
       <div>
-        <label className="block mb-1 font-medium">Simulation Length (ms)</label>
+        <label className="block mb-1 font-medium">Simulation Length (s)</label>
         <input
           type="number"
           name="simulationLength"

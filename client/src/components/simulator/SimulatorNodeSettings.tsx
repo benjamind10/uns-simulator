@@ -1,57 +1,73 @@
 import { useState, useEffect, useRef } from 'react';
-
-import type { NodeSettings } from '../../types';
+import type { ISchemaNode, NodeSettings } from '../../types';
 
 interface NodeSettingsTabProps {
   onSave: (settings: Record<string, NodeSettings>) => void;
   nodeIds: string[];
-  fetchNodesByIds?: (ids: string[]) => Promise<any[]>;
-  nodeSettings?: Record<string, NodeSettings>; // <-- Add this prop for initial settings
+  fetchNodesByIds?: (ids: string[]) => Promise<ISchemaNode[]>;
+  nodeSettings?: Record<string, NodeSettings>;
 }
+
+const createDefaultSettings = (nodeId: string): NodeSettings => ({
+  nodeId,
+  frequency: 0,
+  failRate: 0,
+  payload: { quality: '', value: '', timestamp: 0 },
+});
 
 export default function SimulatorNodeSettings({
   onSave,
   nodeIds,
   fetchNodesByIds,
-  nodeSettings = {}, // <-- Default to empty object
+  nodeSettings = {},
 }: NodeSettingsTabProps) {
-  const [nodes, setNodes] = useState<any[]>([]);
+  const [nodes, setNodes] = useState<ISchemaNode[]>([]);
   const [settings, setSettings] = useState<Record<string, NodeSettings>>({});
   const didInit = useRef(false);
 
-  // Fetch nodes by IDs
+  // Fetch or create nodes
   useEffect(() => {
-    if (fetchNodesByIds && nodeIds.length > 0) {
-      fetchNodesByIds(nodeIds).then((fetched) => {
-        setNodes(fetched);
-      });
-    } else {
-      setNodes(nodeIds.map((id) => ({ id })));
-    }
+    let isMounted = true;
+
+    const loadNodes = async () => {
+      if (fetchNodesByIds && nodeIds.length > 0) {
+        const fetched = await fetchNodesByIds(nodeIds);
+        if (isMounted) setNodes(fetched);
+      } else {
+        const fallbackNodes = nodeIds.map((id) => ({
+          id,
+          name: id,
+          kind: 'metric' as const,
+          parent: null,
+          path: id,
+          order: 0,
+        }));
+        setNodes(fallbackNodes);
+      }
+    };
+
+    loadNodes();
+    return () => {
+      isMounted = false;
+    };
   }, [nodeIds, fetchNodesByIds]);
 
-  // Initialize settings from nodeSettings prop ONLY ONCE when nodes are loaded
+  // Initialize settings once
   useEffect(() => {
     if (nodes.length > 0 && !didInit.current) {
-      const metricNodeIds = nodes
-        .filter((node) => node.kind === 'metric')
-        .map((node) => node.id);
-
-      const merged: Record<string, NodeSettings> = {};
-      metricNodeIds.forEach((id) => {
-        merged[id] = nodeSettings[id] ?? {
-          frequency: '',
-          failRate: '',
-          payload: { quality: '', value: '', timestamp: '' },
-        };
-      });
+      const metricNodes = nodes.filter((node) => node.kind === 'metric');
+      const merged = Object.fromEntries(
+        metricNodes.map((node) => [
+          node.id,
+          nodeSettings[node.id] ?? createDefaultSettings(node.id),
+        ])
+      );
 
       setSettings(merged);
       didInit.current = true;
     }
   }, [nodes, nodeSettings]);
 
-  // Only show nodes with kind === 'metric'
   const metricNodes = nodes.filter((node) => node.kind === 'metric');
 
   const handleChange = (
@@ -59,13 +75,17 @@ export default function SimulatorNodeSettings({
     field: keyof NodeSettings,
     value: string | number
   ) => {
-    setSettings((prev: Record<string, NodeSettings>) => ({
+    setSettings((prev) => ({
       ...prev,
-      [nodeId]: {
-        ...prev[nodeId],
-        [field]: value,
-      },
+      [nodeId]: { ...prev[nodeId], [field]: value },
     }));
+  };
+
+  const handleClear = () => {
+    const cleared = Object.fromEntries(
+      metricNodes.map((node) => [node.id, createDefaultSettings(node.id)])
+    );
+    setSettings(cleared);
   };
 
   return (
@@ -108,12 +128,22 @@ export default function SimulatorNodeSettings({
           </div>
         </div>
       ))}
-      <button
-        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
-        onClick={() => onSave(settings)}
-      >
-        Save Node Settings
-      </button>
+      <div className="flex justify-end gap-2">
+        <button
+          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded font-semibold"
+          onClick={handleClear}
+          type="button"
+        >
+          Clear
+        </button>
+        <button
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
+          onClick={() => onSave(settings)}
+          type="button"
+        >
+          Save Node Settings
+        </button>
+      </div>
     </div>
   );
 }
