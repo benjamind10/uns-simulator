@@ -22,8 +22,6 @@ export default function LandingPage() {
           Welcome to the UNS Simulator!
         </h1>
       )}
-      {/* Add some space at the bottom for the footer */}
-      <div className="flex-1" />
     </div>
   );
 }

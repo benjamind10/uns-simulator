@@ -1,5 +1,4 @@
-// FileUpload.tsx (drop‑in replacement)
-import { UploadCloud } from 'lucide-react'; // or any icon lib you prefer
+import { UploadCloud } from 'lucide-react';
 import { useRef } from 'react';
 
 import type { ISchemaNode } from '../../types';

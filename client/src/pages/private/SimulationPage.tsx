@@ -100,7 +100,6 @@ export default function SimulationPage() {
     );
     setShowModal(false);
     setForm({ name: '', description: '', schemaId: '', brokerId: '' });
-    // Optionally, re-fetch profiles if your thunk doesn't update the list automatically
     // dispatch(fetchSimulationProfilesAsync());
   };
 
