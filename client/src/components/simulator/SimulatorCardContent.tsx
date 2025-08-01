@@ -19,13 +19,13 @@ import type {
 
 import SimulatorGlobalForm from './SimulatorGlobalForm';
 import SimulatorNodeSettings from './SimulatorNodeSettings';
+import NodePayloadSettings from './NodePayloadSettings';
 
 type TabType =
   | 'details'
   | 'global_settings'
   | 'node_settings'
-  | 'global'
-  | 'behavior';
+  | 'node_payloads';
 
 // Accept fetchNodesByIds as a prop
 type SimulatorCardContentProps = {
@@ -103,8 +103,8 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
   };
 
   function sanitizeNodeSettings(settings: Record<string, NodeSettings>) {
-    const sanitizeNumber = (val: any) =>
-      val === '' || val === undefined ? null : val;
+    const sanitizeNumber = (val: number | string | undefined | null) =>
+      val === '' || val === undefined || val === null ? undefined : Number(val);
 
     const sanitized: Record<string, NodeSettings> = {};
     for (const [nodeId, nodeSetting] of Object.entries(settings)) {
@@ -133,9 +133,8 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
       const sanitizedSettings = sanitizeNodeSettings(settings);
       await Promise.all(
         Object.entries(sanitizedSettings).map(([nodeId, nodeSetting]) => {
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { nodeId: _omit, ...settingsWithoutNodeId } =
-            nodeSetting as any;
+          // Omit nodeId from nodeSetting for upsert
+          const { nodeId: _omit, ...settingsWithoutNodeId } = nodeSetting;
           return dispatch(
             upsertNodeSettingsAsync({
               profileId: selectedProfile.id,
@@ -151,6 +150,45 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
       toast.error('Failed to save node settings');
     }
   };
+
+  // // Handler for saving node payloads
+  // const handleSaveNodePayloads = async (
+  //   payloads: Record<string, Record<string, any>>
+  // ) => {
+  //   if (!selectedProfile) return;
+  //   try {
+  //     // Merge new payloads into existing nodeSettings
+  //     const nodeSettingsArray = selectedProfile.nodeSettings ?? [];
+  //     const updatedSettings = nodeSettingsArray.map((ns) => ({
+  //       ...ns,
+  //       payload: payloads[ns.nodeId] ?? ns.payload,
+  //     }));
+
+  //     // If a nodeId is present in payloads but not in nodeSettings, add it
+  //     Object.keys(payloads).forEach((nodeId) => {
+  //       if (!updatedSettings.find((ns) => ns.nodeId === nodeId)) {
+  //         updatedSettings.push({ nodeId, payload: payloads[nodeId] });
+  //       }
+  //     });
+
+  //     // Save each node's settings using the dedicated mutation
+  //     await Promise.all(
+  //       updatedSettings.map(({ nodeId, ...settingsWithoutNodeId }) =>
+  //         dispatch(
+  //           upsertNodeSettingsAsync({
+  //             profileId: selectedProfile.id,
+  //             nodeId,
+  //             settings: settingsWithoutNodeId,
+  //           })
+  //         )
+  //       )
+  //     );
+  //     await dispatch(fetchSimulationProfilesAsync());
+  //     toast.success('Node payloads saved!');
+  //   } catch {
+  //     toast.error('Failed to save node payloads');
+  //   }
+  // };
 
   return (
     <>
@@ -187,13 +225,13 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
         </button>
         <button
           className={`pb-2 font-semibold ${
-            activeTab === 'global'
+            activeTab === 'node_payloads'
               ? 'border-b-2 border-blue-600 text-blue-600'
               : 'text-gray-500 dark:text-gray-400'
           }`}
-          onClick={() => setActiveTab('global')}
+          onClick={() => setActiveTab('node_payloads')}
         >
-          Pass
+          Node Payloads
         </button>
       </div>
 
@@ -269,15 +307,23 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
         </div>
       )}
 
-      {activeTab === 'behavior' && (
+      {activeTab === 'node_payloads' && (
         <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-          <span>[Behavior content goes here]</span>
-        </div>
-      )}
-
-      {activeTab === 'global' && (
-        <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-          <span>[Global settings content goes here]</span>
+          <NodePayloadSettings
+          // nodeIds={nodeIds}
+          // nodePayloads={
+          //   selectedProfile?.nodeSettings
+          //     ? Object.fromEntries(
+          //         selectedProfile.nodeSettings.map((ns) => [
+          //           ns.nodeId,
+          //           ns.payload ?? { quality: '', value: '', timestamp: '' },
+          //         ])
+          //       )
+          //     : {}
+          // }
+          // onSave={handleSaveNodePayloads}
+          // fetchNodesByIds={fetchNodesByIds}
+          />
         </div>
       )}
     </>
