@@ -35,6 +35,24 @@ export interface ISimulationProfile {
   userId: string;
   createdAt: string;
   updatedAt: string;
+  status?: {
+    state:
+      | 'idle'
+      | 'starting'
+      | 'running'
+      | 'paused'
+      | 'stopping'
+      | 'stopped'
+      | 'error';
+    isRunning: boolean;
+    isPaused: boolean;
+    startTime?: Date;
+    lastActivity?: Date;
+    nodeCount?: number;
+    mqttConnected?: boolean;
+    reconnectAttempts?: number;
+    error?: string;
+  };
 }
 
 // Simulation Control Types

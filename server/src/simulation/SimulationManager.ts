@@ -22,38 +22,38 @@ export class SimulationManager {
     // Create new engine
     const engine = new SimulationEngine(profile, schema, broker);
 
-    // Set up event listeners for logging/monitoring
-    engine.on('started', (data) => {
-      console.log(`Simulation started: ${data.profileId}`);
-    });
+    // // Set up event listeners for logging/monitoring
+    // engine.on('started', (data) => {
+    //   console.log(`Simulation started: ${data.profileId}`);
+    // });
 
-    engine.on('nodePublished', (data) => {
-      console.log(
-        `Published: ${data.topic} -> ${JSON.stringify(data.payload)}`
-      );
-    });
+    // engine.on('nodePublished', (data) => {
+    //   console.log(
+    //     `Published: ${data.topic} -> ${JSON.stringify(data.payload)}`
+    //   );
+    // });
 
-    engine.on('nodeFailure', (data) => {
-      console.log(`Node failure: ${data.nodeId} at ${data.timestamp}`);
-    });
+    // engine.on('nodeFailure', (data) => {
+    //   console.log(`Node failure: ${data.nodeId} at ${data.timestamp}`);
+    // });
 
-    engine.on('publishError', (data) => {
-      console.error(`Publish error for ${data.nodeId}: ${data.error}`);
-    });
+    // engine.on('publishError', (data) => {
+    //   console.error(`Publish error for ${data.nodeId}: ${data.error}`);
+    // });
 
-    engine.on('stopped', (data) => {
-      console.log(`Simulation stopped: ${data.profileId}`);
-      // Clean up engine when stopped
-      this.engines.delete(profileId);
-    });
+    // engine.on('stopped', (data) => {
+    //   console.log(`Simulation stopped: ${data.profileId}`);
+    //   // Clean up engine when stopped
+    //   this.engines.delete(profileId);
+    // });
 
-    engine.on('paused', (data) => {
-      console.log(`Simulation paused: ${data.profileId}`);
-    });
+    // engine.on('paused', (data) => {
+    //   console.log(`Simulation paused: ${data.profileId}`);
+    // });
 
-    engine.on('resumed', (data) => {
-      console.log(`Simulation resumed: ${data.profileId}`);
-    });
+    // engine.on('resumed', (data) => {
+    //   console.log(`Simulation resumed: ${data.profileId}`);
+    // });
 
     this.engines.set(profileId, engine);
     await engine.start();

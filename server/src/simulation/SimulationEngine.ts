@@ -5,6 +5,7 @@ import * as mqtt from 'mqtt';
 import { ISimulationProfile } from '../graphql/models/SimulationProfile';
 import { ISchema } from '../graphql/models/Schema';
 import { IBroker } from '../graphql/models/Broker';
+import SimulationProfile from '../graphql/models/SimulationProfile';
 
 export interface SimulationNode {
   id: string;
@@ -37,13 +38,12 @@ export class SimulationEngine extends EventEmitter {
   }
 
   private initializeNodes() {
-    // Get metric nodes from schema
     const metricNodes = this.schema.nodes.filter(
       (node) => node.kind === 'metric'
     );
 
     console.log(
-      `🔧 Initializing ${metricNodes.length} metric nodes for simulation`
+      `🔧 Initializing ${metricNodes.length} nodes for simulation: ${this.profile.name}`
     );
 
     metricNodes.forEach((schemaNode) => {
@@ -52,7 +52,6 @@ export class SimulationEngine extends EventEmitter {
         : undefined;
       const globalSettings = this.profile.globalSettings;
 
-      // Merge global defaults with node-specific settings
       const node: SimulationNode = {
         id: schemaNode.id,
         path: schemaNode.path,
@@ -65,14 +64,12 @@ export class SimulationEngine extends EventEmitter {
       };
 
       this.nodes.set(schemaNode.id, node);
-      console.log(`  📋 Node: ${schemaNode.path} (${node.frequency}ms)`);
     });
   }
 
   private async connectToBroker(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        // Construct MQTT URL - keep your ws/wss logic
         const protocol =
           typeof this.broker.ssl === 'boolean'
             ? this.broker.ssl
@@ -81,57 +78,40 @@ export class SimulationEngine extends EventEmitter {
             : 'ws';
 
         let brokerUrl = this.broker.url;
-        // Remove protocol if it's included in the URL
         brokerUrl = brokerUrl.replace(/^wss?:\/\//, '');
-
         const url = `${protocol}://${brokerUrl}:${this.broker.port}`;
 
-        // MQTT connection options with better settings
         const options: mqtt.IClientOptions = {
           clientId: `uns-sim-${this.profile.id
             .toString()
             .slice(-8)}-${Date.now()}`,
           clean: true,
           connectTimeout: 15000,
-          reconnectPeriod: 0, // Disable auto-reconnect for manual control
+          reconnectPeriod: 0,
           keepalive: 30,
-          protocolVersion: 4, // Force MQTT v3.1.1
+          protocolVersion: 4,
           reschedulePings: true,
         };
 
-        // Add authentication if provided
-        if (this.broker.username && this.broker.username.trim()) {
+        if (this.broker.username?.trim()) {
           options.username = this.broker.username;
-          console.log(`🔐 Using username: ${this.broker.username}`);
         }
-        if (this.broker.password && this.broker.password.trim()) {
+        if (this.broker.password?.trim()) {
           options.password = this.broker.password;
-          console.log(`🔐 Using password authentication`);
         }
 
-        console.log(`🔌 Connecting to MQTT broker: ${url}`);
-        console.log(`🔧 Client ID: ${options.clientId}`);
+        console.log(`🔌 Connecting to ${this.broker.name} (${url})`);
 
         this.mqttClient = mqtt.connect(url, options);
 
-        // Set up event handlers
-        this.mqttClient.on('connect', (connack) => {
+        this.mqttClient.on('connect', () => {
           console.log(`✅ Connected to MQTT broker: ${this.broker.name}`);
-          console.log(`📋 Connection details:`, connack);
           this.reconnectAttempts = 0;
           resolve();
         });
 
         this.mqttClient.on('error', (error) => {
-          console.error(`❌ MQTT connection error:`, error);
-          console.error(`🔍 Error details:`, {
-            message: error.message,
-            stack: error.stack,
-            broker: this.broker.name,
-            url: url,
-          });
-
-          // Clean up and reject
+          console.error(`❌ MQTT connection error: ${error.message}`);
           if (this.mqttClient) {
             this.mqttClient.end(true);
             this.mqttClient = undefined;
@@ -140,70 +120,18 @@ export class SimulationEngine extends EventEmitter {
         });
 
         this.mqttClient.on('close', () => {
-          console.log(`🔌 MQTT connection closed`);
-          console.log(`📊 Current simulation state:`, {
-            isRunning: this.isRunning,
-            isPaused: this.isPaused,
-            reconnectAttempts: this.reconnectAttempts,
-            maxReconnectAttempts: this.maxReconnectAttempts,
-            profileId: this.profile.id,
-            profileName: this.profile.name,
-            activeNodes: Array.from(this.nodes.keys()).length,
-            publishingNodes: Array.from(this.nodes.values()).filter(
-              (n) => n.intervalId
-            ).length,
-          });
-
-          // Only try to handle disconnections if we're running
           if (
             this.isRunning &&
             !this.isPaused &&
             this.reconnectAttempts < this.maxReconnectAttempts
           ) {
-            console.log(`⚠️ Unexpected MQTT disconnection during simulation`);
-            console.log(`🔄 Will attempt reconnection...`);
+            console.log(`⚠️ MQTT disconnected, attempting reconnection...`);
             this.handleDisconnection();
-          } else {
-            console.log(`📝 Not handling disconnection because:`);
-            if (!this.isRunning) {
-              console.log(
-                `   - Simulation is not running (isRunning: ${this.isRunning})`
-              );
-            }
-            if (this.isPaused) {
-              console.log(
-                `   - Simulation is paused (isPaused: ${this.isPaused})`
-              );
-            }
-            if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-              console.log(
-                `   - Max reconnect attempts reached (${this.reconnectAttempts}/${this.maxReconnectAttempts})`
-              );
-            }
           }
         });
 
-        this.mqttClient.on('offline', () => {
-          console.log(`📶 MQTT client is offline`);
-          console.log(`📊 Client state when going offline:`, {
-            connected: this.mqttClient?.connected,
-            reconnecting: this.mqttClient?.reconnecting,
-            clientId: this.mqttClient?.options?.clientId,
-          });
-        });
-
-        this.mqttClient.on('disconnect', (packet) => {
-          console.log(`🔌 MQTT client disconnected:`, packet);
-          console.log(`📊 Disconnect packet details:`, {
-            reasonCode: packet?.reasonCode,
-            properties: packet?.properties,
-            timestamp: new Date().toISOString(),
-          });
-        });
-
-        // Add a timeout to prevent hanging
         const connectionTimeout = setTimeout(() => {
-          console.error(`❌ Connection timeout after 15 seconds`);
+          console.error(`❌ Connection timeout to ${this.broker.name}`);
           if (this.mqttClient) {
             this.mqttClient.end(true);
             this.mqttClient = undefined;
@@ -211,7 +139,6 @@ export class SimulationEngine extends EventEmitter {
           reject(new Error('MQTT connection timeout'));
         }, 15000);
 
-        // Clear timeout on successful connection
         this.mqttClient.once('connect', () => {
           clearTimeout(connectionTimeout);
         });
@@ -222,100 +149,69 @@ export class SimulationEngine extends EventEmitter {
     });
   }
 
+  private async updateProfileStatus(updates: Partial<any>) {
+    try {
+      await SimulationProfile.findByIdAndUpdate(
+        this.profile.id,
+        {
+          $set: {
+            'status.lastActivity': new Date(),
+            ...Object.fromEntries(
+              Object.entries(updates).map(([key, value]) => [
+                `status.${key}`,
+                value,
+              ])
+            ),
+          },
+        },
+        { new: true }
+      );
+    } catch (error) {
+      console.error('Failed to update profile status:', error);
+    }
+  }
+
   private handleDisconnection() {
     this.reconnectAttempts++;
-
     console.log(
-      `🔄 Handling disconnection (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`
+      `🔄 Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`
     );
-    console.log(`📊 Disconnection context:`, {
-      profileId: this.profile.id,
-      profileName: this.profile.name,
-      brokerName: this.broker.name,
-      brokerUrl: this.broker.url,
-      brokerPort: this.broker.port,
-      isRunning: this.isRunning,
-      isPaused: this.isPaused,
-      startTime: this.startTime,
-      activeNodes: Array.from(this.nodes.keys()).length,
-      publishingNodes: Array.from(this.nodes.values()).filter(
-        (n) => n.intervalId
-      ).length,
+
+    // Update MQTT connection status
+    this.updateProfileStatus({
+      mqttConnected: false,
       reconnectAttempts: this.reconnectAttempts,
-      timestamp: new Date().toISOString(),
     });
 
-    // Pause publishing immediately - UNCOMMENT THIS!
-    console.log(`⏸️ Pausing all node publishing due to disconnection`);
     this.pausePublishing();
 
-    // Calculate backoff delay
-    const backoffDelay = 2000 * this.reconnectAttempts; // Exponential backoff
-    console.log(`⏳ Will attempt reconnection in ${backoffDelay}ms`);
-
-    // Try to reconnect after a delay
+    const backoffDelay = 2000 * this.reconnectAttempts;
     this.reconnectTimeout = setTimeout(async () => {
-      console.log(
-        `🔄 Starting reconnection attempt ${this.reconnectAttempts}...`
-      );
-      console.log(`⏳ Reconnecting to MQTT broker...`);
-
       try {
         await this.connectToBroker();
-        console.log(`✅ Reconnected to MQTT broker successfully`);
-        console.log(`📊 Reconnection successful:`, {
-          attempts: this.reconnectAttempts,
-          totalDowntime: Date.now() - (this.startTime?.getTime() || Date.now()),
-          clientConnected: this.mqttClient?.connected,
-          timestamp: new Date().toISOString(),
+        console.log(`✅ Reconnected to ${this.broker.name}`);
+
+        // Update successful reconnection
+        await this.updateProfileStatus({
+          mqttConnected: true,
+          reconnectAttempts: 0,
         });
 
-        // Resume publishing if still running - UNCOMMENT THIS!
         if (this.isRunning && !this.isPaused) {
-          console.log(`▶️ Resuming publishing after successful reconnection`);
           this.resumePublishing();
-        } else {
-          console.log(`⚠️ Not resuming publishing:`, {
-            isRunning: this.isRunning,
-            isPaused: this.isPaused,
-          });
         }
       } catch (error) {
-        console.error(
-          `❌ Reconnection attempt ${this.reconnectAttempts} failed:`,
-          error
-        );
-        console.error(`🔍 Reconnection error details:`, {
-          message: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
-          attempts: this.reconnectAttempts,
-          maxAttempts: this.maxReconnectAttempts,
-          timestamp: new Date().toISOString(),
-        });
+        console.error(`❌ Reconnection failed: ${error}`);
 
-        // If max attempts reached, stop the simulation
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
           console.error(
-            `❌ Max reconnect attempts (${this.maxReconnectAttempts}) reached. Stopping simulation.`
+            `❌ Max reconnect attempts reached. Stopping simulation.`
           );
-          console.error(`📊 Final simulation state:`, {
-            profileId: this.profile.id,
-            profileName: this.profile.name,
-            totalAttempts: this.reconnectAttempts,
-            startTime: this.startTime,
-            failureTime: new Date().toISOString(),
-            totalRuntime: this.startTime
-              ? Date.now() - this.startTime.getTime()
-              : 0,
+          await this.updateProfileStatus({
+            state: 'error',
+            error: 'Max reconnection attempts reached',
           });
           this.stop();
-        } else {
-          console.log(
-            `🔄 Will retry reconnection (${this.reconnectAttempts + 1}/${
-              this.maxReconnectAttempts
-            })`
-          );
-          // The method will be called again from the close event
         }
       }
     }, backoffDelay);
@@ -325,13 +221,28 @@ export class SimulationEngine extends EventEmitter {
     if (this.isRunning) return;
 
     try {
-      // Connect to broker first
+      // Update status to starting
+      await this.updateProfileStatus({
+        state: 'starting',
+        error: null,
+      });
+
       await this.connectToBroker();
 
       this.isRunning = true;
       this.startTime = new Date();
 
-      // Apply start delay if configured
+      // Update status to running
+      await this.updateProfileStatus({
+        state: 'running',
+        isRunning: true,
+        isPaused: false,
+        startTime: this.startTime,
+        nodeCount: this.nodes.size,
+        mqttConnected: this.mqttClient?.connected || false,
+        reconnectAttempts: 0,
+      });
+
       if (
         this.profile.globalSettings?.startDelay &&
         this.profile.globalSettings.startDelay > 0
@@ -339,25 +250,34 @@ export class SimulationEngine extends EventEmitter {
         await this.delay(this.profile.globalSettings.startDelay * 1000);
       }
 
-      // Start publishing for each node
       this.nodes.forEach((node) => {
         this.startNodePublishing(node);
       });
 
-      // Set simulation length timer if configured
       if (
         this.profile.globalSettings &&
         typeof this.profile.globalSettings.simulationLength === 'number' &&
         this.profile.globalSettings.simulationLength > 0
       ) {
         setTimeout(() => {
+          console.log(`⏰ Simulation time limit reached, stopping...`);
           this.stop();
         }, this.profile.globalSettings.simulationLength * 1000);
       }
 
+      console.log(
+        `🚀 Simulation started: ${this.profile.name} (${this.nodes.size} nodes)`
+      );
       this.emit('started', { profileId: this.profile.id });
     } catch (error) {
       this.isRunning = false;
+      await this.updateProfileStatus({
+        state: 'error',
+        isRunning: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      console.error(`❌ Failed to start simulation: ${error}`);
       this.emit('error', {
         profileId: this.profile.id,
         error: `Failed to start simulation: ${error}`,
@@ -367,7 +287,6 @@ export class SimulationEngine extends EventEmitter {
   }
 
   private startNodePublishing(node: SimulationNode) {
-    // Calculate actual interval based on timeScale
     const actualInterval =
       node.frequency / this.profile.globalSettings.timeScale;
 
@@ -377,40 +296,34 @@ export class SimulationEngine extends EventEmitter {
   }
 
   private async publishNodeData(node: SimulationNode) {
-    // Check if this publication should fail based on failRate
     if (Math.random() < node.failRate) {
       this.emit('nodeFailure', {
         nodeId: node.id,
         timestamp: Date.now(),
-        quality: 'good', // Hardcoded quality value
+        quality: 'good',
       });
       return;
     }
 
-    // Generate payload with current timestamp
     const payload = {
       ...node.payload,
       timestamp: Date.now(),
-      quality: 'good', // Hardcoded quality value
+      quality: 'good',
       value: this.generateNodeValue(node),
     };
 
-    // Construct topic path - fix the publishRoot logic
     let topic: string;
     const publishRoot = this.profile.globalSettings?.publishRoot?.trim();
 
     if (publishRoot && publishRoot.length > 0) {
-      // Remove trailing slash from publishRoot and leading slash from node.path
       const cleanRoot = publishRoot.replace(/\/$/, '');
       const cleanPath = node.path.replace(/^\//, '');
       topic = `${cleanRoot}/${cleanPath}`;
     } else {
-      // If no publishRoot, use the node path directly
       topic = node.path;
     }
 
     try {
-      // Publish to broker
       await this.publishToBroker(topic, payload);
 
       this.emit('nodePublished', {
@@ -420,8 +333,15 @@ export class SimulationEngine extends EventEmitter {
         timestamp: Date.now(),
       });
 
-      console.log(`📤 Published: ${topic} -> ${JSON.stringify(payload)}`);
+      // Only log occasionally to avoid spam
+      if (Math.random() < 0.1) {
+        // 10% chance to log
+        console.log(
+          `📤 Publishing to ${this.nodes.size} topics (sample: ${topic})`
+        );
+      }
     } catch (error) {
+      console.error(`🚨 Publish error for ${node.path}: ${error}`);
       this.emit('publishError', {
         nodeId: node.id,
         error:
@@ -430,22 +350,15 @@ export class SimulationEngine extends EventEmitter {
             : String(error),
         timestamp: Date.now(),
       });
-
-      console.error(`🚨 Publish error for ${node.id}: ${error}`);
     }
   }
 
   private generateNodeValue(node: SimulationNode): any {
-    // Implement your value generation logic here
-    // This could be random values, sine waves, step functions, etc.
-
     if (typeof node.payload?.value === 'number') {
-      // Generate a random number around the base value
       const baseValue = node.payload.value || 0;
-      return baseValue + (Math.random() - 0.5) * 10;
+      return Math.round((baseValue + (Math.random() - 0.5) * 10) * 100) / 100;
     }
 
-    // If no value specified, generate a random number
     if (!node.payload?.value) {
       return Math.round(Math.random() * 100);
     }
@@ -457,7 +370,6 @@ export class SimulationEngine extends EventEmitter {
     if (!this.mqttClient || !this.mqttClient.connected) {
       throw new Error('MQTT client is not connected');
     }
-
     await this.publishToMQTT(topic, payload);
   }
 
@@ -468,7 +380,6 @@ export class SimulationEngine extends EventEmitter {
         return;
       }
 
-      // Convert payload to JSON string
       const message = JSON.stringify(payload);
 
       this.mqttClient.publish(topic, message, { qos: 0 }, (error) => {
@@ -484,9 +395,16 @@ export class SimulationEngine extends EventEmitter {
   stop() {
     if (!this.isRunning) return;
 
-    this.isRunning = false;
+    this.updateProfileStatus({ state: 'stopping' });
 
-    // Clear all intervals
+    this.isRunning = false;
+    this.isPaused = false;
+
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = undefined;
+    }
+
     this.nodes.forEach((node) => {
       if (node.intervalId) {
         clearInterval(node.intervalId);
@@ -494,19 +412,26 @@ export class SimulationEngine extends EventEmitter {
       }
     });
 
-    // Disconnect MQTT client
     if (this.mqttClient) {
       this.mqttClient.end(true);
       this.mqttClient = undefined;
     }
 
+    // Update final stopped status
+    this.updateProfileStatus({
+      state: 'stopped',
+      isRunning: false,
+      isPaused: false,
+      mqttConnected: false,
+    });
+
+    console.log(`🛑 Simulation stopped: ${this.profile.name}`);
     this.emit('stopped', { profileId: this.profile.id });
   }
 
   pause() {
-    if (!this.isRunning) return;
+    if (!this.isRunning || this.isPaused) return;
 
-    // Clear intervals but don't set isRunning to false
     this.nodes.forEach((node) => {
       if (node.intervalId) {
         clearInterval(node.intervalId);
@@ -515,18 +440,31 @@ export class SimulationEngine extends EventEmitter {
     });
 
     this.isPaused = true;
+
+    this.updateProfileStatus({
+      state: 'paused',
+      isPaused: true,
+    });
+
+    console.log(`⏸️ Simulation paused: ${this.profile.name}`);
     this.emit('paused', { profileId: this.profile.id });
   }
 
   resume() {
     if (!this.isRunning || !this.isPaused) return;
 
-    // Restart intervals for all nodes
     this.nodes.forEach((node) => {
       this.startNodePublishing(node);
     });
 
     this.isPaused = false;
+
+    this.updateProfileStatus({
+      state: 'running',
+      isPaused: false,
+    });
+
+    console.log(`▶️ Simulation resumed: ${this.profile.name}`);
     this.emit('resumed', { profileId: this.profile.id });
   }
 
@@ -538,6 +476,7 @@ export class SimulationEngine extends EventEmitter {
       nodeCount: this.nodes.size,
       profile: this.profile.name,
       mqttConnected: this.mqttClient?.connected || false,
+      reconnectAttempts: this.reconnectAttempts,
     };
   }
 
@@ -546,47 +485,28 @@ export class SimulationEngine extends EventEmitter {
   }
 
   private pausePublishing() {
-    console.log(`⏸️ Pausing publishing for ${this.nodes.size} nodes`);
-
     let pausedCount = 0;
-    this.nodes.forEach((node, nodeId) => {
+    this.nodes.forEach((node) => {
       if (node.intervalId) {
         clearInterval(node.intervalId);
         node.intervalId = undefined;
         pausedCount++;
-        console.log(`   📋 Paused: ${node.path}`);
       }
     });
-
-    console.log(`✅ Paused publishing for ${pausedCount} active nodes`);
+    console.log(`⏸️ Paused ${pausedCount} publishing nodes`);
   }
 
   private resumePublishing() {
-    console.log(`▶️ Resuming publishing for ${this.nodes.size} nodes`);
-
-    // Clear any pending reconnect timeout
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = undefined;
-      console.log(`🔄 Cleared reconnection timeout`);
     }
 
-    // Restart publishing if we're still running and not manually paused
     if (this.isRunning && !this.isPaused) {
-      let resumedCount = 0;
       this.nodes.forEach((node) => {
-        console.log(
-          `   📋 Resuming: ${node.path} (${node.frequency}ms interval)`
-        );
         this.startNodePublishing(node);
-        resumedCount++;
       });
-      console.log(`✅ Resumed publishing for ${resumedCount} nodes`);
-    } else {
-      console.log(`⚠️ Not resuming publishing:`, {
-        isRunning: this.isRunning,
-        isPaused: this.isPaused,
-      });
+      console.log(`▶️ Resumed ${this.nodes.size} publishing nodes`);
     }
   }
 }

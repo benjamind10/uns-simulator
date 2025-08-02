@@ -38,6 +38,32 @@ export const simulationProfileResolvers = {
       if (!profile) throw new Error('Profile not found');
       return profile;
     },
+    simulationStatus: async (
+      _: {},
+      { profileId }: { profileId: string },
+      ctx: Context
+    ) => {
+      // Optionally require auth
+      requireAuth(ctx);
+      const profile = await SimulationProfile.findById(profileId);
+      if (!profile) throw new Error('Profile not found');
+      // Always return a valid status object
+      if (!profile.status) {
+        // Provide default values if status is missing
+        return {
+          state: 'idle',
+          isRunning: false,
+          isPaused: false,
+          startTime: null,
+          lastActivity: null,
+          nodeCount: 0,
+          mqttConnected: false,
+          reconnectAttempts: 0,
+          error: null,
+        };
+      }
+      return profile.status;
+    },
   },
 
   Mutation: {

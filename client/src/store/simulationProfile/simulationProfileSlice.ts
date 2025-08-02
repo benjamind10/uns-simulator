@@ -17,17 +17,31 @@ import {
   stopSimulationAsync,
   pauseSimulationAsync,
   resumeSimulationAsync,
+  getSimulationStatusAsync, // <-- Add this import
 } from './simulationProfieThunk';
+
+// Add SimulationStatus type
+interface SimulationStatus {
+  state: SimulationState;
+  isRunning: boolean;
+  isPaused: boolean;
+  startTime?: string;
+  lastActivity?: string;
+  nodeCount?: number;
+  mqttConnected?: boolean;
+  reconnectAttempts?: number;
+  error?: string;
+}
 
 interface SimulationProfileState {
   profiles: Record<string, ISimulationProfile>;
   selectedProfileId: string | null;
   loading: boolean;
   error: string | null;
-  // Simulation control state
   simulationStates: Record<string, SimulationState>;
   simulationLoading: Record<string, boolean>;
   simulationErrors: Record<string, string | null>;
+  simulationStatus: Record<string, SimulationStatus>; // <-- Add this
 }
 
 const initialState: SimulationProfileState = {
@@ -38,6 +52,7 @@ const initialState: SimulationProfileState = {
   simulationStates: {},
   simulationLoading: {},
   simulationErrors: {},
+  simulationStatus: {}, // <-- Add this
 };
 
 const simulationProfileSlice = createSlice({
@@ -47,6 +62,13 @@ const simulationProfileSlice = createSlice({
     setProfiles(state, action: PayloadAction<ISimulationProfile[]>) {
       state.profiles = action.payload.reduce((acc, profile) => {
         acc[profile.id] = profile;
+        // Sync simulation status from profile.status if present
+        if (profile.status) {
+          state.simulationStatus[profile.id] =
+            profile.status as SimulationStatus;
+          state.simulationStates[profile.id] = profile.status
+            .state as SimulationState;
+        }
         return acc;
       }, {} as Record<string, ISimulationProfile>);
     },
@@ -61,17 +83,32 @@ const simulationProfileSlice = createSlice({
     },
     addProfile(state, action: PayloadAction<ISimulationProfile>) {
       state.profiles[action.payload.id] = action.payload;
+      if (action.payload.status) {
+        state.simulationStatus[action.payload.id] = action.payload
+          .status as SimulationStatus;
+        state.simulationStates[action.payload.id] = action.payload.status
+          .state as SimulationState;
+      }
     },
     updateProfile(state, action: PayloadAction<ISimulationProfile>) {
       state.profiles[action.payload.id] = action.payload;
+      if (action.payload.status) {
+        state.simulationStatus[action.payload.id] = action.payload
+          .status as SimulationStatus;
+        state.simulationStates[action.payload.id] = action.payload.status
+          .state as SimulationState;
+      }
     },
     removeProfile(state, action: PayloadAction<string>) {
       delete state.profiles[action.payload];
+      delete state.simulationStates[action.payload];
+      delete state.simulationLoading[action.payload];
+      delete state.simulationErrors[action.payload];
+      delete state.simulationStatus[action.payload];
       if (state.selectedProfileId === action.payload) {
         state.selectedProfileId = null;
       }
     },
-    // Simulation control reducers
     setSimulationState(
       state,
       action: PayloadAction<{
@@ -81,6 +118,9 @@ const simulationProfileSlice = createSlice({
     ) {
       const { profileId, simulationState } = action.payload;
       state.simulationStates[profileId] = simulationState;
+      if (state.simulationStatus[profileId]) {
+        state.simulationStatus[profileId].state = simulationState;
+      }
     },
     setSimulationLoading(
       state,
@@ -95,6 +135,21 @@ const simulationProfileSlice = createSlice({
     ) {
       const { profileId, error } = action.payload;
       state.simulationErrors[profileId] = error;
+      if (state.simulationStatus[profileId]) {
+        state.simulationStatus[profileId].error = error || undefined;
+      }
+    },
+    // Add reducer for updating simulation status directly
+    updateSimulationStatus(
+      state,
+      action: PayloadAction<{ profileId: string; status: SimulationStatus }>
+    ) {
+      const { profileId, status } = action.payload;
+      state.simulationStatus[profileId] = status;
+      state.simulationStates[profileId] = status.state;
+      if (status.state !== 'error') {
+        state.simulationErrors[profileId] = null;
+      }
     },
   },
   extraReducers: (builder) => {
@@ -239,7 +294,21 @@ const simulationProfileSlice = createSlice({
         state.simulationLoading[profileId] = false;
         state.simulationErrors[profileId] =
           action.error.message || 'Failed to resume simulation';
+      })
+      // Get simulation status
+      .addCase(getSimulationStatusAsync.fulfilled, (state, action) => {
+        const { profileId, status } = action.payload;
+        state.simulationStatus[profileId] = status;
+        state.simulationStates[profileId] = status?.state || 'idle';
+        if (status && status.state !== 'error') {
+          state.simulationErrors[profileId] = null;
+        } else if (status && status.error) {
+          state.simulationErrors[profileId] = status.error;
+        }
       });
+    // .addCase(getSimulationStatusAsync.rejected, (state, action) => {
+    //   // Optionally log or handle polling errors
+    // });
   },
 });
 
@@ -254,6 +323,7 @@ export const {
   setSimulationState,
   setSimulationLoading,
   setSimulationError,
+  updateSimulationStatus, // <-- Export this
 } = simulationProfileSlice.actions;
 
 export const selectSelectedProfileId = (state: RootState) =>
@@ -281,6 +351,17 @@ export const selectProfileById = createSelector(
   ],
   (profiles, profileId) => {
     return profileId ? profiles[profileId] || null : null;
+  }
+);
+
+// Add selector for simulation status
+export const selectSimulationStatus = createSelector(
+  [
+    (state: RootState) => state.simulationProfile.simulationStates,
+    (_: RootState, profileId: string | undefined) => profileId,
+  ],
+  (simulationStatus, profileId) => {
+    return profileId ? simulationStatus[profileId] || null : null;
   }
 );
 

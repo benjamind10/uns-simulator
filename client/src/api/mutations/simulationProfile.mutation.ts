@@ -29,6 +29,17 @@ export const CREATE_SIMULATION_PROFILE = gql`
       }
       defaultScenario
       userId
+      status {
+        state
+        isRunning
+        isPaused
+        startTime
+        lastActivity
+        nodeCount
+        mqttConnected
+        reconnectAttempts
+        error
+      }
       createdAt
       updatedAt
     }
@@ -64,6 +75,17 @@ export const UPDATE_SIMULATION_PROFILE = gql`
       }
       defaultScenario
       userId
+      status {
+        state
+        isRunning
+        isPaused
+        startTime
+        lastActivity
+        nodeCount
+        mqttConnected
+        reconnectAttempts
+        error
+      }
       createdAt
       updatedAt
     }
@@ -89,6 +111,7 @@ export const UPSERT_NODE_SETTINGS = gql`
       nodeId: $nodeId
       settings: $settings
     ) {
+      nodeId
       frequency
       failRate
       payload {

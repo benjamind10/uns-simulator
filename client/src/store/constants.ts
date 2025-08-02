@@ -11,6 +11,7 @@ export const SIMULATION_PROFILE_ACTIONS = {
   STOP_SIMULATION: 'simulationProfile/stopSimulation',
   PAUSE_SIMULATION: 'simulationProfile/pauseSimulation',
   RESUME_SIMULATION: 'simulationProfile/resumeSimulation',
+  GET_SIMULATION_STATUS: 'simulationProfile/getSimulationStatus',
 } as const;
 
 // Action type constants for schema thunks

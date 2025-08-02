@@ -29,9 +29,28 @@ export interface ISimulationProfile extends Document {
       timestamp: number;
     };
   };
-  nodeSettings?: Record<string, ISimulationNodeSettings>; // key: nodeId
+  nodeSettings?: Record<string, ISimulationNodeSettings>;
   defaultScenario?: string;
   userId: Types.ObjectId;
+  // Add simulation status tracking
+  status: {
+    state:
+      | 'idle'
+      | 'starting'
+      | 'running'
+      | 'paused'
+      | 'stopping'
+      | 'stopped'
+      | 'error';
+    isRunning: boolean;
+    isPaused: boolean;
+    startTime?: Date;
+    lastActivity?: Date;
+    nodeCount?: number;
+    mqttConnected?: boolean;
+    reconnectAttempts?: number;
+    error?: string;
+  };
 }
 
 const SimulationNodeSettingsSchema = new Schema<ISimulationNodeSettings>(
@@ -72,6 +91,30 @@ const SimulationProfileSchema = new Schema<ISimulationProfile>(
     },
     defaultScenario: String,
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    // Add status tracking
+    status: {
+      state: {
+        type: String,
+        enum: [
+          'idle',
+          'starting',
+          'running',
+          'paused',
+          'stopping',
+          'stopped',
+          'error',
+        ],
+        default: 'idle',
+      },
+      isRunning: { type: Boolean, default: false },
+      isPaused: { type: Boolean, default: false },
+      startTime: Date,
+      lastActivity: { type: Date, default: Date.now },
+      nodeCount: Number,
+      mqttConnected: { type: Boolean, default: false },
+      reconnectAttempts: { type: Number, default: 0 },
+      error: String,
+    },
   },
   { timestamps: true }
 );

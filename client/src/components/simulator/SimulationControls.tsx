@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 
@@ -8,7 +8,9 @@ import {
   stopSimulationAsync,
   pauseSimulationAsync,
   resumeSimulationAsync,
+  getSimulationStatusAsync,
 } from '../../store/simulationProfile/simulationProfieThunk';
+import { selectSimulationStatus } from '../../store/simulationProfile/simulationProfileSlice';
 
 const SimulationControls: React.FC = () => {
   const dispatch = useDispatch();
@@ -29,6 +31,29 @@ const SimulationControls: React.FC = () => {
   const simulationErrors = useSelector(
     (state: RootState) => state.simulationProfile.simulationErrors
   );
+  const status = useSelector((state: RootState) =>
+    selectSimulationStatus(state, profileId)
+  );
+
+  const currentState = profileId
+    ? simulationStates[profileId] || 'idle'
+    : 'idle';
+
+  useEffect(() => {
+    if (!profileId) return;
+
+    // Always fetch once on mount/profile change
+    dispatch(getSimulationStatusAsync(profileId) as any);
+
+    // Only poll if running or paused
+    if (currentState === 'running' || currentState === 'paused') {
+      const interval = setInterval(() => {
+        dispatch(getSimulationStatusAsync(profileId) as any);
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+    // No polling if not running/paused
+  }, [dispatch, profileId, currentState]);
 
   const handleStart = () => {
     if (profileId) {
@@ -54,9 +79,6 @@ const SimulationControls: React.FC = () => {
     }
   };
 
-  const currentState = profileId
-    ? simulationStates[profileId] || 'idle'
-    : 'idle';
   const isLoading = profileId ? simulationLoading[profileId] || false : false;
   const error = profileId ? simulationErrors[profileId] : null;
 

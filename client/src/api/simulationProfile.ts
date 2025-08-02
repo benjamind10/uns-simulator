@@ -16,6 +16,7 @@ import {
 import {
   GET_SIMULATION_PROFILES,
   GET_SIMULATION_PROFILE,
+  GET_SIMULATION_STATUS, // Add this import
 } from './queries/simulationProfile.queries';
 
 const endpoint = import.meta.env.VITE_API_URL;
@@ -47,6 +48,7 @@ type DeleteSimulationProfileResponse = { deleteSimulationProfile: boolean };
 
 type UpsertNodeSettingsResponse = {
   upsertNodeSettings: {
+    nodeId: string;
     frequency?: number;
     failRate?: number;
     payload?: {
@@ -64,6 +66,21 @@ type StartSimulationResponse = { startSimulation: boolean };
 type StopSimulationResponse = { stopSimulation: boolean };
 type PauseSimulationResponse = { pauseSimulation: boolean };
 type ResumeSimulationResponse = { resumeSimulation: boolean };
+
+// Add Simulation Status Response Type
+type SimulationStatusResponse = {
+  simulationStatus: {
+    state: string;
+    isRunning: boolean;
+    isPaused: boolean;
+    startTime?: string;
+    lastActivity?: string;
+    nodeCount?: number;
+    mqttConnected?: boolean;
+    reconnectAttempts?: number;
+    error?: string;
+  };
+};
 
 export type CreateSimulationProfileInput = {
   name: string;
@@ -118,6 +135,19 @@ export async function fetchSimulationProfile(
     { id }
   );
   return data.simulationProfile;
+}
+
+// Get simulation status by profile ID
+export async function getSimulationStatus(
+  profileId: string
+): Promise<SimulationStatusResponse['simulationStatus']> {
+  const client = getClient();
+  const variables = { profileId };
+  const data: SimulationStatusResponse = await client.request(
+    GET_SIMULATION_STATUS,
+    variables
+  );
+  return data.simulationStatus;
 }
 
 // Create a new simulation profile

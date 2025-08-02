@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
 import type {
@@ -16,6 +17,7 @@ import {
   stopSimulation,
   pauseSimulation,
   resumeSimulation,
+  getSimulationStatus, // Add this import
   type CreateSimulationProfileInput,
   type UpdateSimulationProfileInput,
   type NodeSettingsInput,
@@ -70,7 +72,9 @@ export const upsertNodeSettingsAsync = createAsyncThunk<
   SIMULATION_PROFILE_ACTIONS.UPSERT_NODE_SETTINGS,
   async ({ profileId, nodeId, settings }) => {
     const result = await upsertNodeSettings(profileId, nodeId, settings);
-    return { nodeId, ...result };
+    // Remove duplicate nodeId if present in result
+    const { nodeId: _ignored, ...rest } = result;
+    return { nodeId, ...rest };
   }
 );
 
@@ -114,3 +118,12 @@ export const resumeSimulationAsync = createAsyncThunk<boolean, string>(
     return await resumeSimulation(profileId);
   }
 );
+
+// Get simulation status (for syncing state)
+export const getSimulationStatusAsync = createAsyncThunk<
+  { profileId: string; status: any },
+  string
+>(SIMULATION_PROFILE_ACTIONS.GET_SIMULATION_STATUS, async (profileId) => {
+  const status = await getSimulationStatus(profileId); // Should be the full object
+  return { profileId, status };
+});

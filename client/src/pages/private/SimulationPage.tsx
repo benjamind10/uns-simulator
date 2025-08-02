@@ -131,9 +131,6 @@ export default function SimulationPage() {
               onDeleteProfile={handleDeleteProfile} // <-- pass delete handler
             />
           </SimulationCard>
-          <SimulationCard title="Run Log">
-            <RunLogCardContent />
-          </SimulationCard>
         </div>
 
         {/* Simulator Section */}
