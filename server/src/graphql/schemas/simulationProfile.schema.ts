@@ -28,6 +28,16 @@ export const simulationProfileTypeDefs = gql`
     failed
   }
 
+  enum SimulationState {
+    idle
+    starting
+    running
+    paused
+    stopping
+    stopped
+    error
+  }
+
   # BEHAVIOR INTERFACE
   interface NodeBehaviorBase {
     id: ID!
@@ -89,6 +99,19 @@ export const simulationProfileTypeDefs = gql`
   union NodeBehavior = StaticBehavior | RandomBehavior | PatternBehavior
   # | DriftBehavior | ReplayBehavior | FormulaBehavior
 
+  # SIMULATION STATUS TYPE
+  type SimulationStatus {
+    state: SimulationState!
+    isRunning: Boolean!
+    isPaused: Boolean!
+    startTime: String
+    lastActivity: String
+    nodeCount: Int
+    mqttConnected: Boolean
+    reconnectAttempts: Int
+    error: String
+  }
+
   # MAIN PROFILE
   type SimulationProfile {
     id: ID!
@@ -103,6 +126,7 @@ export const simulationProfileTypeDefs = gql`
     nodeBehaviors: [NodeBehavior!]!
     nodeSettings: [NodeSettings!]!
     userId: ID!
+    status: SimulationStatus!
   }
 
   type GlobalSettings {
@@ -212,6 +236,7 @@ export const simulationProfileTypeDefs = gql`
     simulationProfiles: [SimulationProfile!]!
     simulationProfile(id: ID!): SimulationProfile
     profileNodeBehaviors(profileId: ID!): [NodeBehavior!]!
+    simulationStatus(profileId: ID!): SimulationStatus!
   }
 
   type Mutation {
@@ -231,6 +256,11 @@ export const simulationProfileTypeDefs = gql`
       settings: NodeSettingsInput!
     ): NodeSettings!
     deleteNodeSettings(profileId: ID!, nodeId: ID!): Boolean!
+
+    startSimulation(profileId: ID!): Boolean!
+    stopSimulation(profileId: ID!): Boolean!
+    pauseSimulation(profileId: ID!): Boolean!
+    resumeSimulation(profileId: ID!): Boolean!
   }
 
   type Payload {

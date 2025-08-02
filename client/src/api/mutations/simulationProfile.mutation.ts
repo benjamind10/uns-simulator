@@ -29,6 +29,17 @@ export const CREATE_SIMULATION_PROFILE = gql`
       }
       defaultScenario
       userId
+      status {
+        state
+        isRunning
+        isPaused
+        startTime
+        lastActivity
+        nodeCount
+        mqttConnected
+        reconnectAttempts
+        error
+      }
       createdAt
       updatedAt
     }
@@ -64,6 +75,17 @@ export const UPDATE_SIMULATION_PROFILE = gql`
       }
       defaultScenario
       userId
+      status {
+        state
+        isRunning
+        isPaused
+        startTime
+        lastActivity
+        nodeCount
+        mqttConnected
+        reconnectAttempts
+        error
+      }
       createdAt
       updatedAt
     }
@@ -89,6 +111,7 @@ export const UPSERT_NODE_SETTINGS = gql`
       nodeId: $nodeId
       settings: $settings
     ) {
+      nodeId
       frequency
       failRate
       payload {
@@ -104,5 +127,30 @@ export const UPSERT_NODE_SETTINGS = gql`
 export const DELETE_NODE_SETTINGS = gql`
   mutation DeleteNodeSettings($profileId: ID!, $nodeId: ID!) {
     deleteNodeSettings(profileId: $profileId, nodeId: $nodeId)
+  }
+`;
+
+// Simulation Control Mutations
+export const START_SIMULATION = gql`
+  mutation StartSimulation($profileId: ID!) {
+    startSimulation(profileId: $profileId)
+  }
+`;
+
+export const STOP_SIMULATION = gql`
+  mutation StopSimulation($profileId: ID!) {
+    stopSimulation(profileId: $profileId)
+  }
+`;
+
+export const PAUSE_SIMULATION = gql`
+  mutation PauseSimulation($profileId: ID!) {
+    pauseSimulation(profileId: $profileId)
+  }
+`;
+
+export const RESUME_SIMULATION = gql`
+  mutation ResumeSimulation($profileId: ID!) {
+    resumeSimulation(profileId: $profileId)
   }
 `;

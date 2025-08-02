@@ -1,6 +1,8 @@
 import mongoose, { Document, Schema, Types } from 'mongoose';
 
 export interface IBroker extends Document {
+  ssl: any;
+  isConnected: boolean;
   name: string;
   url: string;
   port: number;
