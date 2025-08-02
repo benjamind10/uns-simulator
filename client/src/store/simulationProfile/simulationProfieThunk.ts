@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
 import type {
@@ -12,6 +13,11 @@ import {
   deleteSimulationProfile,
   upsertNodeSettings,
   deleteNodeSettings,
+  startSimulation,
+  stopSimulation,
+  pauseSimulation,
+  resumeSimulation,
+  getSimulationStatus, // Add this import
   type CreateSimulationProfileInput,
   type UpdateSimulationProfileInput,
   type NodeSettingsInput,
@@ -66,7 +72,9 @@ export const upsertNodeSettingsAsync = createAsyncThunk<
   SIMULATION_PROFILE_ACTIONS.UPSERT_NODE_SETTINGS,
   async ({ profileId, nodeId, settings }) => {
     const result = await upsertNodeSettings(profileId, nodeId, settings);
-    return { nodeId, ...result };
+    // Remove duplicate nodeId if present in result
+    const { nodeId: _ignored, ...rest } = result;
+    return { nodeId, ...rest };
   }
 );
 
@@ -81,3 +89,41 @@ export const deleteNodeSettingsAsync = createAsyncThunk<
     return nodeId;
   }
 );
+
+// Simulation Control Thunks
+export const startSimulationAsync = createAsyncThunk<boolean, string>(
+  SIMULATION_PROFILE_ACTIONS.START_SIMULATION,
+  async (profileId) => {
+    return await startSimulation(profileId);
+  }
+);
+
+export const stopSimulationAsync = createAsyncThunk<boolean, string>(
+  SIMULATION_PROFILE_ACTIONS.STOP_SIMULATION,
+  async (profileId) => {
+    return await stopSimulation(profileId);
+  }
+);
+
+export const pauseSimulationAsync = createAsyncThunk<boolean, string>(
+  SIMULATION_PROFILE_ACTIONS.PAUSE_SIMULATION,
+  async (profileId) => {
+    return await pauseSimulation(profileId);
+  }
+);
+
+export const resumeSimulationAsync = createAsyncThunk<boolean, string>(
+  SIMULATION_PROFILE_ACTIONS.RESUME_SIMULATION,
+  async (profileId) => {
+    return await resumeSimulation(profileId);
+  }
+);
+
+// Get simulation status (for syncing state)
+export const getSimulationStatusAsync = createAsyncThunk<
+  { profileId: string; status: any },
+  string
+>(SIMULATION_PROFILE_ACTIONS.GET_SIMULATION_STATUS, async (profileId) => {
+  const status = await getSimulationStatus(profileId); // Should be the full object
+  return { profileId, status };
+});

@@ -8,7 +8,6 @@ import {
   updateSimulationProfileAsync,
   upsertNodeSettingsAsync,
 } from '../../store/simulationProfile/simulationProfieThunk';
-import { selectProfiles } from '../../store/simulationProfile/simulationProfileSlice';
 import type { AppDispatch, RootState } from '../../store/store';
 import type {
   ISchema,
@@ -20,6 +19,7 @@ import type {
 import SimulatorGlobalForm from './SimulatorGlobalForm';
 import SimulatorNodeSettings from './SimulatorNodeSettings';
 import NodePayloadSettings from './NodePayloadSettings';
+import SimulationControls from './SimulationControls';
 
 type TabType =
   | 'details'
@@ -27,7 +27,6 @@ type TabType =
   | 'node_settings'
   | 'node_payloads';
 
-// Accept fetchNodesByIds as a prop
 type SimulatorCardContentProps = {
   fetchNodesByIds?: (ids: string[]) => Promise<ISchemaNode[]>;
 };
@@ -38,15 +37,13 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>('details');
   const dispatch = useDispatch<AppDispatch>();
   const { profileId } = useParams<{ profileId?: string }>();
-  const profiles = Object.values(
-    useSelector(selectProfiles)
-  ) as ISimulationProfile[];
-  const schemas = useSelector((state: RootState) => state.schema.schemas); // <-- always called
 
-  // Find the selected profile from the store using URL param
-  const selectedProfile = profiles.find(
-    (p: { id: string }) => p.id === profileId
+  // Use simple selectors to avoid memoization issues
+  const profiles = useSelector(
+    (state: RootState) => state.simulationProfile.profiles
   );
+  const selectedProfile = profileId ? profiles[profileId] : null;
+  const schemas = useSelector((state: RootState) => state.schema.schemas);
 
   // If no profile is selected, show a card prompting the user to select one
   if (!selectedProfile) {
@@ -124,7 +121,6 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
     return sanitized;
   }
 
-  // Handler for saving node settings
   const handleSaveNodeSettings = async (
     settings: Record<string, NodeSettings>
   ) => {
@@ -133,13 +129,13 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
       const sanitizedSettings = sanitizeNodeSettings(settings);
       await Promise.all(
         Object.entries(sanitizedSettings).map(([nodeId, nodeSetting]) => {
-          // Omit nodeId from nodeSetting for upsert
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { nodeId: _omit, ...settingsWithoutNodeId } = nodeSetting;
           return dispatch(
             upsertNodeSettingsAsync({
               profileId: selectedProfile.id,
-              nodeId, // pass nodeId separately
-              settings: settingsWithoutNodeId, // only the fields expected by NodeSettingsInput
+              nodeId,
+              settings: settingsWithoutNodeId,
             })
           );
         })
@@ -239,39 +235,7 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
       {activeTab === 'details' && (
         <div>
           <div className="mb-6">
-            <div className="text-lg font-semibold mb-2 dark:text-white text-gray-900">
-              Status
-            </div>
-            <div className="text-3xl font-bold text-green-500 mb-4">
-              Running
-            </div>
-            <div className="flex gap-4">
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold">
-                Start
-              </button>
-              <button className="bg-gray-400 dark:bg-gray-700 text-white px-4 py-2 rounded font-semibold">
-                Pause
-              </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-semibold">
-                Stop
-              </button>
-            </div>
-          </div>
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 mb-6 h-40 flex items-center justify-center shadow-sm">
-            <span className="text-gray-500 dark:text-gray-400">
-              [Chart Placeholder]
-            </span>
-          </div>
-          <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-4 text-xs shadow-sm">
-            <div className="dark:text-gray-300 text-gray-600">
-              09:14:08 INFO Topic A ...
-            </div>
-            <div className="dark:text-gray-300 text-gray-600">
-              09:14:06 INFO ...
-            </div>
-            <div className="dark:text-gray-300 text-gray-600">
-              09:14:04 INFO ...
-            </div>
+            <SimulationControls />
           </div>
         </div>
       )}
@@ -302,28 +266,14 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
                     selectedProfile.nodeSettings.map((ns) => [ns.nodeId, ns])
                   )
                 : {}
-            } // <-- Convert array to object mapping
+            }
           />
         </div>
       )}
 
       {activeTab === 'node_payloads' && (
         <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-          <NodePayloadSettings
-          // nodeIds={nodeIds}
-          // nodePayloads={
-          //   selectedProfile?.nodeSettings
-          //     ? Object.fromEntries(
-          //         selectedProfile.nodeSettings.map((ns) => [
-          //           ns.nodeId,
-          //           ns.payload ?? { quality: '', value: '', timestamp: '' },
-          //         ])
-          //       )
-          //     : {}
-          // }
-          // onSave={handleSaveNodePayloads}
-          // fetchNodesByIds={fetchNodesByIds}
-          />
+          <NodePayloadSettings />
         </div>
       )}
     </>
