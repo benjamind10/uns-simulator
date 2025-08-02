@@ -147,6 +147,45 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
     }
   };
 
+  // // Handler for saving node payloads
+  // const handleSaveNodePayloads = async (
+  //   payloads: Record<string, Record<string, any>>
+  // ) => {
+  //   if (!selectedProfile) return;
+  //   try {
+  //     // Merge new payloads into existing nodeSettings
+  //     const nodeSettingsArray = selectedProfile.nodeSettings ?? [];
+  //     const updatedSettings = nodeSettingsArray.map((ns) => ({
+  //       ...ns,
+  //       payload: payloads[ns.nodeId] ?? ns.payload,
+  //     }));
+
+  //     // If a nodeId is present in payloads but not in nodeSettings, add it
+  //     Object.keys(payloads).forEach((nodeId) => {
+  //       if (!updatedSettings.find((ns) => ns.nodeId === nodeId)) {
+  //         updatedSettings.push({ nodeId, payload: payloads[nodeId] });
+  //       }
+  //     });
+
+  //     // Save each node's settings using the dedicated mutation
+  //     await Promise.all(
+  //       updatedSettings.map(({ nodeId, ...settingsWithoutNodeId }) =>
+  //         dispatch(
+  //           upsertNodeSettingsAsync({
+  //             profileId: selectedProfile.id,
+  //             nodeId,
+  //             settings: settingsWithoutNodeId,
+  //           })
+  //         )
+  //       )
+  //     );
+  //     await dispatch(fetchSimulationProfilesAsync());
+  //     toast.success('Node payloads saved!');
+  //   } catch {
+  //     toast.error('Failed to save node payloads');
+  //   }
+  // };
+
   return (
     <>
       <div className="flex gap-8 border-b border-gray-300 dark:border-gray-700 mb-4">
