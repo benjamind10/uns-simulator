@@ -106,3 +106,28 @@ export const DELETE_NODE_SETTINGS = gql`
     deleteNodeSettings(profileId: $profileId, nodeId: $nodeId)
   }
 `;
+
+// Simulation Control Mutations
+export const START_SIMULATION = gql`
+  mutation StartSimulation($profileId: ID!) {
+    startSimulation(profileId: $profileId)
+  }
+`;
+
+export const STOP_SIMULATION = gql`
+  mutation StopSimulation($profileId: ID!) {
+    stopSimulation(profileId: $profileId)
+  }
+`;
+
+export const PAUSE_SIMULATION = gql`
+  mutation PauseSimulation($profileId: ID!) {
+    pauseSimulation(profileId: $profileId)
+  }
+`;
+
+export const RESUME_SIMULATION = gql`
+  mutation ResumeSimulation($profileId: ID!) {
+    resumeSimulation(profileId: $profileId)
+  }
+`;

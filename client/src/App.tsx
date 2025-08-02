@@ -42,6 +42,7 @@ export default function App() {
         <Route element={<DashboardLayout />}>
           {/* <Route index element={<Dashboard />} /> */}
           <Route path="dashboard/brokers" element={<BrokersPage />} />
+          <Route path="dashboard/brokers/:brokerId" element={<BrokersPage />} />
           <Route path="dashboard/simulators" element={<SimulatorsPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="dashboard/schemas" element={<SchemaPage />} />

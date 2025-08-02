@@ -12,6 +12,7 @@ export type SchemaNodeKind = 'group' | 'metric' | 'object';
 export type SchemaNodeDataType = 'Int' | 'Float' | 'Bool' | 'String';
 
 export interface ISchemaNode {
+  id: string;
   _id?: Types.ObjectId;
   name: string;
   kind: SchemaNodeKind;

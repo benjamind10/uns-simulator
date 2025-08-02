@@ -8,6 +8,10 @@ import {
   DELETE_SIMULATION_PROFILE,
   UPSERT_NODE_SETTINGS,
   DELETE_NODE_SETTINGS,
+  START_SIMULATION,
+  STOP_SIMULATION,
+  PAUSE_SIMULATION,
+  RESUME_SIMULATION,
 } from './mutations/simulationProfile.mutation';
 import {
   GET_SIMULATION_PROFILES,
@@ -55,6 +59,12 @@ type UpsertNodeSettingsResponse = {
 
 type DeleteNodeSettingsResponse = { deleteNodeSettings: boolean };
 
+// Simulation Control Response Types
+type StartSimulationResponse = { startSimulation: boolean };
+type StopSimulationResponse = { stopSimulation: boolean };
+type PauseSimulationResponse = { pauseSimulation: boolean };
+type ResumeSimulationResponse = { resumeSimulation: boolean };
+
 export type CreateSimulationProfileInput = {
   name: string;
   description?: string;
@@ -73,7 +83,7 @@ export type CreateSimulationProfileInput = {
     };
   };
   defaultScenario?: string;
-  nodeSettings?: Record<string, NodeSettingsInput>; // <-- Add this line
+  nodeSettings?: Record<string, NodeSettingsInput>;
 };
 
 export type UpdateSimulationProfileInput =
@@ -175,4 +185,48 @@ export async function deleteNodeSettings(
     variables
   );
   return data.deleteNodeSettings;
+}
+
+// Start a simulation
+export async function startSimulation(profileId: string): Promise<boolean> {
+  const client = getClient();
+  const variables = { profileId };
+  const data: StartSimulationResponse = await client.request(
+    START_SIMULATION,
+    variables
+  );
+  return data.startSimulation;
+}
+
+// Stop a simulation
+export async function stopSimulation(profileId: string): Promise<boolean> {
+  const client = getClient();
+  const variables = { profileId };
+  const data: StopSimulationResponse = await client.request(
+    STOP_SIMULATION,
+    variables
+  );
+  return data.stopSimulation;
+}
+
+// Pause a simulation
+export async function pauseSimulation(profileId: string): Promise<boolean> {
+  const client = getClient();
+  const variables = { profileId };
+  const data: PauseSimulationResponse = await client.request(
+    PAUSE_SIMULATION,
+    variables
+  );
+  return data.pauseSimulation;
+}
+
+// Resume a simulation
+export async function resumeSimulation(profileId: string): Promise<boolean> {
+  const client = getClient();
+  const variables = { profileId };
+  const data: ResumeSimulationResponse = await client.request(
+    RESUME_SIMULATION,
+    variables
+  );
+  return data.resumeSimulation;
 }

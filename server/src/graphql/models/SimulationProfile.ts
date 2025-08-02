@@ -56,7 +56,7 @@ const SimulationProfileSchema = new Schema<ISimulationProfile>(
     globalSettings: {
       defaultUpdateFrequency: { type: Number, default: 60 },
       timeScale: { type: Number, default: 1.0 },
-      publishRoot: { type: String, default: '#' },
+      publishRoot: { type: String, default: '' },
       startDelay: { type: Number, default: 0 },
       simulationLength: { type: Number, default: 0 },
       defaultPayload: {

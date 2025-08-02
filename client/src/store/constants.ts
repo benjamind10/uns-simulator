@@ -7,6 +7,10 @@ export const SIMULATION_PROFILE_ACTIONS = {
   DELETE: 'simulationProfile/delete',
   UPSERT_NODE_SETTINGS: 'simulationProfile/upsertNodeSettings',
   DELETE_NODE_SETTINGS: 'simulationProfile/deleteNodeSettings',
+  START_SIMULATION: 'simulationProfile/startSimulation',
+  STOP_SIMULATION: 'simulationProfile/stopSimulation',
+  PAUSE_SIMULATION: 'simulationProfile/pauseSimulation',
+  RESUME_SIMULATION: 'simulationProfile/resumeSimulation',
 } as const;
 
 // Action type constants for schema thunks
@@ -49,6 +53,10 @@ export const SIMULATION_PROFILE_ERRORS = {
   DELETE_FAILED: 'Failed to delete simulation profile',
   UPSERT_NODE_SETTINGS_FAILED: 'Failed to upsert node settings',
   DELETE_NODE_SETTINGS_FAILED: 'Failed to delete node settings',
+  START_SIMULATION_FAILED: 'Failed to start simulation',
+  STOP_SIMULATION_FAILED: 'Failed to stop simulation',
+  PAUSE_SIMULATION_FAILED: 'Failed to pause simulation',
+  RESUME_SIMULATION_FAILED: 'Failed to resume simulation',
 } as const;
 
 export const SCHEMA_ERRORS = {
@@ -84,4 +92,16 @@ export const LOADING_STATES = {
   PENDING: 'pending',
   FULFILLED: 'fulfilled',
   REJECTED: 'rejected',
+} as const;
+
+// Simulation states
+export const SIMULATION_STATES = {
+  IDLE: 'idle',
+  STARTING: 'starting',
+  RUNNING: 'running',
+  PAUSING: 'pausing',
+  PAUSED: 'paused',
+  STOPPING: 'stopping',
+  STOPPED: 'stopped',
+  ERROR: 'error',
 } as const;

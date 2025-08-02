@@ -12,6 +12,10 @@ import {
   deleteSimulationProfile,
   upsertNodeSettings,
   deleteNodeSettings,
+  startSimulation,
+  stopSimulation,
+  pauseSimulation,
+  resumeSimulation,
   type CreateSimulationProfileInput,
   type UpdateSimulationProfileInput,
   type NodeSettingsInput,
@@ -79,5 +83,34 @@ export const deleteNodeSettingsAsync = createAsyncThunk<
   async ({ profileId, nodeId }) => {
     await deleteNodeSettings(profileId, nodeId);
     return nodeId;
+  }
+);
+
+// Simulation Control Thunks
+export const startSimulationAsync = createAsyncThunk<boolean, string>(
+  SIMULATION_PROFILE_ACTIONS.START_SIMULATION,
+  async (profileId) => {
+    return await startSimulation(profileId);
+  }
+);
+
+export const stopSimulationAsync = createAsyncThunk<boolean, string>(
+  SIMULATION_PROFILE_ACTIONS.STOP_SIMULATION,
+  async (profileId) => {
+    return await stopSimulation(profileId);
+  }
+);
+
+export const pauseSimulationAsync = createAsyncThunk<boolean, string>(
+  SIMULATION_PROFILE_ACTIONS.PAUSE_SIMULATION,
+  async (profileId) => {
+    return await pauseSimulation(profileId);
+  }
+);
+
+export const resumeSimulationAsync = createAsyncThunk<boolean, string>(
+  SIMULATION_PROFILE_ACTIONS.RESUME_SIMULATION,
+  async (profileId) => {
+    return await resumeSimulation(profileId);
   }
 );

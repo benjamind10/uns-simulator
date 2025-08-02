@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import {
   fetchSimulationProfilesAsync,
   createSimulationProfileAsync,
-  deleteSimulationProfileAsync, // <-- import delete thunk
+  deleteSimulationProfileAsync,
 } from '../../store/simulationProfile/simulationProfieThunk';
 import SimulationCard from '../../components/simulator/SimulationCard';
 import type {
@@ -24,13 +24,13 @@ import { fetchSchemasAsync } from '../../store/schema/schemaThunk';
 
 export default function SimulationPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const profiles = useSelector((state: RootState) => {
-    // If profiles is a Record, convert to array
-    const rawProfiles = state.simulationProfile.profiles;
-    return Array.isArray(rawProfiles)
-      ? rawProfiles
-      : (Object.values(rawProfiles) as ISimulationProfile[]);
-  });
+
+  // Fix: Use a simpler selector approach
+  const profilesRecord = useSelector(
+    (state: RootState) => state.simulationProfile.profiles
+  );
+  const profiles = Object.values(profilesRecord) as ISimulationProfile[];
+
   const loading = useSelector(
     (state: RootState) => state.simulationProfile.loading
   );
@@ -53,7 +53,7 @@ export default function SimulationPage() {
   const { profileId } = useParams<{ profileId?: string }>();
   const navigate = useNavigate();
 
-  // NEW: Delete handler
+  // Delete handler
   const handleDeleteProfile = async (id: string) => {
     if (
       window.confirm('Are you sure you want to delete this simulation profile?')
@@ -88,19 +88,25 @@ export default function SimulationPage() {
 
   const handleCreateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Dispatch the thunk to create the profile
-    await dispatch(
-      createSimulationProfileAsync({
-        ...form,
-        globalSettings: {
-          defaultUpdateFrequency: 0,
-          timeScale: 0,
-        }, // Provide default or initial globalSettings as required by your type
-      })
-    );
-    setShowModal(false);
-    setForm({ name: '', description: '', schemaId: '', brokerId: '' });
-    // dispatch(fetchSimulationProfilesAsync());
+    try {
+      const result = await dispatch(
+        createSimulationProfileAsync({
+          ...form,
+          globalSettings: {
+            defaultUpdateFrequency: 1000,
+            timeScale: 1,
+          },
+        })
+      ).unwrap();
+
+      setShowModal(false);
+      setForm({ name: '', description: '', schemaId: '', brokerId: '' });
+
+      // Navigate to the newly created profile's detail page
+      navigate(`/simulator/${result.id}`);
+    } catch (error) {
+      console.error('Failed to create profile:', error);
+    }
   };
 
   // Fetch nodes by IDs utility

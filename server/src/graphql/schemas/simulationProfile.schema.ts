@@ -231,6 +231,11 @@ export const simulationProfileTypeDefs = gql`
       settings: NodeSettingsInput!
     ): NodeSettings!
     deleteNodeSettings(profileId: ID!, nodeId: ID!): Boolean!
+
+    startSimulation(profileId: ID!): Boolean!
+    stopSimulation(profileId: ID!): Boolean!
+    pauseSimulation(profileId: ID!): Boolean!
+    resumeSimulation(profileId: ID!): Boolean!
   }
 
   type Payload {

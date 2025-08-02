@@ -1,6 +1,9 @@
 import SimulationProfile, {
   ISimulationProfile,
 } from '../../graphql/models/SimulationProfile';
+import simulationManager from '../../simulation/SimulationManager';
+import Broker from '../models/Broker';
+import SchemaModel from '../models/Schema';
 
 interface Context {
   user?: { _id: string };
@@ -127,6 +130,36 @@ export const simulationProfileResolvers = {
         delete profile.nodeSettings[nodeId];
         await profile.save();
       }
+      return true;
+    },
+
+    startSimulation: async (_: any, { profileId }: { profileId: string }) => {
+      // Fetch profile, schema, and broker from DB
+      const profile = await SimulationProfile.findById(profileId);
+      if (!profile) throw new Error('Profile not found');
+      const schema = await SchemaModel.findById(profile.schemaId);
+      if (!schema) throw new Error('Schema not found');
+      const broker = await Broker.findById(profile.brokerId);
+      if (!broker) throw new Error('Broker not found');
+
+      // Start simulation via SimulationManager
+      await simulationManager.startSimulation(profile, schema, broker);
+
+      return true;
+    },
+
+    stopSimulation: async (_: any, { profileId }: { profileId: string }) => {
+      await simulationManager.stopSimulation(profileId);
+      return true;
+    },
+
+    pauseSimulation: async (_: any, { profileId }: { profileId: string }) => {
+      await simulationManager.pauseSimulation(profileId);
+      return true;
+    },
+
+    resumeSimulation: async (_: any, { profileId }: { profileId: string }) => {
+      await simulationManager.resumeSimulation(profileId);
       return true;
     },
   },
