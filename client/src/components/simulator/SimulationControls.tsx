@@ -10,7 +10,6 @@ import {
   resumeSimulationAsync,
   getSimulationStatusAsync,
 } from '../../store/simulationProfile/simulationProfieThunk';
-import { selectSimulationStatus } from '../../store/simulationProfile/simulationProfileSlice';
 
 const SimulationControls: React.FC = () => {
   const dispatch = useDispatch();
@@ -31,13 +30,15 @@ const SimulationControls: React.FC = () => {
   const simulationErrors = useSelector(
     (state: RootState) => state.simulationProfile.simulationErrors
   );
-  const status = useSelector((state: RootState) =>
-    selectSimulationStatus(state, profileId)
-  );
+  //   const status = useSelector((state: RootState) =>
+  //     selectSimulationStatus(state, profileId)
+  //   );
 
   const currentState = profileId
     ? simulationStates[profileId] || 'idle'
     : 'idle';
+
+  console.log('Current State:', currentState);
 
   useEffect(() => {
     if (!profileId) return;
@@ -53,7 +54,9 @@ const SimulationControls: React.FC = () => {
       return () => clearInterval(interval);
     }
     // No polling if not running/paused
-  }, [dispatch, profileId, currentState]);
+    // Do not fetch again if not running/paused
+    // Remove the one-time fetch from here if you want to avoid firing on every state change
+  }, [dispatch, profileId]); // <-- Remove currentState from dependencies
 
   const handleStart = () => {
     if (profileId) {
