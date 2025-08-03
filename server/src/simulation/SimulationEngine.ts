@@ -448,10 +448,10 @@ export class SimulationEngine extends EventEmitter {
     });
   }
 
-  stop() {
+  async stop() {
     if (!this.isRunning) return;
 
-    this.updateProfileStatus({ state: 'stopping' });
+    await this.updateProfileStatus({ state: 'stopping' });
 
     this.isRunning = false;
     this.isPaused = false;
@@ -473,8 +473,8 @@ export class SimulationEngine extends EventEmitter {
       this.mqttClient = undefined;
     }
 
-    // Update final stopped status
-    this.updateProfileStatus({
+    // Await final stopped status
+    await this.updateProfileStatus({
       state: 'stopped',
       isRunning: false,
       isPaused: false,

@@ -41,22 +41,10 @@ const SimulationControls: React.FC = () => {
   console.log('Current State:', currentState);
 
   useEffect(() => {
-    if (!profileId) return;
-
-    // Always fetch once on mount/profile change
-    dispatch(getSimulationStatusAsync(profileId) as any);
-
-    // Only poll if running or paused
-    if (currentState === 'running' || currentState === 'paused') {
-      const interval = setInterval(() => {
-        dispatch(getSimulationStatusAsync(profileId) as any);
-      }, 2000);
-      return () => clearInterval(interval);
+    if (profileId) {
+      dispatch(getSimulationStatusAsync(profileId) as any);
     }
-    // No polling if not running/paused
-    // Do not fetch again if not running/paused
-    // Remove the one-time fetch from here if you want to avoid firing on every state change
-  }, [dispatch, profileId]); // <-- Remove currentState from dependencies
+  }, [dispatch, profileId]);
 
   const handleStart = () => {
     if (profileId) {

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Server, Book, Activity, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -7,13 +8,19 @@ import StatCard from '../../components/dashboard/StatCard';
 import SchemaCard from '../../components/schema/SchemaCard';
 import BrokerCard from '../../components/brokers/BrokerCard';
 import SimulatorCard from '../../components/simulator/SimulatorCard';
-import { deleteBrokerAsync } from '../../store/brokers';
-import { deleteSchemaAsync } from '../../store/schema/schemaThunk';
+import { deleteBrokerAsync, fetchBrokersAsync } from '../../store/brokers';
+import {
+  deleteSchemaAsync,
+  fetchSchemasAsync,
+} from '../../store/schema/schemaThunk';
 import {
   selectConnectedBrokersCount,
   selectBrokerStatuses,
 } from '../../store/mqtt/mqttSlice';
-import { deleteSimulationProfileAsync } from '../../store/simulationProfile/simulationProfieThunk';
+import {
+  deleteSimulationProfileAsync,
+  fetchSimulationProfilesAsync,
+} from '../../store/simulationProfile/simulationProfieThunk';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { IBroker, ISchema, ISimulationProfile } from '../../types';
 import { selectProfiles } from '../../store/simulationProfile/simulationProfileSlice';
@@ -21,6 +28,14 @@ import { selectProfiles } from '../../store/simulationProfile/simulationProfileS
 export default function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+
+  // Fetch brokers, schemas, and simulation profiles on mount
+  useEffect(() => {
+    dispatch(fetchBrokersAsync());
+    dispatch(fetchSchemasAsync());
+    dispatch(fetchSimulationProfilesAsync());
+  }, [dispatch]);
+
   const { brokers, loading: brokersLoading } = useSelector(
     (state: RootState) => state.brokers
   );
@@ -29,16 +44,12 @@ export default function DashboardPage() {
   );
 
   const connectedBrokers = useSelector(selectConnectedBrokersCount);
-
-  // Get all broker statuses in one go
   const brokerStatuses = useSelector(selectBrokerStatuses);
 
-  // Get simulators from redux
   const simulators = Object.values(
     useSelector(selectProfiles)
   ) as ISimulationProfile[];
 
-  // Count running simulations
   const simulationStates = useSelector(
     (state: RootState) => state.simulationProfile.simulationStates
   );

@@ -20,6 +20,7 @@ import { fetchBrokersAsync, selectBrokers } from '../../store/brokers';
 import ProfilesCardContent from '../../components/simulator/ProfilesCardContent';
 import SimulatorCardContent from '../../components/simulator/SimulatorCardContent';
 import { fetchSchemasAsync } from '../../store/schema/schemaThunk';
+import ConfirmDialog from '../../components/global/ConfirmDialog';
 
 export default function SimulationPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -52,15 +53,24 @@ export default function SimulationPage() {
   const { profileId } = useParams<{ profileId?: string }>();
   const navigate = useNavigate();
 
+  // State for confirm dialog
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
+
   // Delete handler
-  const handleDeleteProfile = async (id: string) => {
-    if (
-      window.confirm('Are you sure you want to delete this simulation profile?')
-    ) {
-      await dispatch(deleteSimulationProfileAsync(id));
-      if (profileId === id) {
-        navigate('/simulator'); // Redirect if deleted profile was selected
+  const handleDeleteProfile = (id: string) => {
+    setProfileToDelete(id);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteProfile = async () => {
+    if (profileToDelete) {
+      await dispatch(deleteSimulationProfileAsync(profileToDelete));
+      if (profileId === profileToDelete) {
+        navigate('/simulator');
       }
+      setProfileToDelete(null);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -127,7 +137,7 @@ export default function SimulationPage() {
               error={error}
               onCreateProfileClick={() => setShowModal(true)}
               schemas={schemas}
-              onDeleteProfile={handleDeleteProfile} // <-- pass delete handler
+              onDeleteProfile={handleDeleteProfile} // <-- now opens dialog
             />
           </SimulationCard>
         </div>
@@ -140,7 +150,7 @@ export default function SimulationPage() {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal for creating profile */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
           <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 w-full max-w-md">
@@ -232,6 +242,15 @@ export default function SimulationPage() {
           </div>
         </div>
       )}
+
+      {/* ── Confirm delete dialog ── */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDeleteProfile}
+        title="Delete Simulation Profile"
+        message="This will permanently delete the selected simulation profile. Are you sure?"
+      />
     </div>
   );
 }
