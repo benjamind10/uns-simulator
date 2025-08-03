@@ -71,8 +71,8 @@ export default function DashboardPage() {
       icon: <Book size={20} className="text-green-500" />,
     },
     {
-      title: 'Sim Runs Today',
-      value: 128,
+      title: 'Simulator Profiles',
+      value: simulators.length,
       icon: <Activity size={20} className="text-amber-500" />,
     },
   ];
