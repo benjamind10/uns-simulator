@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Server, Book, Activity } from 'lucide-react';
+import { Server, Book, Activity, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,16 +8,19 @@ import StatCard from '../../components/dashboard/StatCard';
 import SchemaCard from '../../components/schema/SchemaCard';
 import BrokerCard from '../../components/brokers/BrokerCard';
 import SimulatorCard from '../../components/simulator/SimulatorCard';
-import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokers';
+import { deleteBrokerAsync, fetchBrokersAsync } from '../../store/brokers';
 import {
-  fetchSchemasAsync,
   deleteSchemaAsync,
+  fetchSchemasAsync,
 } from '../../store/schema/schemaThunk';
-import { connectToMultipleBrokersAsync } from '../../store/mqtt/mqttThunk';
 import {
   selectConnectedBrokersCount,
   selectBrokerStatuses,
 } from '../../store/mqtt/mqttSlice';
+import {
+  connectToBrokerAsync,
+  disconnectFromBrokerAsync,
+} from '../../store/mqtt/mqttThunk';
 import {
   deleteSimulationProfileAsync,
   fetchSimulationProfilesAsync,
@@ -29,6 +32,14 @@ import { selectProfiles } from '../../store/simulationProfile/simulationProfileS
 export default function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+
+  // Fetch brokers, schemas, and simulation profiles on mount
+  useEffect(() => {
+    dispatch(fetchBrokersAsync());
+    dispatch(fetchSchemasAsync());
+    dispatch(fetchSimulationProfilesAsync());
+  }, [dispatch]);
+
   const { brokers, loading: brokersLoading } = useSelector(
     (state: RootState) => state.brokers
   );
@@ -37,26 +48,18 @@ export default function DashboardPage() {
   );
 
   const connectedBrokers = useSelector(selectConnectedBrokersCount);
-
-  // Get all broker statuses in one go
   const brokerStatuses = useSelector(selectBrokerStatuses);
 
-  // Get simulators from redux
   const simulators = Object.values(
     useSelector(selectProfiles)
   ) as ISimulationProfile[];
 
-  useEffect(() => {
-    dispatch(fetchBrokersAsync());
-    dispatch(fetchSchemasAsync());
-    dispatch(fetchSimulationProfilesAsync());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (brokers.length > 0) {
-      dispatch(connectToMultipleBrokersAsync(brokers));
-    }
-  }, [brokers, dispatch]);
+  const simulationStates = useSelector(
+    (state: RootState) => state.simulationProfile.simulationStates
+  );
+  const runningSimulations = Object.values(simulationStates).filter(
+    (state) => state === 'running'
+  ).length;
 
   /* ---------------  stat cards --------------- */
   const stats = [
@@ -74,6 +77,11 @@ export default function DashboardPage() {
       title: 'Simulator Profiles',
       value: simulators.length,
       icon: <Activity size={20} className="text-amber-500" />,
+    },
+    {
+      title: 'Simulations Running',
+      value: runningSimulations,
+      icon: <Activity size={20} className="text-green-500" />,
     },
   ];
 
@@ -125,6 +133,34 @@ export default function DashboardPage() {
     }
   };
 
+  // NEW: Connect/Disconnect handlers
+  const handleConnectBroker = async (broker: IBroker) => {
+    try {
+      await dispatch(connectToBrokerAsync(broker)).unwrap();
+      toast.success(`Connected to ${broker.name}`, {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+    } catch (error) {
+      console.error('Error connecting to broker:', error);
+      toast.error(`Failed to connect to ${broker.name}`);
+    }
+  };
+
+  const handleDisconnectBroker = async (brokerId: string) => {
+    try {
+      await dispatch(disconnectFromBrokerAsync(brokerId)).unwrap();
+      const broker = brokers.find((b) => b.id === brokerId);
+      toast.success(`Disconnected from ${broker?.name || 'broker'}`, {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+    } catch (error) {
+      console.error('Error disconnecting from broker:', error);
+      toast.error('Failed to disconnect from broker');
+    }
+  };
+
   const handleEditBroker = (broker: IBroker) => {
     navigate(`/dashboard/brokers/${broker.id}`);
   };
@@ -157,16 +193,29 @@ export default function DashboardPage() {
           </p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {simulators.map((sim) => (
-              <SimulatorCard
-                key={sim.id}
-                brokers={brokers}
-                schemas={schemas}
-                simulator={sim}
-                onDelete={handleDeleteSimulator}
-                onOpen={() => handleOpenSimulator(sim)}
-              />
-            ))}
+            {simulators.map((sim) => {
+              const isRunning =
+                simulationStates[sim.id] &&
+                simulationStates[sim.id] === 'running';
+              return (
+                <div className="relative" key={sim.id}>
+                  <SimulatorCard
+                    brokers={brokers}
+                    schemas={schemas}
+                    simulator={sim}
+                    onDelete={handleDeleteSimulator}
+                    onOpen={() => handleOpenSimulator(sim)}
+                  />
+                  {/* Move running icon to bottom right, below card content */}
+                  {isRunning && (
+                    <CheckCircle
+                      size={20}
+                      className="absolute bottom-4 right-4 text-green-500 z-10"
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
@@ -201,6 +250,8 @@ export default function DashboardPage() {
                 }
                 onDelete={handleDeleteBroker}
                 onEdit={() => handleEditBroker(b)}
+                onConnect={() => handleConnectBroker(b)}
+                onDisconnect={() => handleDisconnectBroker(b.id)}
               />
             ))}
           </div>

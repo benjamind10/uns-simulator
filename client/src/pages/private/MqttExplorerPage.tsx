@@ -1,23 +1,23 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { selectBrokers, fetchBrokersAsync } from '../../store/brokers';
 import { selectBrokerStatus } from '../../store/mqtt/mqttSlice';
 import { connectToBrokerAsync } from '../../store/mqtt/mqttThunk';
 import { getClient } from '../../store/mqtt/mqttClientManager';
+import MqttTopicTree from '../../components/brokers/MqttTopicTree';
+import MqttMessageViewer from '../../components/brokers/MqttMessageViewer';
 import { buildTopicTree } from '../../utils/mqttTopicTree';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { MqttMessage } from '../../types';
-import MqttMessageViewer from '../../components/brokers/MqttMessageViewer';
-import MqttTopicTree from '../../components/brokers/MqttTopicTree';
 
 export default function MqttExplorerPage() {
   const dispatch = useDispatch<AppDispatch>();
   const brokers = useSelector(selectBrokers);
-  const [selectedBrokerId, setSelectedBrokerId] = useState<string>('');
-  const [messages, setMessages] = useState<MqttMessage[]>([]);
-  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
-  const [topicInput, setTopicInput] = useState<string>('');
+  const [selectedBrokerId, setSelectedBrokerId] = React.useState<string>('');
+  const [messages, setMessages] = React.useState<MqttMessage[]>([]);
+  const [selectedTopic, setSelectedTopic] = React.useState<string | null>(null);
+  const [topicInput, setTopicInput] = React.useState<string>('');
 
   const selectedBroker = brokers.find((b) => b.id === selectedBrokerId);
   const brokerStatus = useSelector((state: RootState) =>
@@ -81,7 +81,6 @@ export default function MqttExplorerPage() {
     <div className="w-full min-h-full bg-gray-100 dark:bg-gray-900">
       <div className="max-w-6xl mx-auto flex flex-col">
         <h1 className="text-3xl font-bold mb-6">MQTT Explorer</h1>
-
         {/* Broker Picker */}
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6 mb-6">
           <label htmlFor="broker-select" className="block mb-2 font-medium">
@@ -108,10 +107,10 @@ export default function MqttExplorerPage() {
                   brokerStatus === 'connected'
                     ? 'text-green-600'
                     : brokerStatus === 'connecting'
-                      ? 'text-yellow-600'
-                      : brokerStatus === 'error'
-                        ? 'text-red-600'
-                        : 'text-gray-600'
+                    ? 'text-yellow-600'
+                    : brokerStatus === 'error'
+                    ? 'text-red-600'
+                    : 'text-gray-600'
                 }
               >
                 {brokerStatus}

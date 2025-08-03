@@ -235,7 +235,6 @@ export const simulationProfileTypeDefs = gql`
   type Query {
     simulationProfiles: [SimulationProfile!]!
     simulationProfile(id: ID!): SimulationProfile
-    profileNodeBehaviors(profileId: ID!): [NodeBehavior!]!
     simulationStatus(profileId: ID!): SimulationStatus!
   }
 
