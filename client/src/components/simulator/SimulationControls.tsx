@@ -71,9 +71,10 @@ const SimulationControls: React.FC = () => {
     }
   };
 
-  const handleStop = () => {
+  const handleStop = async () => {
     if (profileId) {
-      dispatch(stopSimulationAsync(profileId) as any);
+      await dispatch(stopSimulationAsync(profileId) as any);
+      dispatch(getSimulationStatusAsync(profileId) as any); // Refetch status
     }
   };
 

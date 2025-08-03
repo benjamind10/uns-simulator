@@ -298,13 +298,8 @@ const simulationProfileSlice = createSlice({
       // Get simulation status
       .addCase(getSimulationStatusAsync.fulfilled, (state, action) => {
         const { profileId, status } = action.payload;
+        state.simulationStates[profileId] = status.state;
         state.simulationStatus[profileId] = status;
-        state.simulationStates[profileId] = status?.state || 'idle';
-        if (status && status.state !== 'error') {
-          state.simulationErrors[profileId] = null;
-        } else if (status && status.error) {
-          state.simulationErrors[profileId] = status.error;
-        }
       });
     // .addCase(getSimulationStatusAsync.rejected, (state, action) => {
     //   // Optionally log or handle polling errors
