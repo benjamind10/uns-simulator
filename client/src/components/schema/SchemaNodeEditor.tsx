@@ -78,12 +78,13 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       id: Date.now().toString(),
       name: form.name,
       kind: form.kind,
-      parent: selectedNode?.id || null,
+      parent: selectedNode?.id || '',
       path: selectedNode ? `${selectedNode.path}/${form.name}` : form.name,
       order: 0,
-      dataType: form.dataType === '' ? undefined : form.dataType,
+      dataType: form.kind === 'metric' ? form.dataType || 'Float' : undefined,
       unit: form.unit,
       engineering: {},
+      objectData: form.kind === 'metric' ? {} : undefined,
       isTemporary: true,
     };
 
@@ -143,12 +144,13 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
             id: n.id,
             name: n.name,
             kind: n.kind,
-            parent: n.parent,
+            parent: n.parent ?? '',
             path: n.path ?? '',
             order: typeof n.order === 'number' ? n.order : 0,
-            dataType: n.dataType,
+            dataType: n.kind === 'metric' ? n.dataType ?? 'Float' : undefined,
             unit: n.unit ?? '',
             engineering: n.engineering ?? {},
+            objectData: n.kind === 'metric' ? n.objectData ?? {} : undefined,
           })),
         })
       ).unwrap();
@@ -233,7 +235,26 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
         <h2 className="font-bold mb-4 text-lg flex items-center justify-between">
           Node Builder
           <FileUpload
-            onImport={(nodes) => setTempNodes((p) => [...p, ...nodes])}
+            onImport={(nodes) => {
+              // Normalize imported nodes for tree builder
+              const normalized = nodes.map((n) => ({
+                ...n,
+                id: n.id ?? Date.now().toString(),
+                name: n.name ?? '',
+                kind: n.kind ?? 'group',
+                parent: !n.parent || n.parent === '' ? null : n.parent,
+                path: n.path ?? n.name,
+                order: typeof n.order === 'number' ? n.order : 0,
+                dataType:
+                  n.kind === 'metric' ? n.dataType ?? 'Float' : undefined,
+                unit: n.unit ?? '',
+                engineering: n.engineering ?? {},
+                objectData:
+                  n.kind === 'metric' ? n.objectData ?? {} : undefined,
+                isTemporary: true,
+              }));
+              setTempNodes((p) => [...p, ...normalized]);
+            }}
           />
         </h2>
 
