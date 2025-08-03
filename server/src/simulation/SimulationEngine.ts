@@ -381,17 +381,45 @@ export class SimulationEngine extends EventEmitter {
   }
 
   private generateNodeValue(node: SimulationNode): any {
+    // Try to get the dataType from the schema node definition
+    const schemaNode = this.schema.nodes.find((n) => n.id === node.id);
+    const dataType = schemaNode?.dataType ?? 'Float';
+
     let value;
     if (typeof node.payload?.value === 'number') {
-      const baseValue = node.payload.value || 0;
-      value = Math.round((baseValue + (Math.random() - 0.5) * 10) * 100) / 100;
+      const baseValue = node.payload.value;
+      if (dataType === 'Int') {
+        // Integer between 1 and 100
+        value = Math.max(
+          1,
+          Math.min(100, Math.round(baseValue + (Math.random() - 0.5) * 10))
+        );
+      } else if (dataType === 'Float') {
+        // Float between 0 and 1.0
+        value = Math.max(
+          0,
+          Math.min(
+            1,
+            Math.round((baseValue + (Math.random() - 0.5) * 0.2) * 100) / 100
+          )
+        );
+      } else {
+        value = baseValue;
+      }
     } else if (!node.payload?.value) {
-      value = Math.round(Math.random() * 100);
+      if (dataType === 'Int') {
+        // Integer between 1 and 100
+        value = Math.floor(Math.random() * 100) + 1;
+      } else if (dataType === 'Float') {
+        // Float between 0 and 1.0
+        value = Math.round(Math.random() * 100) / 100;
+      } else {
+        value = 0;
+      }
     } else {
       value = node.payload.value;
     }
-    // Ensure value is never negative
-    return Math.max(0, value);
+    return value;
   }
 
   private async publishToBroker(topic: string, payload: any) {
