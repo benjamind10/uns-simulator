@@ -21,6 +21,7 @@ import ProfilesCardContent from '../../components/simulator/ProfilesCardContent'
 import SimulatorCardContent from '../../components/simulator/SimulatorCardContent';
 import { fetchSchemasAsync } from '../../store/schema/schemaThunk';
 import ConfirmDialog from '../../components/global/ConfirmDialog';
+import { connectToBrokerAsync } from '../../store/mqtt/mqttThunk';
 
 export default function SimulationPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -123,6 +124,17 @@ export default function SimulationPage() {
     // Find all nodes in all schemas that match the given IDs
     const allNodes = schemas.flatMap((schema) => schema.nodes ?? []);
     return allNodes.filter((node) => ids.includes(node.id));
+  };
+
+  const brokerStatuses = useSelector(
+    (state: RootState) => state.mqtt.connections
+  );
+
+  const handleConnectBroker = (brokerId: string) => {
+    const broker = brokers.find((b) => b.id === brokerId);
+    if (broker) {
+      dispatch(connectToBrokerAsync(broker));
+    }
   };
 
   return (
@@ -251,6 +263,42 @@ export default function SimulationPage() {
         title="Delete Simulation Profile"
         message="This will permanently delete the selected simulation profile. Are you sure?"
       />
+
+      {/* Brokers Section - Added Section */}
+      <div className="mb-6">
+        <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">
+          Brokers
+        </h3>
+        <ul className="space-y-2">
+          {brokers.map((broker: IBroker) => {
+            const status = brokerStatuses[broker.id]?.status || 'disconnected';
+            console.log(brokerStatuses);
+            return (
+              <li key={broker.id} className="flex items-center justify-between">
+                <span>
+                  {broker.name}
+                  <span
+                    className={`ml-2 px-2 py-1 rounded text-xs ${
+                      status === 'connected'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}
+                  >
+                    {status}
+                  </span>
+                </span>
+                <button
+                  onClick={() => handleConnectBroker(broker.id)}
+                  disabled={status === 'connected'}
+                  className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm disabled:bg-gray-400"
+                >
+                  Connect
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </div>
   );
 }
