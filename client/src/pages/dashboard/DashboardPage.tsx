@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import { Server, Book, Activity } from 'lucide-react';
+import { Server, Book, Activity, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -8,20 +7,13 @@ import StatCard from '../../components/dashboard/StatCard';
 import SchemaCard from '../../components/schema/SchemaCard';
 import BrokerCard from '../../components/brokers/BrokerCard';
 import SimulatorCard from '../../components/simulator/SimulatorCard';
-import { fetchBrokersAsync, deleteBrokerAsync } from '../../store/brokers';
-import {
-  fetchSchemasAsync,
-  deleteSchemaAsync,
-} from '../../store/schema/schemaThunk';
-import { connectToMultipleBrokersAsync } from '../../store/mqtt/mqttThunk';
+import { deleteBrokerAsync } from '../../store/brokers';
+import { deleteSchemaAsync } from '../../store/schema/schemaThunk';
 import {
   selectConnectedBrokersCount,
   selectBrokerStatuses,
 } from '../../store/mqtt/mqttSlice';
-import {
-  deleteSimulationProfileAsync,
-  fetchSimulationProfilesAsync,
-} from '../../store/simulationProfile/simulationProfieThunk';
+import { deleteSimulationProfileAsync } from '../../store/simulationProfile/simulationProfieThunk';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { IBroker, ISchema, ISimulationProfile } from '../../types';
 import { selectProfiles } from '../../store/simulationProfile/simulationProfileSlice';
@@ -46,17 +38,13 @@ export default function DashboardPage() {
     useSelector(selectProfiles)
   ) as ISimulationProfile[];
 
-  useEffect(() => {
-    dispatch(fetchBrokersAsync());
-    dispatch(fetchSchemasAsync());
-    dispatch(fetchSimulationProfilesAsync());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (brokers.length > 0) {
-      dispatch(connectToMultipleBrokersAsync(brokers));
-    }
-  }, [brokers, dispatch]);
+  // Count running simulations
+  const simulationStates = useSelector(
+    (state: RootState) => state.simulationProfile.simulationStates
+  );
+  const runningSimulations = Object.values(simulationStates).filter(
+    (state) => state === 'running'
+  ).length;
 
   /* ---------------  stat cards --------------- */
   const stats = [
@@ -74,6 +62,11 @@ export default function DashboardPage() {
       title: 'Simulator Profiles',
       value: simulators.length,
       icon: <Activity size={20} className="text-amber-500" />,
+    },
+    {
+      title: 'Simulations Running',
+      value: runningSimulations,
+      icon: <Activity size={20} className="text-green-500" />,
     },
   ];
 
@@ -157,16 +150,29 @@ export default function DashboardPage() {
           </p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {simulators.map((sim) => (
-              <SimulatorCard
-                key={sim.id}
-                brokers={brokers}
-                schemas={schemas}
-                simulator={sim}
-                onDelete={handleDeleteSimulator}
-                onOpen={() => handleOpenSimulator(sim)}
-              />
-            ))}
+            {simulators.map((sim) => {
+              const isRunning =
+                simulationStates[sim.id] &&
+                simulationStates[sim.id] === 'running';
+              return (
+                <div className="relative" key={sim.id}>
+                  <SimulatorCard
+                    brokers={brokers}
+                    schemas={schemas}
+                    simulator={sim}
+                    onDelete={handleDeleteSimulator}
+                    onOpen={() => handleOpenSimulator(sim)}
+                  />
+                  {/* Move running icon to bottom right, below card content */}
+                  {isRunning && (
+                    <CheckCircle
+                      size={20}
+                      className="absolute bottom-4 right-4 text-green-500 z-10"
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </section>

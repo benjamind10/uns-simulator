@@ -210,7 +210,7 @@ const SimulationControls: React.FC = () => {
               currentState,
               isLoading,
               error,
-              totalProfiles: Object.keys(profiles).length,
+              // totalProfiles: Object.keys(profiles).length,
             },
             null,
             2
