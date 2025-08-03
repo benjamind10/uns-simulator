@@ -18,7 +18,6 @@ import type {
 import { selectSchemas } from '../../store/schema/schemaSlice';
 import { fetchBrokersAsync, selectBrokers } from '../../store/brokers';
 import ProfilesCardContent from '../../components/simulator/ProfilesCardContent';
-import RunLogCardContent from '../../components/simulator/RunLogCardContent';
 import SimulatorCardContent from '../../components/simulator/SimulatorCardContent';
 import { fetchSchemasAsync } from '../../store/schema/schemaThunk';
 

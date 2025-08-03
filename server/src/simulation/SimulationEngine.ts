@@ -47,16 +47,43 @@ export class SimulationEngine extends EventEmitter {
     );
 
     metricNodes.forEach((schemaNode) => {
-      const nodeSettings = Array.isArray(this.profile.nodeSettings)
-        ? this.profile.nodeSettings.find((ns) => ns.nodeId === schemaNode.id)
-        : undefined;
+      let nodeSettings;
+      if (this.profile.nodeSettings instanceof Map) {
+        nodeSettings = this.profile.nodeSettings.get(schemaNode.id);
+      } else if (Array.isArray(this.profile.nodeSettings)) {
+        nodeSettings = this.profile.nodeSettings.find(
+          (ns) => String(ns.nodeId) === String(schemaNode.id)
+        );
+      } else {
+        nodeSettings = undefined;
+      }
+
       const globalSettings = this.profile.globalSettings;
+
+      // Use nodeSettings.frequency only if it's a valid number > 0
+      let frequency = globalSettings.defaultUpdateFrequency;
+      if (
+        nodeSettings &&
+        typeof nodeSettings.frequency === 'number' &&
+        nodeSettings.frequency > 0
+      ) {
+        frequency = nodeSettings.frequency;
+      }
+
+      // Log for debugging
+      console.log(
+        `[Node ${schemaNode.id}] nodeSettings.frequency:`,
+        nodeSettings?.frequency,
+        '| resolved frequency:',
+        frequency,
+        '| global default:',
+        globalSettings.defaultUpdateFrequency
+      );
 
       const node: SimulationNode = {
         id: schemaNode.id,
         path: schemaNode.path,
-        frequency:
-          nodeSettings?.frequency ?? globalSettings.defaultUpdateFrequency,
+        frequency,
         failRate: nodeSettings?.failRate ?? 0,
         payload: {
           ...nodeSettings?.payload,
@@ -354,16 +381,17 @@ export class SimulationEngine extends EventEmitter {
   }
 
   private generateNodeValue(node: SimulationNode): any {
+    let value;
     if (typeof node.payload?.value === 'number') {
       const baseValue = node.payload.value || 0;
-      return Math.round((baseValue + (Math.random() - 0.5) * 10) * 100) / 100;
+      value = Math.round((baseValue + (Math.random() - 0.5) * 10) * 100) / 100;
+    } else if (!node.payload?.value) {
+      value = Math.round(Math.random() * 100);
+    } else {
+      value = node.payload.value;
     }
-
-    if (!node.payload?.value) {
-      return Math.round(Math.random() * 100);
-    }
-
-    return node.payload.value;
+    // Ensure value is never negative
+    return Math.max(0, value);
   }
 
   private async publishToBroker(topic: string, payload: any) {
