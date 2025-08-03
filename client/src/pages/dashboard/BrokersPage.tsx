@@ -11,6 +11,10 @@ import {
   fetchBrokersAsync,
   updateBrokerAsync,
 } from '../../store/brokers';
+import {
+  connectToBrokerAsync,
+  disconnectFromBrokerAsync,
+} from '../../store/mqtt/mqttThunk'; // <-- Import connect/disconnect thunks
 import type { AppDispatch, RootState } from '../../store/store';
 import type { IBroker } from '../../types';
 
@@ -19,6 +23,9 @@ export default function BrokersPage() {
   const navigate = useNavigate();
   const { brokers, loading, error } = useSelector(
     (state: RootState) => state.brokers
+  );
+  const brokerStatuses = useSelector(
+    (state: RootState) => state.mqtt.connections
   );
   const [editingBroker, setEditingBroker] = useState<IBroker | null>(null);
   const { brokerId } = useParams();
@@ -95,6 +102,25 @@ export default function BrokersPage() {
     }
   };
 
+  // --- Connect/Disconnect handlers ---
+  const handleConnectBroker = async (broker: IBroker) => {
+    try {
+      await dispatch(connectToBrokerAsync(broker)).unwrap();
+      toast.success(`Connected to ${broker.name}`);
+    } catch {
+      toast.error(`Failed to connect to ${broker.name}`);
+    }
+  };
+
+  const handleDisconnectBroker = async (broker: IBroker) => {
+    try {
+      await dispatch(disconnectFromBrokerAsync(broker.id)).unwrap();
+      toast.success(`Disconnected from ${broker.name}`);
+    } catch {
+      toast.error(`Failed to disconnect from ${broker.name}`);
+    }
+  };
+
   return (
     <div className="max-w-3xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">
@@ -114,7 +140,13 @@ export default function BrokersPage() {
         {loading ? (
           <p>Loading brokers...</p>
         ) : (
-          <BrokerList brokers={brokers} onDelete={handleDeleteBroker} />
+          <BrokerList
+            brokers={brokers}
+            brokerStatuses={brokerStatuses}
+            onDelete={handleDeleteBroker}
+            onConnect={handleConnectBroker}
+            onDisconnect={handleDisconnectBroker}
+          />
         )}
       </div>
     </div>
