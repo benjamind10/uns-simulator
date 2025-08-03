@@ -102,7 +102,7 @@ export default function SimulatorNodeSettings({
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm mb-1">Frequency</label>
+              <label className="block text-sm mb-1">Frequency (ms)</label>
               <input
                 type="number"
                 value={settings[node.id]?.frequency ?? ''}
@@ -113,7 +113,7 @@ export default function SimulatorNodeSettings({
               />
             </div>
             <div>
-              <label className="block text-sm mb-1">Fail Rate</label>
+              <label className="block text-sm mb-1">Fail Rate (ms)</label>
               <input
                 type="number"
                 step="0.01"
