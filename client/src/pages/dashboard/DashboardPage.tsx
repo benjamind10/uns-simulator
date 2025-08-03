@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Server, Book, Activity, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import StatCard from '../../components/dashboard/StatCard';
@@ -32,13 +32,14 @@ import { selectProfiles } from '../../store/simulationProfile/simulationProfileS
 export default function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+  const location = useLocation();
 
-  // Fetch brokers, schemas, and simulation profiles on mount
+  // Fetch brokers, schemas, and simulation profiles every time the route changes
   useEffect(() => {
     dispatch(fetchBrokersAsync());
     dispatch(fetchSchemasAsync());
     dispatch(fetchSimulationProfilesAsync());
-  }, [dispatch]);
+  }, [dispatch, location.pathname]);
 
   const { brokers, loading: brokersLoading } = useSelector(
     (state: RootState) => state.brokers

@@ -41,21 +41,23 @@ const SimulationControls: React.FC = () => {
     ? simulationStates[profileId] || 'idle'
     : 'idle';
 
+  // Fetch simulation status on mount and when profileId changes
   useEffect(() => {
     if (profileId) {
       dispatch(getSimulationStatusAsync(profileId) as any);
     }
   }, [dispatch, profileId]);
 
-  const handleStart = () => {
-    // Check if broker is connected
+  // Handle backend errors gracefully
+  const [serverError, setServerError] = useState<string | null>(null);
+
+  const handleStart = async () => {
     const requiredBrokerId = selectedProfile?.brokerId;
     const brokerStatus =
       requiredBrokerId && brokerStatuses[requiredBrokerId]
         ? brokerStatuses[requiredBrokerId]
         : { status: 'disconnected' };
 
-    // Type guard to ensure brokerStatus has a 'status' property
     const status =
       typeof brokerStatus === 'object' && 'status' in brokerStatus
         ? (brokerStatus as any).status
@@ -67,26 +69,49 @@ const SimulationControls: React.FC = () => {
     }
 
     if (profileId) {
-      dispatch(startSimulationAsync(profileId) as any);
+      try {
+        await dispatch(startSimulationAsync(profileId) as any);
+        dispatch(getSimulationStatusAsync(profileId) as any);
+        setServerError(null);
+      } catch {
+        setServerError('Could not start simulation. Server may be offline.');
+      }
     }
   };
 
   const handleStop = async () => {
     if (profileId) {
-      await dispatch(stopSimulationAsync(profileId) as any);
-      dispatch(getSimulationStatusAsync(profileId) as any); // Refetch status
+      try {
+        await dispatch(stopSimulationAsync(profileId) as any);
+        dispatch(getSimulationStatusAsync(profileId) as any);
+        setServerError(null);
+      } catch {
+        setServerError('Could not stop simulation. Server may be offline.');
+      }
     }
   };
 
-  const handlePause = () => {
+  const handlePause = async () => {
     if (profileId) {
-      dispatch(pauseSimulationAsync(profileId) as any);
+      try {
+        await dispatch(pauseSimulationAsync(profileId) as any);
+        dispatch(getSimulationStatusAsync(profileId) as any);
+        setServerError(null);
+      } catch {
+        setServerError('Could not pause simulation. Server may be offline.');
+      }
     }
   };
 
-  const handleResume = () => {
+  const handleResume = async () => {
     if (profileId) {
-      dispatch(resumeSimulationAsync(profileId) as any);
+      try {
+        await dispatch(resumeSimulationAsync(profileId) as any);
+        dispatch(getSimulationStatusAsync(profileId) as any);
+        setServerError(null);
+      } catch {
+        setServerError('Could not resume simulation. Server may be offline.');
+      }
     }
   };
 
@@ -159,6 +184,11 @@ const SimulationControls: React.FC = () => {
           {error && (
             <div className="text-red-600 dark:text-red-400 text-sm">
               Error: {error}
+            </div>
+          )}
+          {serverError && (
+            <div className="text-red-600 dark:text-red-400 text-sm">
+              {serverError}
             </div>
           )}
         </div>
@@ -235,6 +265,7 @@ const SimulationControls: React.FC = () => {
               currentState,
               isLoading,
               error,
+              serverError,
             },
             null,
             2
