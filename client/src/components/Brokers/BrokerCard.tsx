@@ -9,6 +9,8 @@ interface BrokerCardProps {
   status: 'disconnected' | 'connecting' | 'connected' | 'error';
   onDelete: (id: string) => void;
   onEdit: () => void;
+  onConnect: () => void;
+  onDisconnect: () => void;
 }
 
 export default function BrokerCard({
@@ -16,6 +18,8 @@ export default function BrokerCard({
   status = 'disconnected',
   onEdit,
   onDelete,
+  onConnect,
+  onDisconnect,
 }: BrokerCardProps) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -95,6 +99,28 @@ export default function BrokerCard({
             >
               <Trash2 size={16} />
             </button>
+          </div>
+        </div>
+
+        {/* Connect/Disconnect buttons */}
+        <div className="flex justify-between items-center mt-4">
+          <div className="flex gap-2">
+            {status === 'connected' ? (
+              <button
+                onClick={onDisconnect}
+                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+              >
+                Disconnect
+              </button>
+            ) : (
+              <button
+                onClick={onConnect}
+                className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                disabled={status === 'connecting'}
+              >
+                {status === 'connecting' ? 'Connecting...' : 'Connect'}
+              </button>
+            )}
           </div>
         </div>
       </div>

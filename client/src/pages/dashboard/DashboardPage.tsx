@@ -18,6 +18,10 @@ import {
   selectBrokerStatuses,
 } from '../../store/mqtt/mqttSlice';
 import {
+  connectToBrokerAsync,
+  disconnectFromBrokerAsync,
+} from '../../store/mqtt/mqttThunk';
+import {
   deleteSimulationProfileAsync,
   fetchSimulationProfilesAsync,
 } from '../../store/simulationProfile/simulationProfieThunk';
@@ -129,6 +133,34 @@ export default function DashboardPage() {
     }
   };
 
+  // NEW: Connect/Disconnect handlers
+  const handleConnectBroker = async (broker: IBroker) => {
+    try {
+      await dispatch(connectToBrokerAsync(broker)).unwrap();
+      toast.success(`Connected to ${broker.name}`, {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+    } catch (error) {
+      console.error('Error connecting to broker:', error);
+      toast.error(`Failed to connect to ${broker.name}`);
+    }
+  };
+
+  const handleDisconnectBroker = async (brokerId: string) => {
+    try {
+      await dispatch(disconnectFromBrokerAsync(brokerId)).unwrap();
+      const broker = brokers.find((b) => b.id === brokerId);
+      toast.success(`Disconnected from ${broker?.name || 'broker'}`, {
+        duration: 3000,
+        position: 'bottom-right',
+      });
+    } catch (error) {
+      console.error('Error disconnecting from broker:', error);
+      toast.error('Failed to disconnect from broker');
+    }
+  };
+
   const handleEditBroker = (broker: IBroker) => {
     navigate(`/dashboard/brokers/${broker.id}`);
   };
@@ -218,6 +250,8 @@ export default function DashboardPage() {
                 }
                 onDelete={handleDeleteBroker}
                 onEdit={() => handleEditBroker(b)}
+                onConnect={() => handleConnectBroker(b)}
+                onDisconnect={() => handleDisconnectBroker(b.id)}
               />
             ))}
           </div>
