@@ -219,8 +219,12 @@ const simulationProfileSlice = createSlice({
         state.error = null;
       })
       .addCase(deleteSimulationProfileAsync.fulfilled, (state, action) => {
-        state.loading = false;
-        delete state.profiles[action.payload];
+        const profileId = action.payload;
+        delete state.profiles[profileId];
+        delete state.simulationStates[profileId];
+        delete state.simulationErrors[profileId];
+        delete state.simulationLoading[profileId];
+        delete state.simulationStatus[profileId];
       })
       .addCase(deleteSimulationProfileAsync.rejected, (state, action) => {
         state.loading = false;
