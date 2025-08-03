@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 
@@ -15,7 +15,6 @@ const SimulationControls: React.FC = () => {
   const dispatch = useDispatch();
   const { profileId } = useParams<{ profileId: string }>();
 
-  // Use a simpler selector approach
   const profiles = useSelector(
     (state: RootState) => state.simulationProfile.profiles
   );
@@ -30,35 +29,43 @@ const SimulationControls: React.FC = () => {
   const simulationErrors = useSelector(
     (state: RootState) => state.simulationProfile.simulationErrors
   );
-  //   const status = useSelector((state: RootState) =>
-  //     selectSimulationStatus(state, profileId)
-  //   );
+
+  // Broker connection check
+  const brokerStatuses = useSelector(
+    (state: RootState) => state.mqtt.connections
+  );
+
+  const [showAlert, setShowAlert] = useState(false);
 
   const currentState = profileId
     ? simulationStates[profileId] || 'idle'
     : 'idle';
 
-  console.log('Current State:', currentState);
-
   useEffect(() => {
-    if (!profileId) return;
-
-    // Always fetch once on mount/profile change
-    dispatch(getSimulationStatusAsync(profileId) as any);
-
-    // Only poll if running or paused
-    if (currentState === 'running' || currentState === 'paused') {
-      const interval = setInterval(() => {
-        dispatch(getSimulationStatusAsync(profileId) as any);
-      }, 2000);
-      return () => clearInterval(interval);
+    if (profileId) {
+      dispatch(getSimulationStatusAsync(profileId) as any);
     }
-    // No polling if not running/paused
-    // Do not fetch again if not running/paused
-    // Remove the one-time fetch from here if you want to avoid firing on every state change
-  }, [dispatch, profileId]); // <-- Remove currentState from dependencies
+  }, [dispatch, profileId]);
 
   const handleStart = () => {
+    // Check if broker is connected
+    const requiredBrokerId = selectedProfile?.brokerId;
+    const brokerStatus =
+      requiredBrokerId && brokerStatuses[requiredBrokerId]
+        ? brokerStatuses[requiredBrokerId]
+        : { status: 'disconnected' };
+
+    // Type guard to ensure brokerStatus has a 'status' property
+    const status =
+      typeof brokerStatus === 'object' && 'status' in brokerStatus
+        ? (brokerStatus as any).status
+        : 'disconnected';
+
+    if (status !== 'connected') {
+      setShowAlert(true);
+      return;
+    }
+
     if (profileId) {
       dispatch(startSimulationAsync(profileId) as any);
     }
@@ -85,7 +92,6 @@ const SimulationControls: React.FC = () => {
   const isLoading = profileId ? simulationLoading[profileId] || false : false;
   const error = profileId ? simulationErrors[profileId] : null;
 
-  // If no profile is selected from URL, show message
   if (!profileId || !selectedProfile) {
     return (
       <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-2xl mx-auto">
@@ -95,11 +101,6 @@ const SimulationControls: React.FC = () => {
         <div className="text-center text-gray-500 dark:text-gray-400">
           {!profileId ? 'No profile ID in URL' : 'Profile not found'}
         </div>
-        {profileId && (
-          <div className="text-xs text-gray-400 mt-2 text-center">
-            Looking for profile: {profileId}
-          </div>
-        )}
       </div>
     );
   }
@@ -196,6 +197,29 @@ const SimulationControls: React.FC = () => {
         </button>
       </div>
 
+      {/* Simple Alert Popup */}
+      {showAlert && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+              Broker Not Connected
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Please connect to the required broker in the dashboard before
+              starting the simulation.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowAlert(false)}
+                className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Debug Info */}
       <details className="mt-6">
         <summary className="cursor-pointer text-sm text-gray-600 dark:text-gray-400">
@@ -210,7 +234,6 @@ const SimulationControls: React.FC = () => {
               currentState,
               isLoading,
               error,
-              totalProfiles: Object.keys(profiles).length,
             },
             null,
             2

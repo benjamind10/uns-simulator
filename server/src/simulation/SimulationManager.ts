@@ -62,8 +62,8 @@ export class SimulationManager {
   async stopSimulation(profileId: string): Promise<void> {
     const engine = this.engines.get(profileId);
     if (engine) {
-      engine.stop();
-      // Engine will be removed from map via 'stopped' event listener
+      await engine.stop(); // Wait for stop to complete
+      this.engines.delete(profileId); // Remove from map
     }
   }
 

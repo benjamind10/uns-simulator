@@ -1,8 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { useEffect } from 'react';
 
-import { connectToMultipleBrokersAsync } from './store/mqtt/mqttThunk';
 import PublicLayout from './layout/PublicLayout';
 import DashboardLayout from './layout/DashboardLayout';
 import LandingPage from './pages/public/LandingPage';
@@ -14,19 +11,18 @@ import SchemaBuilderPage from './pages/private/SchemaBuilderPage';
 import NotFoundPage from './pages/public/NotFoundPage';
 import SchemaPage from './pages/dashboard/SchemaPage';
 import SimulationPage from './pages/private/SimulationPage';
-import type { AppDispatch, RootState } from './types';
 import SimulatorsPage from './pages/dashboard/SimulatorsPage';
 
 export default function App() {
-  const dispatch = useDispatch<AppDispatch>();
-  const { brokers } = useSelector((state: RootState) => state.brokers);
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  // const dispatch = useDispatch<AppDispatch>();
+  // const { brokers } = useSelector((state: RootState) => state.brokers);
+  // const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
-  useEffect(() => {
-    if (isAuthenticated && brokers.length > 0) {
-      dispatch(connectToMultipleBrokersAsync(brokers));
-    }
-  }, [isAuthenticated, brokers, dispatch]);
+  // useEffect(() => {
+  //   if (isAuthenticated && brokers.length > 0) {
+  //     dispatch(connectToMultipleBrokersAsync(brokers));
+  //   }
+  // }, [isAuthenticated, brokers, dispatch]);
 
   return (
     <BrowserRouter>

@@ -71,14 +71,14 @@ export class SimulationEngine extends EventEmitter {
       }
 
       // Log for debugging
-      console.log(
-        `[Node ${schemaNode.id}] nodeSettings.frequency:`,
-        nodeSettings?.frequency,
-        '| resolved frequency:',
-        frequency,
-        '| global default:',
-        globalSettings.defaultUpdateFrequency
-      );
+      // console.log(
+      //   `[Node ${schemaNode.id}] nodeSettings.frequency:`,
+      //   nodeSettings?.frequency,
+      //   '| resolved frequency:',
+      //   frequency,
+      //   '| global default:',
+      //   globalSettings.defaultUpdateFrequency
+      // );
 
       const node: SimulationNode = {
         id: schemaNode.id,
@@ -361,12 +361,12 @@ export class SimulationEngine extends EventEmitter {
       });
 
       // Only log occasionally to avoid spam
-      if (Math.random() < 0.1) {
-        // 10% chance to log
-        console.log(
-          `📤 Publishing to ${this.nodes.size} topics (sample: ${topic})`
-        );
-      }
+      // if (Math.random() < 0.1) {
+      //   // 10% chance to log
+      //   console.log(
+      //     `📤 Publishing to ${this.nodes.size} topics (sample: ${topic})`
+      //   );
+      // }
     } catch (error) {
       console.error(`🚨 Publish error for ${node.path}: ${error}`);
       this.emit('publishError', {
@@ -448,10 +448,10 @@ export class SimulationEngine extends EventEmitter {
     });
   }
 
-  stop() {
+  async stop() {
     if (!this.isRunning) return;
 
-    this.updateProfileStatus({ state: 'stopping' });
+    await this.updateProfileStatus({ state: 'stopping' });
 
     this.isRunning = false;
     this.isPaused = false;
@@ -473,8 +473,8 @@ export class SimulationEngine extends EventEmitter {
       this.mqttClient = undefined;
     }
 
-    // Update final stopped status
-    this.updateProfileStatus({
+    // Await final stopped status
+    await this.updateProfileStatus({
       state: 'stopped',
       isRunning: false,
       isPaused: false,
