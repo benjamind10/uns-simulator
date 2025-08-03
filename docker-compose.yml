@@ -6,8 +6,8 @@ services:
     depends_on:
       - backend
     environment:
-      - VITE_API_URL=http://localhost:5000
-      - VITE_MQTTBROKER=ws://localhost:1884
+      - VITE_API_URL=http://backend:4000
+      - VITE_MQTTBROKER=ws://mqtt:1884
     volumes:
       - ./client:/app
       - /app/node_modules
