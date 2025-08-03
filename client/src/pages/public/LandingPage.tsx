@@ -3,9 +3,10 @@ import { useSelector } from 'react-redux';
 
 import slide1 from '../../assets/carousel/dashboard.png';
 import slide2 from '../../assets/carousel/simulator.png';
+import slide3 from '../../assets/carousel/schema.png';
 import { selectIsAuthenticated } from '../../store/auth';
 
-const carouselImages = [slide1, slide2];
+const carouselImages = [slide1, slide2, slide3];
 
 function Carousel() {
   const [current, setCurrent] = useState(0);
