@@ -99,12 +99,13 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <button
-              onClick={() => navigate('/')}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+            <NavLink
+              to="/login"
+              onClick={closeMenu}
+              className="block w-full text-left bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
               Login
-            </button>
+            </NavLink>
           )}
           <button
             onClick={toggleDarkMode}
@@ -128,7 +129,7 @@ export default function Navbar() {
                   `block ${isActive ? 'font-semibold text-blue-500' : ''}`
                 }
               >
-                Admin
+                Dashboard
               </NavLink>
               <NavLink
                 to="/explorer"
@@ -148,6 +149,15 @@ export default function Navbar() {
               >
                 Schema Builder
               </NavLink>
+              <NavLink
+                to="/simulator"
+                onClick={closeMenu}
+                className={({ isActive }) =>
+                  `block ${isActive ? 'font-semibold text-blue-500' : ''}`
+                }
+              >
+                Simulator
+              </NavLink>
               <button
                 onClick={handleLogout}
                 className="block w-full text-left bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
@@ -156,15 +166,13 @@ export default function Navbar() {
               </button>
             </>
           ) : (
-            <button
-              onClick={() => {
-                navigate('/');
-                closeMenu();
-              }}
+            <NavLink
+              to="/login"
+              onClick={closeMenu}
               className="block w-full text-left bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
             >
               Login
-            </button>
+            </NavLink>
           )}
         </div>
       )}

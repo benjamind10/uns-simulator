@@ -12,6 +12,7 @@ import NotFoundPage from './pages/public/NotFoundPage';
 import SchemaPage from './pages/dashboard/SchemaPage';
 import SimulationPage from './pages/private/SimulationPage';
 import SimulatorsPage from './pages/dashboard/SimulatorsPage';
+import LoginPage from './pages/public/LoginPage';
 
 export default function App() {
   // const dispatch = useDispatch<AppDispatch>();
@@ -30,6 +31,7 @@ export default function App() {
         {/* ---------- PUBLIC ROUTES ---------- */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
           <Route path="*" element={<NotFoundPage />} />
           {/* add more marketing / help pages here */}
         </Route>
