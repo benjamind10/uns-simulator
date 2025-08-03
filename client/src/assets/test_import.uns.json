@@ -3,9 +3,11 @@
     "id": "fiberon",
     "name": "Fiberon",
     "kind": "group",
-    "parent": null,
+    "parent": "",
     "path": "Fiberon",
-    "order": 0
+    "order": 0,
+    "unit": "",
+    "engineering": {}
   },
   {
     "id": "1nl",
@@ -13,7 +15,9 @@
     "kind": "group",
     "parent": "fiberon",
     "path": "Fiberon/1NL/",
-    "order": 1
+    "order": 1,
+    "unit": "",
+    "engineering": {}
   },
   {
     "id": "pe",
@@ -21,7 +25,9 @@
     "kind": "group",
     "parent": "1nl",
     "path": "Fiberon/1NL/PE",
-    "order": 2
+    "order": 2,
+    "unit": "",
+    "engineering": {}
   },
   {
     "id": "line-24",
@@ -29,7 +35,9 @@
     "kind": "group",
     "parent": "pe",
     "path": "Fiberon/1NL/PE/Line 24",
-    "order": 3
+    "order": 3,
+    "unit": "",
+    "engineering": {}
   },
   {
     "id": "oee",
@@ -37,7 +45,9 @@
     "kind": "group",
     "parent": "line-24",
     "path": "Fiberon/1NL/PE/Line 24/OEE",
-    "order": 4
+    "order": 4,
+    "unit": "",
+    "engineering": {}
   },
   {
     "id": "oee-metric",
@@ -47,7 +57,9 @@
     "dataType": "Float",
     "unit": "%",
     "path": "Fiberon/1NL/PE/Line 24/OEE/OEE",
-    "order": 5
+    "order": 5,
+    "engineering": {},
+    "objectData": {}
   },
   {
     "id": "availability-metric",
@@ -57,7 +69,9 @@
     "dataType": "Float",
     "unit": "%",
     "path": "Fiberon/1NL/PE/Line 24/OEE/Availability",
-    "order": 6
+    "order": 6,
+    "engineering": {},
+    "objectData": {}
   },
   {
     "id": "quality-metric",
@@ -67,7 +81,9 @@
     "dataType": "Float",
     "unit": "%",
     "path": "Fiberon/1NL/PE/Line 24/OEE/Quality",
-    "order": 7
+    "order": 7,
+    "engineering": {},
+    "objectData": {}
   },
   {
     "id": "performance-metric",
@@ -77,6 +93,54 @@
     "dataType": "Float",
     "unit": "%",
     "path": "Fiberon/1NL/PE/Line 24/OEE/Performance",
-    "order": 8
+    "order": 8,
+    "engineering": {},
+    "objectData": {}
+  },
+  {
+    "id": "edge",
+    "name": "Edge",
+    "kind": "group",
+    "parent": "line-24",
+    "path": "Fiberon/1NL/PE/Line 24/Edge",
+    "order": 9,
+    "unit": "",
+    "engineering": {}
+  },
+  {
+    "id": "infeed-metric",
+    "name": "Infeed",
+    "kind": "metric",
+    "parent": "edge",
+    "dataType": "Int",
+    "unit": "",
+    "path": "Fiberon/1NL/PE/Line 24/Edge/Infeed",
+    "order": 10,
+    "engineering": {},
+    "objectData": {}
+  },
+  {
+    "id": "outfeed-metric",
+    "name": "Outfeed",
+    "kind": "metric",
+    "parent": "edge",
+    "dataType": "Int",
+    "unit": "",
+    "path": "Fiberon/1NL/PE/Line 24/Edge/Outfeed",
+    "order": 11,
+    "engineering": {},
+    "objectData": {}
+  },
+  {
+    "id": "waste-metric",
+    "name": "Waste",
+    "kind": "metric",
+    "parent": "edge",
+    "dataType": "Int",
+    "unit": "",
+    "path": "Fiberon/1NL/PE/Line 24/Edge/Waste",
+    "order": 12,
+    "engineering": {},
+    "objectData": {}
   }
 ]
