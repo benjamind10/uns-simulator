@@ -43,6 +43,7 @@ export interface MqttState {
 }
 
 export interface MqttConnection {
+  status: string;
   brokerId: string;
   isConnected: boolean;
   isConnecting: boolean;

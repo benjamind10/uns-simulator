@@ -219,8 +219,12 @@ const simulationProfileSlice = createSlice({
         state.error = null;
       })
       .addCase(deleteSimulationProfileAsync.fulfilled, (state, action) => {
-        state.loading = false;
-        delete state.profiles[action.payload];
+        const profileId = action.payload;
+        delete state.profiles[profileId];
+        delete state.simulationStates[profileId];
+        delete state.simulationErrors[profileId];
+        delete state.simulationLoading[profileId];
+        delete state.simulationStatus[profileId];
       })
       .addCase(deleteSimulationProfileAsync.rejected, (state, action) => {
         state.loading = false;
@@ -298,13 +302,8 @@ const simulationProfileSlice = createSlice({
       // Get simulation status
       .addCase(getSimulationStatusAsync.fulfilled, (state, action) => {
         const { profileId, status } = action.payload;
+        state.simulationStates[profileId] = status.state;
         state.simulationStatus[profileId] = status;
-        state.simulationStates[profileId] = status?.state || 'idle';
-        if (status && status.state !== 'error') {
-          state.simulationErrors[profileId] = null;
-        } else if (status && status.error) {
-          state.simulationErrors[profileId] = status.error;
-        }
       });
     // .addCase(getSimulationStatusAsync.rejected, (state, action) => {
     //   // Optionally log or handle polling errors

@@ -23,6 +23,7 @@ import type {
   SimulationState,
   SimulationInstance,
 } from './simulationProfile';
+import type { RegisterData } from './auth';
 
 export type {
   IBroker,
@@ -49,4 +50,5 @@ export type {
   SimulationState,
   SimulationInstance,
   SchemaInput,
+  RegisterData,
 };
