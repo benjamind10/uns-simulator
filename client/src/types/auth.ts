@@ -1,8 +1,9 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
+  username: string;
   role?: string;
+  createdAt?: string;
 }
 
 export interface AuthState {
@@ -19,7 +20,7 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData {
-  name: string;
+  username: string;
   email: string;
   password: string;
 }

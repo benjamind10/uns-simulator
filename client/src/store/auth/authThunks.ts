@@ -1,7 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
-import { loginUser } from '../../api/auth';
-import type { User } from '../../types/auth';
+import { loginUser, registerUser } from '../../api/auth';
+import type { User, RegisterData } from '../../types/auth';
 import { AUTH_ACTIONS } from '../constants';
 
 // Helper function to persist auth data
@@ -25,6 +25,22 @@ export const loginAsync = createAsyncThunk(
       user: response.user,
       token: response.token,
     };
+  }
+);
+
+export const registerAsync = createAsyncThunk(
+  AUTH_ACTIONS.REGISTER,
+  async ({ username, email, password }: RegisterData) => {
+    const user = await registerUser(username, email, password);
+
+    if (!user) {
+      throw new Error('Registration failed');
+    }
+
+    // Optionally persist user info if you want auto-login after registration
+    // sessionStorage.setItem('authUser', JSON.stringify(user));
+
+    return { user };
   }
 );
 

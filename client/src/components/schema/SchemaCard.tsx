@@ -1,6 +1,8 @@
 import { Edit, Trash2, FileText } from 'lucide-react';
+import { useSelector } from 'react-redux';
 
 import type { ISchema } from '../../types';
+import type { RootState } from '../../store/store'; // adjust path if needed
 
 interface SchemaCardProps {
   schema: ISchema;
@@ -13,6 +15,16 @@ export default function SchemaCard({
   onDelete,
   onEdit,
 }: SchemaCardProps) {
+  // Get all simulation profiles from Redux
+  const profiles = useSelector(
+    (state: RootState) => state.simulationProfile.profiles
+  );
+
+  // Count how many profiles use this schema
+  const assignedCount = Object.values(profiles).filter(
+    (profile: any) => profile.schemaId === schema.id
+  ).length;
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
       <div className="flex items-start justify-between mb-4">
@@ -63,7 +75,10 @@ export default function SchemaCard({
               ).toLocaleDateString()
             : '-'}
         </span>
-        <span>{schema.brokerIds.length} broker(s)</span>
+        <span>
+          Assigned to {assignedCount} simulation profile
+          {assignedCount === 1 ? '' : 's'}
+        </span>
       </div>
     </div>
   );

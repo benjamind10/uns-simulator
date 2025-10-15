@@ -2,7 +2,10 @@ import { GraphQLClient } from 'graphql-request';
 
 import type { User } from '../types/auth';
 
-import { LOGIN_MUTATION } from './mutations/auth.mutations';
+import {
+  LOGIN_MUTATION,
+  CREATE_USER_MUTATION,
+} from './mutations/auth.mutations';
 
 const endpoint = import.meta.env.VITE_API_URL;
 
@@ -21,6 +24,10 @@ interface AuthResponse {
     token: string;
     user: User;
   };
+}
+
+interface RegisterResponse {
+  createUser: User;
 }
 
 export async function loginUser(
@@ -49,6 +56,38 @@ export async function loginUser(
     return response.login;
   } catch (error) {
     console.error('Login request failed:', error);
+    return null;
+  }
+}
+
+// Register user using createUser mutation
+export async function registerUser(
+  username: string,
+  email: string,
+  password: string
+): Promise<User | null> {
+  try {
+    const variables = {
+      input: {
+        username,
+        email,
+        password,
+      },
+    };
+
+    const response: RegisterResponse = await client.request(
+      CREATE_USER_MUTATION,
+      variables
+    );
+
+    if (!response.createUser) {
+      console.error('Invalid register response:', response);
+      return null;
+    }
+
+    return response.createUser;
+  } catch (error) {
+    console.error('Register request failed:', error);
     return null;
   }
 }
