@@ -177,7 +177,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-10">
       {/* --- stat cards row --- */}
-      <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="grid gap-4 grid-cols-2 sm:grid-cols-4">
         {stats.map((s) => (
           <StatCard key={s.title} {...s} />
         ))}

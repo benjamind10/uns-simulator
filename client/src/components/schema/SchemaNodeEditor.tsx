@@ -74,12 +74,13 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   };
 
   const handleAddNode = () => {
+    const isRoot = !selectedNode;
     const newNode: ISchemaNode = {
       id: Date.now().toString(),
       name: form.name,
       kind: form.kind,
-      parent: selectedNode?.id || '',
-      path: selectedNode ? `${selectedNode.path}/${form.name}` : form.name,
+      parent: isRoot ? null : selectedNode?.id,
+      path: isRoot ? form.name : `${selectedNode?.path ?? ''}/${form.name}`,
       order: 0,
       dataType: form.kind === 'metric' ? form.dataType || 'Float' : undefined,
       unit: form.unit,
