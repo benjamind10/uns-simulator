@@ -264,40 +264,74 @@ export default function SimulationPage() {
         message="This will permanently delete the selected simulation profile. Are you sure?"
       />
 
-      {/* Brokers Section - Added Section */}
+      {/* Brokers Section - Table Format */}
       <div className="mb-6">
-        <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">
+        <h3 className="font-semibold mb-4 text-gray-900 dark:text-gray-100 text-lg">
           Brokers
         </h3>
-        <ul className="space-y-2">
-          {brokers.map((broker: IBroker) => {
-            const status = brokerStatuses[broker.id]?.status || 'disconnected';
-            console.log(brokerStatuses);
-            return (
-              <li key={broker.id} className="flex items-center justify-between">
-                <span>
-                  {broker.name}
-                  <span
-                    className={`ml-2 px-2 py-1 rounded text-xs ${
-                      status === 'connected'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                    }`}
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+              {brokers.map((broker: IBroker) => {
+                const status =
+                  brokerStatuses[broker.id]?.status || 'disconnected';
+                return (
+                  <tr
+                    key={broker.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
                   >
-                    {status}
-                  </span>
-                </span>
-                <button
-                  onClick={() => handleConnectBroker(broker.id)}
-                  disabled={status === 'connected'}
-                  className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm disabled:bg-gray-400"
-                >
-                  Connect
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {broker.name}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          status === 'connected'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
+                      <button
+                        onClick={() => handleConnectBroker(broker.id)}
+                        disabled={status === 'connected'}
+                        className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm disabled:bg-gray-400"
+                      >
+                        Connect
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {brokers.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={3}
+                    className="px-4 py-4 text-center text-gray-500 dark:text-gray-400 text-sm"
+                  >
+                    No brokers found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
