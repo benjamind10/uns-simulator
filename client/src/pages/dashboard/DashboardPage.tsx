@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Server, Book, Activity, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import StatCard from '../../components/dashboard/StatCard';
@@ -32,14 +32,14 @@ import { selectProfiles } from '../../store/simulationProfile/simulationProfileS
 export default function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const location = useLocation();
 
-  // Fetch brokers, schemas, and simulation profiles every time the route changes
+  // Fetch brokers, schemas, and simulation profiles only on mount
   useEffect(() => {
     dispatch(fetchBrokersAsync());
     dispatch(fetchSchemasAsync());
     dispatch(fetchSimulationProfilesAsync());
-  }, [dispatch, location.pathname]);
+    // Only fetch on mount, not on every route change
+  }, [dispatch]);
 
   const { brokers, loading: brokersLoading } = useSelector(
     (state: RootState) => state.brokers
@@ -175,115 +175,120 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-10">
-      {/* --- stat cards row --- */}
-      <section className="grid gap-4 grid-cols-2 sm:grid-cols-4">
-        {stats.map((s) => (
-          <StatCard key={s.title} {...s} />
-        ))}
-      </section>
+    <div className="h-full overflow-y-auto">
+      <div className="space-y-10">
+        {/* --- stat cards row --- */}
+        <section className="grid gap-4 grid-cols-2 sm:grid-cols-4">
+          {stats.map((s) => (
+            <StatCard key={s.title} {...s} />
+          ))}
+        </section>
 
-      {/* --- simulators preview row --- */}
-      <section>
-        <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
-          Simulators Overview
-        </h2>
-        {simulators.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400">
-            No simulators created yet.
-          </p>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {simulators.map((sim) => {
-              const isRunning =
-                simulationStates[sim.id] &&
-                simulationStates[sim.id] === 'running';
-              return (
-                <div className="relative" key={sim.id}>
-                  <SimulatorCard
-                    brokers={brokers}
-                    schemas={schemas}
-                    simulator={sim}
-                    onDelete={handleDeleteSimulator}
-                    onOpen={() => handleOpenSimulator(sim)}
-                  />
-                  {/* Move running icon to bottom right, below card content */}
-                  {isRunning && (
-                    <CheckCircle
-                      size={20}
-                      className="absolute bottom-4 right-4 text-green-500 z-10"
+        {/* --- simulators preview row --- */}
+        <section>
+          <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
+            Simulators Overview
+          </h2>
+          {simulators.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400">
+              No simulators created yet.
+            </p>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {simulators.map((sim) => {
+                const isRunning =
+                  simulationStates[sim.id] &&
+                  simulationStates[sim.id] === 'running';
+                return (
+                  <div className="relative" key={sim.id}>
+                    <SimulatorCard
+                      brokers={brokers}
+                      schemas={schemas}
+                      simulator={sim}
+                      onDelete={handleDeleteSimulator}
+                      onOpen={() => handleOpenSimulator(sim)}
                     />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
+                    {/* Move running icon to bottom right, below card content */}
+                    {isRunning && (
+                      <CheckCircle
+                        size={20}
+                        className="absolute bottom-4 right-4 text-green-500 z-10"
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
-      {/* --- brokers preview row --- */}
-      <section>
-        <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
-          Brokers Overview
-        </h2>
-        {brokersLoading ? (
-          <p className="text-gray-500 dark:text-gray-400">Loading brokers…</p>
-        ) : brokers.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400">
-            No brokers configured yet.
-          </p>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {brokers.map((b) => (
-              <BrokerCard
-                key={b.id}
-                broker={b}
-                status={
-                  ['disconnected', 'connecting', 'connected', 'error'].includes(
-                    brokerStatuses[b.id]
-                  )
-                    ? (brokerStatuses[b.id] as
-                        | 'disconnected'
-                        | 'connecting'
-                        | 'connected'
-                        | 'error')
-                    : 'disconnected'
-                }
-                onDelete={handleDeleteBroker}
-                onEdit={() => handleEditBroker(b)}
-                onConnect={() => handleConnectBroker(b)}
-                onDisconnect={() => handleDisconnectBroker(b.id)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+        {/* --- brokers preview row --- */}
+        <section>
+          <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
+            Brokers Overview
+          </h2>
+          {brokersLoading ? (
+            <p className="text-gray-500 dark:text-gray-400">Loading brokers…</p>
+          ) : brokers.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400">
+              No brokers configured yet.
+            </p>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {brokers.map((b) => (
+                <BrokerCard
+                  key={b.id}
+                  broker={b}
+                  status={
+                    [
+                      'disconnected',
+                      'connecting',
+                      'connected',
+                      'error',
+                    ].includes(brokerStatuses[b.id])
+                      ? (brokerStatuses[b.id] as
+                          | 'disconnected'
+                          | 'connecting'
+                          | 'connected'
+                          | 'error')
+                      : 'disconnected'
+                  }
+                  onDelete={handleDeleteBroker}
+                  onEdit={() => handleEditBroker(b)}
+                  onConnect={() => handleConnectBroker(b)}
+                  onDisconnect={() => handleDisconnectBroker(b.id)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
 
-      {/* --- schemas preview row --- */}
-      <section>
-        <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
-          Schemas Overview
-        </h2>
+        {/* --- schemas preview row --- */}
+        <section>
+          <h2 className="mb-4 text-xl font-semibold text-gray-800 dark:text-gray-100">
+            Schemas Overview
+          </h2>
 
-        {schemasLoading ? (
-          <p className="text-gray-500 dark:text-gray-400">Loading schemas…</p>
-        ) : schemas.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400">
-            No schemas created yet.
-          </p>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {schemas.map((schema) => (
-              <SchemaCard
-                key={schema.id}
-                schema={schema}
-                onDelete={handleDeleteSchema}
-                onEdit={() => handleEditSchema(schema)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+          {schemasLoading ? (
+            <p className="text-gray-500 dark:text-gray-400">Loading schemas…</p>
+          ) : schemas.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400">
+              No schemas created yet.
+            </p>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {schemas.map((schema) => (
+                <SchemaCard
+                  key={schema.id}
+                  schema={schema}
+                  onDelete={handleDeleteSchema}
+                  onEdit={() => handleEditSchema(schema)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

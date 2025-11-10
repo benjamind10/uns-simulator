@@ -129,6 +129,11 @@ export const brokerResolvers = {
       return updatedBroker;
     },
   },
+
+  Broker: {
+    // Never return passwords to clients for security
+    password: () => null,
+  },
 };
 
 function requireAuth(context: Context) {

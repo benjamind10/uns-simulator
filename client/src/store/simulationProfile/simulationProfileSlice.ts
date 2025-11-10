@@ -332,11 +332,7 @@ export const selectSelectedProfile = (
   state: RootState
 ): ISimulationProfile | null => {
   const id = state.simulationProfile.selectedProfileId;
-  return (
-    (state.simulationProfile.profiles as unknown as ISimulationProfile[]).find(
-      (p) => p.id === id
-    ) || null
-  );
+  return id ? state.simulationProfile.profiles[id] || null : null;
 };
 
 export const selectProfiles = (state: RootState) =>

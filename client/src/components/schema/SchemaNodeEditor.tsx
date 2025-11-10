@@ -168,13 +168,10 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
 
   /* ------------------------------------------------------------------ */
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-4 h-full min-h-0">
       {/* ── LEFT: Current Asset Tree ── */}
-      <div
-        className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-4"
-        style={{ maxHeight: 500, overflow: 'auto' }}
-      >
-        <div className="flex justify-between items-center mb-4">
+      <div className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-4 flex flex-col min-h-0">
+        <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <h2 className="font-bold text-lg">Current Asset Tree</h2>
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500">
@@ -190,49 +187,50 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
             )}
           </div>
         </div>
-        {currentTree.length ? (
-          currentTree.map((n) => (
-            <TreeNode
-              key={n.id}
-              node={n}
-              onSelect={handleSelect}
-              onDelete={handleDeleteNode}
-              selectedId={selectedNode?.id ?? null}
-            />
-          ))
-        ) : (
-          <div className="text-gray-400">No saved nodes yet.</div>
-        )}
+        <div className="flex-1 min-h-0 overflow-auto">
+          {currentTree.length ? (
+            currentTree.map((n) => (
+              <TreeNode
+                key={n.id}
+                node={n}
+                onSelect={handleSelect}
+                onDelete={handleDeleteNode}
+                selectedId={selectedNode?.id ?? null}
+              />
+            ))
+          ) : (
+            <div className="text-gray-400">No saved nodes yet.</div>
+          )}
+        </div>
       </div>
 
       {/* ── MIDDLE: Future Asset Tree ── */}
-      <div
-        className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-4"
-        style={{ height: 500, overflow: 'auto' }}
-      >
-        <div className="flex justify-between items-center mb-4">
+      <div className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-4 flex flex-col min-h-0">
+        <div className="flex justify-between items-center mb-4 flex-shrink-0">
           <h2 className="font-bold text-lg">Future Asset Tree</h2>
           <span className="text-sm text-gray-500">{tempNodes.length} temp</span>
         </div>
-        {futureTree.length ? (
-          futureTree.map((n) => (
-            <TreeNode
-              key={n.id}
-              node={n}
-              onSelect={handleSelect}
-              onDelete={handleDeleteNode}
-              selectedId={selectedNode?.id ?? null}
-            />
-          ))
-        ) : (
-          <div className="text-gray-400">
-            {savedNodes.length ? 'Same as current tree.' : 'No nodes yet.'}
-          </div>
-        )}
+        <div className="flex-1 min-h-0 overflow-auto">
+          {futureTree.length ? (
+            futureTree.map((n) => (
+              <TreeNode
+                key={n.id}
+                node={n}
+                onSelect={handleSelect}
+                onDelete={handleDeleteNode}
+                selectedId={selectedNode?.id ?? null}
+              />
+            ))
+          ) : (
+            <div className="text-gray-400">
+              {savedNodes.length ? 'Same as current tree.' : 'No nodes yet.'}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── RIGHT: Builder Form ── */}
-      <div className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-6">
+      <div className="w-1/3 bg-white dark:bg-gray-800 rounded shadow p-6 flex flex-col min-h-0 overflow-auto">
         <h2 className="font-bold mb-4 text-lg flex items-center justify-between">
           Node Builder
           <FileUpload
