@@ -188,7 +188,9 @@ docker-compose logs -f
 - Node.js backend API (port 4000)
 - React frontend (port 3000)
 
-**Docker Commands:**
+**📖 For complete Docker documentation, troubleshooting, and production deployment, see [DOCKER.md](DOCKER.md)**
+
+**Common Docker Commands:**
 
 ```bash
 # Stop all services
@@ -202,17 +204,14 @@ docker-compose logs -f [service-name]  # backend, frontend, mongo, mqtt
 
 # Rebuild after code changes
 docker-compose up -d --build
-
-# Clean up volumes (WARNING: deletes all data)
-docker-compose down -v
 ```
 
-**Troubleshooting Docker:**
+**Quick Troubleshooting:**
 
+- **Port already in use:** Stop local Node.js servers first
 - **Services won't start:** Check `docker-compose logs [service-name]`
 - **Can't connect to backend:** Wait for health checks to pass (`docker-compose ps`)
-- **MongoDB connection failed:** Ensure `MONGO_URI=mongodb://mongo:27017` in `.env`
-- **MQTT not working:** Check ports 1883 (TCP) and 9001 (WebSocket) aren't in use
+- **More help:** Run `.\docker-health-check.ps1` or see [DOCKER.md](DOCKER.md)
 
 ### Manual Installation
 
