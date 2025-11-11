@@ -138,10 +138,10 @@ export default function SimulationPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 py-12 px-4">
-      <div className="max-w-6xl mx-auto grid grid-cols-3 gap-8">
+    <>
+      <div className="grid grid-cols-3 gap-8 h-full min-h-0">
         {/* Profiles Section */}
-        <div className="col-span-1 flex flex-col gap-6">
+        <div className="col-span-1 flex flex-col gap-6 min-h-0">
           <SimulationCard title="Profiles">
             <ProfilesCardContent
               profiles={profiles}
@@ -333,6 +333,6 @@ export default function SimulationPage() {
           </table>
         </div>
       </div>
-    </div>
+    </>
   );
 }

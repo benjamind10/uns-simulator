@@ -7,30 +7,19 @@ interface MqttViewerProps {
   topics: string[];
 }
 
-const MqttMessageViewer: FC<MqttViewerProps> = ({ messages, topics }) => {
+const MqttMessageViewer: FC<MqttViewerProps> = ({ messages }) => {
   return (
-    <div className="mb-6 h-full flex flex-col">
-      <h3 className="text-lg font-semibold mb-2">Subscribed Topics</h3>
-      {topics.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400">
-          No topics subscribed.
-        </p>
-      ) : (
-        <ul className="mb-4 list-disc list-inside text-blue-600 dark:text-blue-400">
-          {topics.map((topic) => (
-            <li key={topic}>{topic}</li>
-          ))}
-        </ul>
-      )}
-
-      <h3 className="text-lg font-semibold mb-2">Received Messages</h3>
+    <div className="flex flex-col flex-1 min-h-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-800 p-2">
+      <h3 className="text-base font-semibold mb-2 tracking-tight text-gray-700 dark:text-gray-200 flex-shrink-0">
+        Received Messages
+      </h3>
       {messages.length === 0 ? (
         <p className="text-gray-500 dark:text-gray-400">
           No messages received yet.
         </p>
       ) : (
-        <div className="flex-1 min-h-0">
-          <div className="space-y- h-110 max-h-[100vh] overflow-y-auto pr-1">
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="h-full overflow-y-auto pr-2 space-y-2">
             {messages.map((msg, idx) => (
               <div
                 key={idx}

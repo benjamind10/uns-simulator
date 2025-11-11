@@ -17,23 +17,21 @@ export default function SchemaBuilderPage() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-100 dark:bg-gray-900 py-3 px-4">
-      <div className="max-w-6xl mx-auto flex flex-col gap-2">
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6">
-          <SchemaManager
-            selectedSchemaId={schemaId || null}
-            setSelectedSchemaId={handleSchemaSelection}
-          />
-        </div>
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6">
-          {schemaId ? (
-            <SchemaNodeEditor schemaId={schemaId} />
-          ) : (
-            <div className="text-center text-gray-400 text-lg mt-12">
-              Please select a schema to start building.
-            </div>
-          )}
-        </div>
+    <div className="flex flex-col gap-2 h-full min-h-0">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6 flex-shrink-0">
+        <SchemaManager
+          selectedSchemaId={schemaId || null}
+          setSelectedSchemaId={handleSchemaSelection}
+        />
+      </div>
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6 flex-1 min-h-0">
+        {schemaId ? (
+          <SchemaNodeEditor schemaId={schemaId} />
+        ) : (
+          <div className="text-center text-gray-400 text-lg mt-12">
+            Please select a schema to start building.
+          </div>
+        )}
       </div>
     </div>
   );

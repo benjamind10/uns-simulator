@@ -120,6 +120,8 @@ const SimulationProfileSchema = new Schema<ISimulationProfile>(
 );
 
 SimulationProfileSchema.index({ userId: 1 });
+SimulationProfileSchema.index({ userId: 1, 'status.state': 1 });
+SimulationProfileSchema.index({ userId: 1, schemaId: 1 });
 
 export default model<ISimulationProfile>(
   'SimulationProfile',
