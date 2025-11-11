@@ -208,23 +208,12 @@ const MqttTopicTree: FC<MqttTopicTreeProps> = ({
   };
 
   return (
-    <div
-      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-800 p-2 h-full flex flex-col"
-      style={{
-        minHeight: '400px',
-        height: '47vh',
-        minWidth: '420px',
-        width: '100%',
-      }}
-    >
-      <h3
-        className="text-base font-semibold mb-2 tracking-tight text-gray-700 dark:text-gray-200"
-        style={{ fontFamily: 'Segoe UI, Arial, sans-serif' }}
-      >
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-800 p-2 flex flex-col flex-1 min-h-0">
+      <h3 className="text-base font-semibold mb-2 tracking-tight text-gray-700 dark:text-gray-200 flex-shrink-0">
         Topic Tree
       </h3>
-      <div className="flex-1 min-h-0 pr-1">
-        <ul className="h-full max-h-full overflow-y-auto pr-2">
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <ul className="h-full overflow-y-auto pr-2">
           <TreeNode
             node={root}
             expanded={expandedRef.current}

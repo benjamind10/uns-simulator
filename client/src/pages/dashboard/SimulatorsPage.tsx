@@ -21,7 +21,7 @@ const SimulatorsPage: React.FC = () => {
     .size;
 
   return (
-    <div className="overflow-x-auto p-8">
+    <div className="h-full overflow-y-auto">
       <h1 className="text-2xl font-bold mb-6">Simulator Manager</h1>
       <div className="flex gap-8 mb-8">
         <div className="bg-white dark:bg-gray-800 rounded shadow px-6 py-4 flex flex-col items-center">

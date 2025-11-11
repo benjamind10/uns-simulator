@@ -6,6 +6,7 @@ import { ISimulationProfile } from '../graphql/models/SimulationProfile';
 import { ISchema } from '../graphql/models/Schema';
 import { IBroker } from '../graphql/models/Broker';
 import SimulationProfile from '../graphql/models/SimulationProfile';
+import { MQTT_CONFIG } from '../config/constants';
 
 export interface SimulationNode {
   id: string;
@@ -26,8 +27,9 @@ export class SimulationEngine extends EventEmitter {
   private startTime?: Date;
   private mqttClient?: mqtt.MqttClient;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 3;
+  private maxReconnectAttempts = MQTT_CONFIG.MAX_RECONNECT_ATTEMPTS;
   private reconnectTimeout?: NodeJS.Timeout;
+  private simulationLengthTimeout?: NodeJS.Timeout;
 
   constructor(profile: ISimulationProfile, schema: ISchema, broker: IBroker) {
     super();
@@ -113,10 +115,10 @@ export class SimulationEngine extends EventEmitter {
             .toString()
             .slice(-8)}-${Date.now()}`,
           clean: true,
-          connectTimeout: 15000,
-          reconnectPeriod: 0,
-          keepalive: 30,
-          protocolVersion: 4,
+          connectTimeout: MQTT_CONFIG.CONNECT_TIMEOUT,
+          reconnectPeriod: MQTT_CONFIG.RECONNECT_PERIOD,
+          keepalive: MQTT_CONFIG.KEEPALIVE,
+          protocolVersion: MQTT_CONFIG.PROTOCOL_VERSION,
           reschedulePings: true,
         };
 
@@ -138,6 +140,7 @@ export class SimulationEngine extends EventEmitter {
         });
 
         this.mqttClient.on('error', (error) => {
+          clearTimeout(connectionTimeout);
           console.error(`❌ MQTT connection error: ${error.message}`);
           if (this.mqttClient) {
             this.mqttClient.end(true);
@@ -164,7 +167,7 @@ export class SimulationEngine extends EventEmitter {
             this.mqttClient = undefined;
           }
           reject(new Error('MQTT connection timeout'));
-        }, 15000);
+        }, MQTT_CONFIG.CONNECT_TIMEOUT);
 
         this.mqttClient.once('connect', () => {
           clearTimeout(connectionTimeout);
@@ -212,7 +215,8 @@ export class SimulationEngine extends EventEmitter {
 
     this.pausePublishing();
 
-    const backoffDelay = 2000 * this.reconnectAttempts;
+    const backoffDelay =
+      MQTT_CONFIG.RECONNECT_BACKOFF_BASE * this.reconnectAttempts;
     this.reconnectTimeout = setTimeout(async () => {
       try {
         await this.connectToBroker();
@@ -238,7 +242,8 @@ export class SimulationEngine extends EventEmitter {
             state: 'error',
             error: 'Max reconnection attempts reached',
           });
-          this.stop();
+          // Use await to ensure proper cleanup
+          await this.stop();
         }
       }
     }, backoffDelay);
@@ -286,7 +291,7 @@ export class SimulationEngine extends EventEmitter {
         typeof this.profile.globalSettings.simulationLength === 'number' &&
         this.profile.globalSettings.simulationLength > 0
       ) {
-        setTimeout(() => {
+        this.simulationLengthTimeout = setTimeout(() => {
           console.log(`⏰ Simulation time limit reached, stopping...`);
           this.stop();
         }, this.profile.globalSettings.simulationLength * 1000);
@@ -459,6 +464,11 @@ export class SimulationEngine extends EventEmitter {
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = undefined;
+    }
+
+    if (this.simulationLengthTimeout) {
+      clearTimeout(this.simulationLengthTimeout);
+      this.simulationLengthTimeout = undefined;
     }
 
     this.nodes.forEach((node) => {

@@ -71,7 +71,7 @@ export default function DashboardLayout() {
         </aside>
 
         {/* ───────────── MAIN ───────────── */}
-        <div className="flex flex-1 flex-col overflow-y-auto bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-1 flex-col bg-gray-50 dark:bg-gray-900">
           {/* Top Bar */}
           <header className="sticky top-0 z-10 h-14 flex items-center justify-between bg-white/80 dark:bg-gray-900/80 backdrop-blur px-4 shadow-sm">
             {/* Breadcrumb & Home Button */}
@@ -129,7 +129,7 @@ export default function DashboardLayout() {
           </header>
 
           {/* Routed page content */}
-          <main className="flex-1 overflow-y-auto p-6">
+          <main className="flex-1 overflow-hidden p-6 flex flex-col">
             <Outlet />
           </main>
         </div>

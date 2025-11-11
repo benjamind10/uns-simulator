@@ -18,6 +18,8 @@ import { schemaResolvers } from './graphql/resolvers/schema.resolver';
 import { simulationProfileTypeDefs } from './graphql/schemas/simulationProfile.schema';
 import { simulationProfileResolvers } from './graphql/resolvers/simulationProfile.resolver';
 import User from './graphql/models/User';
+import SimulationProfile from './graphql/models/SimulationProfile';
+import simulationManager from './simulation/SimulationManager';
 
 // Load environment variables
 dotenv.config();
@@ -55,7 +57,8 @@ const getContext = async ({ req }: { req: express.Request }) => {
     if (!user) return {};
     return { user };
   } catch (err) {
-    console.warn('❌ Invalid token:', (err as Error).message, 'Token:', token);
+    console.warn('❌ Invalid token:', (err as Error).message);
+    // Do not log the actual token value for security
     return {};
   }
 };
@@ -93,6 +96,44 @@ if (process.env.ENABLE_RATE_LIMIT === 'true') {
   app.use(limiter);
 }
 
+// Health check endpoint (before CORS to avoid authentication issues)
+app.get('/health', async (req, res) => {
+  try {
+    // Check MongoDB connection
+    const dbState = mongoose.connection.readyState;
+    const dbStatus =
+      dbState === 1
+        ? 'connected'
+        : dbState === 2
+        ? 'connecting'
+        : 'disconnected';
+
+    // Get uptime
+    const uptime = process.uptime();
+
+    // Basic health response
+    const health = {
+      status: dbState === 1 ? 'ok' : 'degraded',
+      timestamp: new Date().toISOString(),
+      uptime: Math.floor(uptime),
+      database: {
+        status: dbStatus,
+        name: process.env.DB_NAME || 'uns_simulator',
+      },
+      environment: process.env.NODE_ENV || 'development',
+    };
+
+    const statusCode = dbState === 1 ? 200 : 503;
+    res.status(statusCode).json(health);
+  } catch {
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: 'Health check failed',
+    });
+  }
+});
+
 // CORS configuration
 app.use(
   cors({
@@ -118,6 +159,40 @@ const server = new ApolloServer({
   context: getContext,
 });
 
+// Cleanup orphaned simulation states on startup
+const cleanupOrphanedSimulations = async () => {
+  try {
+    const result = await SimulationProfile.updateMany(
+      {
+        $or: [
+          { 'status.state': 'running' },
+          { 'status.state': 'paused' },
+          { 'status.state': 'starting' },
+          { 'status.state': 'stopping' },
+        ],
+      },
+      {
+        $set: {
+          'status.state': 'stopped',
+          'status.isRunning': false,
+          'status.isPaused': false,
+          'status.mqttConnected': false,
+          'status.reconnectAttempts': 0,
+          'status.error': 'Server restarted - simulation was terminated',
+          'status.lastActivity': new Date(),
+        },
+      }
+    );
+    if (result.modifiedCount > 0) {
+      console.log(
+        `🧹 Cleaned up ${result.modifiedCount} orphaned simulation(s)`
+      );
+    }
+  } catch (error) {
+    console.error('❌ Failed to cleanup orphaned simulations:', error);
+  }
+};
+
 // Connect to MongoDB and start the server
 const startServer = async () => {
   try {
@@ -125,6 +200,9 @@ const startServer = async () => {
       dbName: process.env.DB_NAME || 'unsdb',
     });
     console.log('✅ Connected to MongoDB');
+
+    // Clean up any simulations that were running when server last stopped
+    await cleanupOrphanedSimulations();
 
     await server.start();
     server.applyMiddleware({
@@ -144,11 +222,29 @@ const startServer = async () => {
   }
 };
 
-// Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
-  await mongoose.connection.close();
-  process.exit(0);
-});
+// Graceful shutdown handler
+const gracefulShutdown = async (signal: string) => {
+  console.log(`${signal} received. Shutting down gracefully...`);
+
+  try {
+    // Stop all running simulations
+    console.log('🛑 Stopping all running simulations...');
+    await simulationManager.stopAllSimulations();
+
+    // Close database connection
+    await mongoose.connection.close();
+    console.log('✅ Graceful shutdown complete');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
+};
+
+// Graceful shutdown on SIGTERM (Docker)
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+// Graceful shutdown on SIGINT (Ctrl+C)
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 startServer();

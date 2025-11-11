@@ -122,7 +122,7 @@ export default function BrokersPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="h-full overflow-y-auto">
       <h1 className="text-3xl font-bold mb-6">
         {brokerId ? 'Edit MQTT Broker' : 'Add MQTT Broker'}
       </h1>

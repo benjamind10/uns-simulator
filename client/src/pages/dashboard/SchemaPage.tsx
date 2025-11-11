@@ -26,7 +26,7 @@ export default function SchemaPage() {
   );
 
   return (
-    <div>
+    <div className="h-full overflow-y-auto">
       <h1 className="text-2xl font-bold mb-4">Schema Admin</h1>
       <div className="mb-6 flex gap-8">
         <div className="bg-blue-100 dark:bg-blue-900 rounded p-4">

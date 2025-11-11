@@ -5,10 +5,32 @@ import type { AuthState } from '../../types/auth';
 
 import { loginAsync, logoutAsync, registerAsync } from './authThunks';
 
+// Safely parse auth state from sessionStorage
+const getInitialAuthState = (): Omit<AuthState, 'loading' | 'error'> => {
+  try {
+    const userStr = sessionStorage.getItem('authUser');
+    const token = sessionStorage.getItem('authToken');
+
+    return {
+      user: userStr ? JSON.parse(userStr) : null,
+      token,
+      isAuthenticated: !!token,
+    };
+  } catch (error) {
+    console.error('Failed to parse auth state from sessionStorage:', error);
+    // Clear corrupted data
+    sessionStorage.removeItem('authUser');
+    sessionStorage.removeItem('authToken');
+    return {
+      user: null,
+      token: null,
+      isAuthenticated: false,
+    };
+  }
+};
+
 const initialState: AuthState = {
-  user: JSON.parse(sessionStorage.getItem('authUser') || 'null'),
-  token: sessionStorage.getItem('authToken'),
-  isAuthenticated: !!sessionStorage.getItem('authToken'),
+  ...getInitialAuthState(),
   loading: false,
   error: null,
 };

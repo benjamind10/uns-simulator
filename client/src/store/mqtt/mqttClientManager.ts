@@ -49,3 +49,10 @@ export function disconnectAllBrokers() {
 export function getClient(brokerId: string) {
   return clientMap.get(brokerId);
 }
+
+// Clean up all connections when the page is about to unload
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    disconnectAllBrokers();
+  });
+}
