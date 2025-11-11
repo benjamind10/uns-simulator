@@ -1,42 +1,132 @@
+version: '3.8'
+
 services:
-  frontend:
-    build: ./client
-    ports:
-      - '3000:80'
-    depends_on:
-      - backend
-    environment:
-      - VITE_API_URL=http://backend:5000
-      - VITE_MQTTBROKER=ws://mqtt:9001
-    volumes:
-      - ./client:/app
-      - /app/node_modules
-
-  backend:
-    build: ./server
-    ports:
-      - '5000:5000'
-    environment:
-      - MONGO_URI=mongodb://mongo:27017/unsdb
-      - MQTT_URL=mqtt://mqtt:1883
-    volumes:
-      - ./server:/app
-      - /app/node_modules
-
+  # MongoDB Database
   mongo:
     image: mongo:6
+    container_name: uns-mongo
+    restart: unless-stopped
     ports:
       - '27017:27017'
     volumes:
       - mongo-data:/data/db
+    networks:
+      - uns-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # MQTT Broker (Mosquitto)
   mqtt:
-    image: eclipse-mosquitto
+    image: eclipse-mosquitto:2
+    container_name: uns-mqtt
+    restart: unless-stopped
     ports:
-      - '1883:1883'
-      - '1884:9001' # WebSocket port for MQTT
+      - '1883:1883' # MQTT port
+      - '9001:9001' # WebSocket port
     volumes:
       - ./mqtt-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mqtt-data:/mosquitto/data
+      - mqtt-logs:/mosquitto/log
+    networks:
+      - uns-network
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'mosquitto_sub',
+          '-t',
+          '$$SYS/#',
+          '-C',
+          '1',
+          '-i',
+          'healthcheck',
+          '-W',
+          '3',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Server
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: uns-backend
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - MONGO_URI=mongodb://mongo:27017/unsdb
+      - DB_NAME=unsdb
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      - CLIENT_URL=http://localhost:3000
+      - ENABLE_RATE_LIMIT=false
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mqtt:
+        condition: service_healthy
+    networks:
+      - uns-network
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:4000/health',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Client
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:4000/graphql
+    container_name: uns-frontend
+    restart: unless-stopped
+    ports:
+      - '3000:80'
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - uns-network
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'wget',
+          '--no-verbose',
+          '--tries=1',
+          '--spider',
+          'http://localhost:80',
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  uns-network:
+    driver: bridge
 
 volumes:
   mongo-data:
+    driver: local
+  mqtt-data:
+    driver: local
+  mqtt-logs:
+    driver: local

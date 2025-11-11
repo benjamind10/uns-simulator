@@ -85,7 +85,7 @@ A production-ready, web-based MQTT simulation platform for testing Unified Names
 ### System Overview
 
 ```
-┌─────────────────┐      GraphQL/WebSocket      ┌─────────────────┐
+┌─────────────────┐      GraphQL/WebSocket       ┌─────────────────┐
 │                 │◄────────────────────────────►│                 │
 │  React Client   │                              │  Node.js API    │
 │  (TypeScript)   │                              │  (TypeScript)   │
@@ -150,22 +150,69 @@ A production-ready, web-based MQTT simulation platform for testing Unified Names
 - **MQTT Broker** (optional, e.g., Mosquitto for local testing)
 - **Docker** (optional, for containerized deployment)
 
-### Quick Start with Docker Compose
+### Quick Start with Docker Compose (Recommended)
 
-The fastest way to get started:
+The fastest way to get started with all services running:
 
 ```bash
 # Clone the repository
 git clone https://github.com/benduran-fbin/uns-simulator.git
 cd uns-simulator
 
-# Start all services
+# Create environment file from example
+cp .env.example .env
+
+# Edit .env and set your JWT_SECRET (required!)
+# On Linux/Mac: nano .env
+# On Windows: notepad .env
+
+# Start all services (MongoDB, MQTT broker, backend, frontend)
 docker-compose up -d
+
+# Check service health
+docker-compose ps
+
+# View logs
+docker-compose logs -f
 
 # Access the application
 # Frontend: http://localhost:3000
 # Backend: http://localhost:4000/graphql
+# Backend Health: http://localhost:4000/health
 ```
+
+**What's Included:**
+
+- MongoDB database (port 27017)
+- Eclipse Mosquitto MQTT broker (TCP: 1883, WebSocket: 9001)
+- Node.js backend API (port 4000)
+- React frontend (port 3000)
+
+**Docker Commands:**
+
+```bash
+# Stop all services
+docker-compose down
+
+# Restart services
+docker-compose restart
+
+# View service logs
+docker-compose logs -f [service-name]  # backend, frontend, mongo, mqtt
+
+# Rebuild after code changes
+docker-compose up -d --build
+
+# Clean up volumes (WARNING: deletes all data)
+docker-compose down -v
+```
+
+**Troubleshooting Docker:**
+
+- **Services won't start:** Check `docker-compose logs [service-name]`
+- **Can't connect to backend:** Wait for health checks to pass (`docker-compose ps`)
+- **MongoDB connection failed:** Ensure `MONGO_URI=mongodb://mongo:27017` in `.env`
+- **MQTT not working:** Check ports 1883 (TCP) and 9001 (WebSocket) aren't in use
 
 ### Manual Installation
 
@@ -197,7 +244,7 @@ Create `.env` files in both directories:
 ```env
 # Database
 MONGO_URI=mongodb://localhost:27017
-DB_NAME=unsdb
+DB_NAME=uns_simulator
 
 # Authentication
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
@@ -227,10 +274,21 @@ VITE_API_URL=http://localhost:4000/graphql
 mongod --dbpath /path/to/data
 
 # Or using Docker
-docker run -d -p 27017:27017 --name mongodb mongo:latest
+docker run -d -p 27017:27017 --name mongodb mongo:6
 ```
 
-#### 5. Start Development Servers
+#### 5. Start MQTT Broker (Optional)
+
+```bash
+# Using Docker (recommended)
+docker run -d -p 1883:1883 -p 9001:9001 \
+  -v $(pwd)/mqtt-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf \
+  --name mqtt eclipse-mosquitto:2
+
+# Or install Mosquitto locally and configure for WebSocket support
+```
+
+#### 6. Start Development Servers
 
 ```bash
 # Terminal 1 - Start backend
@@ -242,10 +300,11 @@ cd client
 npm run dev
 ```
 
-#### 6. Access the Application
+#### 7. Access the Application
 
 - **Frontend**: http://localhost:5173
 - **GraphQL Playground**: http://localhost:4000/graphql
+- **Health Check**: http://localhost:4000/health
 
 ### First-Time Setup
 

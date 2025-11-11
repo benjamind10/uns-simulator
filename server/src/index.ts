@@ -96,6 +96,44 @@ if (process.env.ENABLE_RATE_LIMIT === 'true') {
   app.use(limiter);
 }
 
+// Health check endpoint (before CORS to avoid authentication issues)
+app.get('/health', async (req, res) => {
+  try {
+    // Check MongoDB connection
+    const dbState = mongoose.connection.readyState;
+    const dbStatus =
+      dbState === 1
+        ? 'connected'
+        : dbState === 2
+        ? 'connecting'
+        : 'disconnected';
+
+    // Get uptime
+    const uptime = process.uptime();
+
+    // Basic health response
+    const health = {
+      status: dbState === 1 ? 'ok' : 'degraded',
+      timestamp: new Date().toISOString(),
+      uptime: Math.floor(uptime),
+      database: {
+        status: dbStatus,
+        name: process.env.DB_NAME || 'uns_simulator',
+      },
+      environment: process.env.NODE_ENV || 'development',
+    };
+
+    const statusCode = dbState === 1 ? 200 : 503;
+    res.status(statusCode).json(health);
+  } catch {
+    res.status(503).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: 'Health check failed',
+    });
+  }
+});
+
 // CORS configuration
 app.use(
   cors({

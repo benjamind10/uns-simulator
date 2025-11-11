@@ -1,5 +1,135 @@
 # Changelog - UNS Simulator
 
+## Docker Infrastructure Enhancements - November 10, 2025
+
+### Overview
+
+Complete Docker stack overhaul to enable proper service communication and production deployment. All services now run in isolated containers with proper networking, health checks, and dependency management.
+
+---
+
+## 🐳 Docker & DevOps
+
+### Docker Compose Rewrite
+
+#### **docker-compose.yml - Production-Ready Orchestration**
+
+- **Issue:** Services couldn't communicate; user had to run MongoDB/MQTT in Docker but frontend/backend on laptop
+- **Root Causes:**
+  - No explicit network configuration (default bridge)
+  - Port mismatches (backend declared 5000 but uses 4000)
+  - MQTT WebSocket wrong mapping (1884:9001 instead of 9001:9001)
+  - No health checks - services started before dependencies ready
+  - No startup dependencies configured
+- **Fixes:**
+  - Added `uns-network` bridge network for all services
+  - Fixed backend port to 4000 everywhere
+  - Corrected MQTT WebSocket mapping to 9001:9001
+  - Added comprehensive health checks for all 4 services:
+    - MongoDB: `mongosh --eval "db.adminCommand('ping')"`
+    - MQTT: `mosquitto_sub -t '$SYS/#' -C 1`
+    - Backend: `wget --no-verbose --tries=1 --spider http://localhost:4000/health`
+    - Frontend: `wget --no-verbose --tries=1 --spider http://localhost:80/`
+  - Added `depends_on` with health check conditions
+  - Created separate volumes for `mqtt-data` and `mqtt-logs`
+  - Added environment variables with defaults for easy configuration
+  - Added container names and restart policies (unless-stopped)
+- **Location:** `docker-compose.yml`
+- **Result:** Complete stack runs in Docker with proper service communication
+
+### Server Dockerfile Improvements
+
+#### **server/Dockerfile - Enhanced Build & Health**
+
+- **Issues:**
+  - `npm ci --only=production` ran AFTER build (deleted bcrypt binary)
+  - Wrong PORT environment variable (5000 vs 4000)
+  - No health check capability
+  - Redundant npm install then npm ci
+- **Fixes:**
+  - Added `wget` package for health checks
+  - Fixed build sequence: `npm ci` → build → `npm prune --production`
+  - Changed PORT from 5000 to 4000 (matches actual server)
+  - Added HEALTHCHECK instruction with 30s interval
+  - Removed redundant npm install
+- **Location:** `server/Dockerfile`
+- **Result:** Reliable builds with proper health monitoring
+
+### Client Dockerfile Improvements
+
+#### **client/Dockerfile - Build Args & Health**
+
+- **Issues:**
+  - No way to configure `VITE_API_URL` at build time
+  - Using `npm install` instead of `npm ci`
+  - No health check capability
+- **Fixes:**
+  - Added `ARG VITE_API_URL` and `ENV VITE_API_URL` for build-time config
+  - Changed `npm install` to `npm ci` (faster, more reliable)
+  - Added `wget` to nginx stage
+  - Added HEALTHCHECK instruction
+- **Location:** `client/Dockerfile`
+- **Result:** Configurable builds with health monitoring
+
+### Server Health Endpoint
+
+#### **GET /health - Service Health Monitoring**
+
+- **Purpose:** Enable Docker health checks and monitoring
+- **Implementation:**
+  - Checks MongoDB connection state (connected/connecting/disconnected)
+  - Returns process uptime and timestamp
+  - 200 OK if database connected, 503 Service Unavailable if degraded
+  - Placed before CORS middleware to avoid authentication issues
+- **Response Example:**
+  ```json
+  {
+    "status": "ok",
+    "timestamp": "2025-11-10T12:34:56.789Z",
+    "uptime": 3600,
+    "database": {
+      "status": "connected",
+      "name": "uns_simulator"
+    },
+    "environment": "production"
+  }
+  ```
+- **Location:** `server/src/index.ts` (before CORS middleware)
+- **Result:** Reliable health checks for Docker and monitoring tools
+
+### Environment Configuration
+
+#### **.env.example - Configuration Template**
+
+- **Purpose:** Document required environment variables for Docker deployment
+- **Includes:**
+  - Server config (NODE_ENV, PORT)
+  - MongoDB config (MONGO_URI, DB_NAME)
+  - JWT config (JWT_SECRET, JWT_EXPIRES_IN)
+  - Client config (CLIENT_URL, VITE_API_URL)
+  - MQTT config (MQTT_HOST, MQTT_PORT, MQTT_WS_PORT)
+  - Rate limiting config (optional)
+- **Location:** `.env.example` (root)
+- **Usage:** `cp .env.example .env` then customize values
+- **Result:** Easy onboarding for new developers
+
+### Documentation Updates
+
+#### **README.md - Docker Deployment Guide**
+
+- **Added Section:** "Quick Start with Docker Compose (Recommended)"
+- **Includes:**
+  - Complete setup instructions from clone to running
+  - Service health check commands
+  - Log viewing commands
+  - Rebuild and cleanup commands
+  - Troubleshooting guide for common Docker issues
+  - Manual MQTT broker setup instructions
+- **Location:** `README.md` (Getting Started section)
+- **Result:** Clear path to production deployment
+
+---
+
 ## UI Layout Fixes - November 10, 2025
 
 ### Overview
