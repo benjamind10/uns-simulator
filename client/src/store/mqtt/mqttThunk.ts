@@ -10,21 +10,36 @@ import { setConnectionStatus, removeConnection } from './mqttSlice';
 // Connect to a single broker and manage its status in Redux
 export const connectToBrokerAsync = createAsyncThunk(
   MQTT_ACTIONS.CONNECT_TO_BROKER,
-  async (broker: IBroker, { dispatch, getState }) => {
+  async (broker: IBroker, { dispatch, getState, rejectWithValue }) => {
     const state = getState() as RootState;
     const existing = state.mqtt.connections[broker.id];
     if (existing?.status === 'connected' || existing?.status === 'connecting')
-      return;
+      return broker.id;
 
     dispatch(
       setConnectionStatus({ brokerId: broker.id, status: 'connecting' })
     );
 
-    connectBroker(broker, (status, error) => {
-      dispatch(setConnectionStatus({ brokerId: broker.id, status, error }));
-    });
+    return new Promise<string>((resolve, reject) => {
+      connectBroker(broker, (status, error) => {
+        dispatch(setConnectionStatus({ brokerId: broker.id, status, error }));
+        
+        if (status === 'connected') {
+          resolve(broker.id);
+        } else if (status === 'error') {
+          reject(rejectWithValue(error || 'Failed to connect to broker'));
+        }
+      });
 
-    return broker.id;
+      // Timeout after 15 seconds
+      setTimeout(() => {
+        const currentState = getState() as RootState;
+        const connection = currentState.mqtt.connections[broker.id];
+        if (connection?.status !== 'connected') {
+          reject(rejectWithValue('Connection timeout'));
+        }
+      }, 15000);
+    });
   }
 );
 

@@ -38,9 +38,15 @@ export default function BrokerForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Auto-generate clientId if left blank
+    const clientId = formData.clientId.trim() || 
+      `mqtt-client-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
     // Ensure port is a number
     const brokerData = {
       ...formData,
+      clientId,
       port: Number(formData.port), // <-- convert to number
     };
 

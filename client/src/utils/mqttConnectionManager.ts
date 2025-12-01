@@ -9,6 +9,16 @@ export interface BrokerConnection {
   lastError?: string;
 }
 
+// Map Docker service names to localhost for browser connections
+function getBrowserAccessibleUrl(brokerUrl: string): string {
+  const dockerServiceMappings: Record<string, string> = {
+    'uns-mqtt': 'localhost',
+    'mqtt': 'localhost',
+    'mosquitto': 'localhost',
+  };
+  return dockerServiceMappings[brokerUrl] || brokerUrl;
+}
+
 class MqttConnectionManager {
   private connections = new Map<string, BrokerConnection>();
   private statusCallbacks = new Set<
@@ -45,7 +55,10 @@ class MqttConnectionManager {
     });
     this.notifyStatusChange();
 
-    const url = `ws://${broker.url}:${broker.port}`;
+    // Use WebSocket port 9001 for browser connections
+    // Map Docker service names to localhost since browser runs on host
+    const browserUrl = getBrowserAccessibleUrl(broker.url);
+    const url = `ws://${browserUrl}:9001`;
     const client = mqtt.connect(url, {
       clientId: broker.clientId,
       username: broker.username,

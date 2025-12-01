@@ -5,6 +5,19 @@ import type { IBroker } from '../../types';
 
 const clientMap = new Map<string, MqttClient>();
 
+// Map Docker service names to localhost for browser connections
+// Browser runs on host machine, not inside Docker network
+function getBrowserAccessibleUrl(brokerUrl: string): string {
+  // Map common Docker service names to localhost
+  const dockerServiceMappings: Record<string, string> = {
+    'uns-mqtt': 'localhost',
+    'mqtt': 'localhost',
+    'mosquitto': 'localhost',
+  };
+
+  return dockerServiceMappings[brokerUrl] || brokerUrl;
+}
+
 export function connectBroker(
   broker: IBroker,
   onStatus: (
@@ -14,7 +27,10 @@ export function connectBroker(
 ) {
   if (clientMap.has(broker.id)) return clientMap.get(broker.id)!;
 
-  const url = `ws://${broker.url}:${broker.port}`;
+  // Use WebSocket port 9001 for browser connections
+  // Map Docker service names to localhost since browser runs on host
+  const browserUrl = getBrowserAccessibleUrl(broker.url);
+  const url = `ws://${browserUrl}:9001`;
   const client = mqtt.connect(url, {
     clientId: broker.clientId,
     username: broker.username,

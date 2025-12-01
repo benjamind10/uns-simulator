@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { Server, Book, Activity, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import StatCard from '../../components/dashboard/StatCard';
 import SchemaCard from '../../components/schema/SchemaCard';
-import BrokerCard from '../../components/brokers/BrokerCard';
+import BrokerCard from '../../components/Brokers/BrokerCard';
 import SimulatorCard from '../../components/simulator/SimulatorCard';
 import { deleteBrokerAsync, fetchBrokersAsync } from '../../store/brokers';
 import {
@@ -32,7 +32,6 @@ import { selectProfiles } from '../../store/simulationProfile/simulationProfileS
 export default function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  const location = useLocation();
 
   // Fetch brokers, schemas, and simulation profiles only on mount
   useEffect(() => {

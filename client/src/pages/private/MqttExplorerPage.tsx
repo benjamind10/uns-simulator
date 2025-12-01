@@ -5,8 +5,8 @@ import { selectBrokers, fetchBrokersAsync } from '../../store/brokers';
 import { selectBrokerStatus } from '../../store/mqtt/mqttSlice';
 import { connectToBrokerAsync } from '../../store/mqtt/mqttThunk';
 import { getClient } from '../../store/mqtt/mqttClientManager';
-import MqttTopicTree from '../../components/brokers/MqttTopicTree';
-import MqttMessageViewer from '../../components/brokers/MqttMessageViewer';
+import MqttTopicTree from '../../components/Brokers/MqttTopicTree';
+import MqttMessageViewer from '../../components/Brokers/MqttMessageViewer';
 import { buildTopicTree } from '../../utils/mqttTopicTree';
 import type { AppDispatch, RootState } from '../../store/store';
 import type { MqttMessage } from '../../types';
@@ -148,7 +148,7 @@ export default function MqttExplorerPage() {
             <MqttTopicTree
               root={topicTreeRoot}
               messages={messages}
-              onSelectTopic={(topic) => {
+              onSelectTopic={(topic: string) => {
                 setSelectedTopic(topic);
                 setTopicInput(topic);
               }}
