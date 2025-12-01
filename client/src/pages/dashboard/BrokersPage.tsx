@@ -3,8 +3,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom';
 
-import BrokerForm from '../../components/brokers/BrokerForm';
-import BrokerList from '../../components/brokers/BrokerList';
+import BrokerForm from '../../components/Brokers/BrokerForm';
+import BrokerList from '../../components/Brokers/BrokerList';
 import {
   createBrokerAsync,
   deleteBrokerAsync,
