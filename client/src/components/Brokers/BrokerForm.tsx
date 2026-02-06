@@ -137,7 +137,7 @@ export default function BrokerForm({
           placeholder="1883 (MQTT) or 9001 (WebSocket)"
           value={formData.port}
           onChange={(e) =>
-            setFormData((prev) => ({ ...prev, port: e.target.value }))
+            setFormData((prev) => ({ ...prev, port: Number(e.target.value) }))
           }
           className="w-full px-4 py-2 rounded 
                      bg-white dark:bg-gray-900 
