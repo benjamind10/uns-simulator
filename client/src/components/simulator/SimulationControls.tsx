@@ -75,22 +75,22 @@ const SimulationStatusPanel: React.FC = () => {
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="px-3 py-2.5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
           Profile Details
         </h3>
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-auto px-6 py-4 space-y-4">
         {/* Profile info */}
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
+          <div className="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
             <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300">
               {selectedProfile.name}
             </h4>
             {selectedProfile.description && (
-              <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-0.5">
+              <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">
                 {selectedProfile.description}
               </p>
             )}
@@ -113,22 +113,22 @@ const SimulationStatusPanel: React.FC = () => {
 
         {/* Status */}
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               Simulation Status
             </h4>
           </div>
-          <div className="p-4">
-            <div className="flex items-center gap-3 mb-3">
+          <div className="px-6 py-4">
+            <div className="flex items-center gap-3 mb-4">
               <span
-                className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}`}
+                className={`inline-flex px-4 py-2 rounded-full text-xs font-semibold ${badgeClass}`}
               >
                 {currentState.toUpperCase()}
               </span>
             </div>
 
             {error && (
-              <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-xs text-red-700 dark:text-red-400">
+              <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-xs text-red-700 dark:text-red-400">
                 {error}
               </div>
             )}
@@ -138,7 +138,7 @@ const SimulationStatusPanel: React.FC = () => {
         {/* Global settings summary */}
         {selectedProfile.globalSettings && (
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                 Active Settings
               </h4>
@@ -178,10 +178,10 @@ const SimulationStatusPanel: React.FC = () => {
         {selectedProfile.nodeSettings &&
           selectedProfile.nodeSettings.length > 0 && (
             <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                   Node Overrides
-                  <span className="ml-1.5 text-xs font-normal text-gray-400">
+                  <span className="ml-2 text-xs font-normal text-gray-400">
                     ({selectedProfile.nodeSettings.length})
                   </span>
                 </h4>
@@ -194,7 +194,7 @@ const SimulationStatusPanel: React.FC = () => {
                   return (
                     <div
                       key={ns.nodeId}
-                      className="px-4 py-2.5 flex items-center justify-between"
+                      className="px-6 py-3 flex items-center justify-between"
                     >
                       <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 font-mono min-w-0">
                         <ChevronRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
@@ -226,7 +226,7 @@ const SimulationStatusPanel: React.FC = () => {
 /* Small helper for info rows */
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="px-4 py-2.5 flex items-center justify-between">
+    <div className="px-6 py-3 flex items-center justify-between">
       <span className="text-xs text-gray-500 dark:text-gray-400">
         {label}
       </span>

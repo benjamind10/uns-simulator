@@ -430,10 +430,10 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
 
   /* ── Render ── */
   return (
-    <div className="flex gap-4 h-full min-h-0">
+    <div className="flex gap-6 h-full min-h-0 px-6 py-4">
       {/* ── LEFT: Unified Tree ── */}
       <div className="w-3/5 flex flex-col min-h-0">
-        <div className="flex items-center justify-between mb-3 flex-shrink-0">
+        <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <div className="flex items-center gap-3">
             <h2 className="font-semibold text-base text-gray-900 dark:text-gray-100">
               Namespace Tree
@@ -485,7 +485,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-2">
+        <div className="flex-1 min-h-0 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 p-4">
           {tree.length > 0 ? (
             <DndContext
               sensors={sensors}
@@ -529,11 +529,11 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       </div>
 
       {/* ── RIGHT: Node Editor / Builder ── */}
-      <div className="w-2/5 flex flex-col min-h-0 overflow-auto">
+      <div className="w-2/5 flex flex-col min-h-0 overflow-auto px-6 py-4">
         {/* Mode toggle when a node is selected */}
         {selectedNode ? (
           <>
-            <div className="flex items-center gap-1 mb-3 flex-shrink-0">
+            <div className="flex items-center gap-1 mb-4 flex-shrink-0">
               <button
                 type="button"
                 onClick={handleSwitchToEdit}
@@ -588,14 +588,14 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
             )}
           </>
         ) : (
-          <h2 className="font-semibold text-base mb-3 text-gray-900 dark:text-gray-100 flex-shrink-0">
+          <h2 className="font-semibold text-base mb-4 text-gray-900 dark:text-gray-100 flex-shrink-0">
             Add Root Node
           </h2>
         )}
 
         {/* Form */}
         <form
-          className="space-y-3 flex-shrink-0"
+          className="space-y-4 flex-shrink-0"
           onSubmit={(e) => {
             e.preventDefault();
             if (mode === 'edit') {
