@@ -61,7 +61,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   const [form, setForm] = useState({
     name: '',
     kind: 'group' as 'group' | 'metric',
-    dataType: '' as '' | 'Int' | 'Float' | 'Bool' | 'String',
+    dataType: '' as '' | 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String',
     unit: '',
   });
 
@@ -131,7 +131,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       setForm({
         name: node.name,
         kind: node.kind as 'group' | 'metric',
-        dataType: (node.dataType as '' | 'Int' | 'Float' | 'Bool' | 'String') || '',
+        dataType: (node.dataType as '' | 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String') || '',
         unit: node.unit || '',
       });
     }
@@ -148,7 +148,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     setForm({
       name: selectedNode.name,
       kind: selectedNode.kind as 'group' | 'metric',
-      dataType: (selectedNode.dataType as '' | 'Int' | 'Float' | 'Bool' | 'String') || '',
+      dataType: (selectedNode.dataType as '' | 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String') || '',
       unit: selectedNode.unit || '',
     });
   };
@@ -635,6 +635,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                         | 'Int'
                         | 'Float'
                         | 'Bool'
+                        | 'Boolean'
                         | 'String',
                     }))
                   }
@@ -643,6 +644,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                   <option value="Int">Int</option>
                   <option value="Float">Float</option>
                   <option value="Bool">Bool</option>
+                  <option value="Boolean">Boolean</option>
                   <option value="String">String</option>
                 </select>
               </div>

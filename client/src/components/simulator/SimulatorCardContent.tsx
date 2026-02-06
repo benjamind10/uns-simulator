@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { Settings, Sliders } from 'lucide-react';
 
 import {
   fetchSimulationProfilesAsync,
@@ -18,14 +19,8 @@ import type {
 
 import SimulatorGlobalForm from './SimulatorGlobalForm';
 import SimulatorNodeSettings from './SimulatorNodeSettings';
-import NodePayloadSettings from './NodePayloadSettings';
-import SimulationControls from './SimulationControls';
 
-type TabType =
-  | 'details'
-  | 'global_settings'
-  | 'node_settings'
-  | 'node_payloads';
+type TabType = 'global_settings' | 'node_settings';
 
 type SimulatorCardContentProps = {
   fetchNodesByIds?: (ids: string[]) => Promise<ISchemaNode[]>;
@@ -34,40 +29,20 @@ type SimulatorCardContentProps = {
 const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
   fetchNodesByIds,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('details');
+  const [activeTab, setActiveTab] = useState<TabType>('global_settings');
   const dispatch = useDispatch<AppDispatch>();
   const { profileId } = useParams<{ profileId?: string }>();
 
-  // Use simple selectors to avoid memoization issues
   const profiles = useSelector(
     (state: RootState) => state.simulationProfile.profiles
   );
   const selectedProfile = profileId ? profiles[profileId] : null;
   const schemas = useSelector((state: RootState) => state.schema.schemas);
 
-  // If no profile is selected, show a card prompting the user to select one
   if (!selectedProfile) {
-    return (
-      <div className="bg-white dark:bg-gray-900 p-8 flex items-center justify-center min-h-[300px]">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-gray-700 dark:text-gray-200 mb-4">
-            No Simulation Profile Selected
-          </div>
-          <div className="text-gray-500 dark:text-gray-400 mb-6">
-            Please select a profile from the left panel to configure and run the
-            simulator.
-          </div>
-          <div>
-            <span className="inline-block bg-blue-100 text-blue-700 px-4 py-2 rounded">
-              ← Select a profile to begin
-            </span>
-          </div>
-        </div>
-      </div>
-    );
+    return null;
   }
 
-  // Get selected schema and node IDs for Node Settings tab
   const selectedSchema = schemas?.find(
     (s: ISchema) => s.id === selectedProfile.schemaId
   );
@@ -147,101 +122,45 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
     }
   };
 
-  // // Handler for saving node payloads
-  // const handleSaveNodePayloads = async (
-  //   payloads: Record<string, Record<string, any>>
-  // ) => {
-  //   if (!selectedProfile) return;
-  //   try {
-  //     // Merge new payloads into existing nodeSettings
-  //     const nodeSettingsArray = selectedProfile.nodeSettings ?? [];
-  //     const updatedSettings = nodeSettingsArray.map((ns) => ({
-  //       ...ns,
-  //       payload: payloads[ns.nodeId] ?? ns.payload,
-  //     }));
-
-  //     // If a nodeId is present in payloads but not in nodeSettings, add it
-  //     Object.keys(payloads).forEach((nodeId) => {
-  //       if (!updatedSettings.find((ns) => ns.nodeId === nodeId)) {
-  //         updatedSettings.push({ nodeId, payload: payloads[nodeId] });
-  //       }
-  //     });
-
-  //     // Save each node's settings using the dedicated mutation
-  //     await Promise.all(
-  //       updatedSettings.map(({ nodeId, ...settingsWithoutNodeId }) =>
-  //         dispatch(
-  //           upsertNodeSettingsAsync({
-  //             profileId: selectedProfile.id,
-  //             nodeId,
-  //             settings: settingsWithoutNodeId,
-  //           })
-  //         )
-  //       )
-  //     );
-  //     await dispatch(fetchSimulationProfilesAsync());
-  //     toast.success('Node payloads saved!');
-  //   } catch {
-  //     toast.error('Failed to save node payloads');
-  //   }
-  // };
+  const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
+    {
+      key: 'global_settings',
+      label: 'Global Settings',
+      icon: <Settings className="w-3.5 h-3.5" />,
+    },
+    {
+      key: 'node_settings',
+      label: 'Node Settings',
+      icon: <Sliders className="w-3.5 h-3.5" />,
+    },
+  ];
 
   return (
-    <>
-      <div className="flex gap-8 border-b border-gray-300 dark:border-gray-700 mb-4">
-        <button
-          className={`pb-2 font-semibold ${
-            activeTab === 'details'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-500 dark:text-gray-400'
-          }`}
-          onClick={() => setActiveTab('details')}
-        >
-          Details
-        </button>
-        <button
-          className={`pb-2 font-semibold ${
-            activeTab === 'global_settings'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-500 dark:text-gray-400'
-          }`}
-          onClick={() => setActiveTab('global_settings')}
-        >
-          Global Settings
-        </button>
-        <button
-          className={`pb-2 font-semibold ${
-            activeTab === 'node_settings'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-500 dark:text-gray-400'
-          }`}
-          onClick={() => setActiveTab('node_settings')}
-        >
-          Node Settings
-        </button>
-        <button
-          className={`pb-2 font-semibold ${
-            activeTab === 'node_payloads'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-500 dark:text-gray-400'
-          }`}
-          onClick={() => setActiveTab('node_payloads')}
-        >
-          Node Payloads
-        </button>
+    <div className="flex flex-col h-full min-h-0">
+      {/* Tab header */}
+      <div className="px-3 py-2.5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="flex items-center gap-1">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                activeTab === tab.key
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Tab Content */}
-      {activeTab === 'details' && (
-        <div>
-          <div className="mb-6">
-            <SimulationControls />
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'global_settings' && (
-        <div className="py-8">
+      {/* Tab content */}
+      <div className="flex-1 min-h-0 overflow-auto p-4">
+        {activeTab === 'global_settings' && (
           <SimulatorGlobalForm
             initialSettings={
               selectedProfile?.globalSettings || {
@@ -251,11 +170,9 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
             }
             onSave={handleSaveGlobalSettings}
           />
-        </div>
-      )}
+        )}
 
-      {activeTab === 'node_settings' && (
-        <div className="py-8">
+        {activeTab === 'node_settings' && (
           <SimulatorNodeSettings
             nodeIds={nodeIds}
             onSave={handleSaveNodeSettings}
@@ -268,15 +185,9 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
                 : {}
             }
           />
-        </div>
-      )}
-
-      {activeTab === 'node_payloads' && (
-        <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-          <NodePayloadSettings />
-        </div>
-      )}
-    </>
+        )}
+      </div>
+    </div>
   );
 };
 

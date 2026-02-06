@@ -9,7 +9,7 @@ import mongoose, {
    Types
 ──────────────────────────*/
 export type SchemaNodeKind = 'group' | 'metric' | 'object';
-export type SchemaNodeDataType = 'Int' | 'Float' | 'Bool' | 'String';
+export type SchemaNodeDataType = 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String';
 
 export interface ISchemaNode {
   id: string;
@@ -45,7 +45,7 @@ const SchemaNodeSubSchema = new MongooseSchema<ISchemaNode>(
     parent: { type: String, default: null },
     path: { type: String, required: true },
     order: { type: Number, default: 0 },
-    dataType: { type: String, enum: ['Int', 'Float', 'Bool', 'String'] },
+    dataType: { type: String, enum: ['Int', 'Float', 'Bool', 'Boolean', 'String'] },
     unit: String,
     engineering: { type: Object, default: {} },
     objectData: { type: Object, default: {} },

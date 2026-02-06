@@ -1,78 +1,66 @@
-import { Cpu, Edit, Trash2 } from 'lucide-react';
+import React from 'react';
+import { Cpu, Trash2 } from 'lucide-react';
 
-import type { ISimulationProfile, IBroker, ISchema } from '../../types';
+import type { IBroker, ISchema, ISimulationProfile } from '../../types';
 
 interface SimulatorCardProps {
   simulator: ISimulationProfile;
+  schemas: ISchema[];
+  brokers: IBroker[];
   onDelete: (id: string) => void;
   onOpen: () => void;
-  brokers?: IBroker[];
-  schemas?: ISchema[];
 }
 
-export default function SimulatorCard({
+const SimulatorCard: React.FC<SimulatorCardProps> = ({
   simulator,
+  schemas,
+  brokers,
   onDelete,
   onOpen,
-  brokers = [],
-  schemas = [],
-}: SimulatorCardProps) {
+}) => {
   const schema = schemas.find((s) => s.id === simulator.schemaId);
   const broker = brokers.find((b) => b.id === simulator.brokerId);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center space-x-3">
-          <Cpu className="h-8 w-8 text-blue-500" />
-          <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">
-              {simulator.name}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {simulator.description || 'No description'}
-            </p>
-          </div>
+    <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-4 flex flex-col gap-2">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          <Cpu className="w-5 h-5 text-blue-500 flex-shrink-0" />
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">
+            {simulator.name}
+          </h3>
         </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={onOpen}
-            className="p-2 text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400"
-            title="Open Simulator"
-          >
-            <Edit size={16} />
-          </button>
-          <button
-            onClick={() => onDelete(simulator.id)}
-            className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
-            title="Delete Simulator"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(simulator.id);
+          }}
+          className="p-1 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
+          title="Delete"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
 
-      <div className="flex flex-col gap-1 text-xs text-gray-500 dark:text-gray-400 mb-3">
-        <span>
-          <strong>Schema:</strong> {schema ? schema.name : '-'}
-        </span>
-        <span>
-          <strong>Broker:</strong> {broker ? broker.name : '-'}
-        </span>
+      {simulator.description && (
+        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+          {simulator.description}
+        </p>
+      )}
+
+      <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <span>{schema?.name ?? '—'}</span>
+        <span>{broker?.name ?? '—'}</span>
       </div>
 
-      <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-        <span>
-          Created:{' '}
-          {simulator.createdAt && !isNaN(Number(simulator.createdAt))
-            ? new Date(
-                typeof simulator.createdAt === 'number'
-                  ? simulator.createdAt
-                  : Number(simulator.createdAt)
-              ).toLocaleDateString()
-            : '-'}
-        </span>
-      </div>
+      <button
+        onClick={onOpen}
+        className="mt-2 w-full px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+      >
+        Open Simulator
+      </button>
     </div>
   );
-}
+};
+
+export default SimulatorCard;
