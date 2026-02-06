@@ -1,13 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import {
+  Plus,
+  Trash2,
+  Play,
+  Square,
+  Pause,
+  RotateCcw,
+  Cpu,
+} from 'lucide-react';
 
 import {
   fetchSimulationProfilesAsync,
   createSimulationProfileAsync,
   deleteSimulationProfileAsync,
+  startSimulationAsync,
+  stopSimulationAsync,
+  pauseSimulationAsync,
+  resumeSimulationAsync,
+  getSimulationStatusAsync,
 } from '../../store/simulationProfile/simulationProfieThunk';
-import SimulationCard from '../../components/simulator/SimulationCard';
+import { selectSchemas } from '../../store/schema/schemaSlice';
+import { fetchSchemasAsync } from '../../store/schema/schemaThunk';
+import { fetchBrokersAsync, selectBrokers } from '../../store/brokers';
+import SimulatorCardContent from '../../components/simulator/SimulatorCardContent';
+import SimulationStatusPanel from '../../components/simulator/SimulationControls';
+import ConfirmDialog from '../../components/global/ConfirmDialog';
 import type {
   AppDispatch,
   IBroker,
@@ -15,35 +35,21 @@ import type {
   ISimulationProfile,
   RootState,
 } from '../../types';
-import { selectSchemas } from '../../store/schema/schemaSlice';
-import { fetchBrokersAsync, selectBrokers } from '../../store/brokers';
-import ProfilesCardContent from '../../components/simulator/ProfilesCardContent';
-import SimulatorCardContent from '../../components/simulator/SimulatorCardContent';
-import { fetchSchemasAsync } from '../../store/schema/schemaThunk';
-import ConfirmDialog from '../../components/global/ConfirmDialog';
-import { connectToBrokerAsync } from '../../store/mqtt/mqttThunk';
 
 export default function SimulationPage() {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const { profileId } = useParams<{ profileId?: string }>();
 
-  // Fix: Use a simpler selector approach
   const profilesRecord = useSelector(
     (state: RootState) => state.simulationProfile.profiles
   );
   const profiles = Object.values(profilesRecord) as ISimulationProfile[];
-
-  const loading = useSelector(
-    (state: RootState) => state.simulationProfile.loading
-  );
-  const error = useSelector(
-    (state: RootState) => state.simulationProfile.error as string | null
-  );
-
-  // Get schemas and brokers from redux
   const schemas = useSelector(selectSchemas);
   const brokers = useSelector(selectBrokers);
 
-  const [showModal, setShowModal] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -51,29 +57,40 @@ export default function SimulationPage() {
     brokerId: '',
   });
 
-  const { profileId } = useParams<{ profileId?: string }>();
-  const navigate = useNavigate();
+  const selectedProfile = profiles.find((p) => p.id === profileId) ?? null;
 
-  // State for confirm dialog
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
+  // Simulation state from Redux
+  const simulationStates = useSelector(
+    (state: RootState) => state.simulationProfile.simulationStates
+  );
+  const simulationLoading = useSelector(
+    (state: RootState) => state.simulationProfile.simulationLoading
+  );
+  const brokerStatuses = useSelector(
+    (state: RootState) => state.mqtt.connections
+  );
 
-  // Delete handler
-  const handleDeleteProfile = (id: string) => {
-    setProfileToDelete(id);
-    setShowDeleteConfirm(true);
+  const currentState = profileId
+    ? simulationStates[profileId] || 'idle'
+    : 'idle';
+  const isLoading = profileId
+    ? simulationLoading[profileId] || false
+    : false;
+
+  // Status badge config
+  const stateConfig: Record<
+    string,
+    { dot: string; text: string; pulse: boolean }
+  > = {
+    running: { dot: 'bg-green-500', text: 'Running', pulse: true },
+    starting: { dot: 'bg-green-500', text: 'Starting...', pulse: true },
+    paused: { dot: 'bg-yellow-500', text: 'Paused', pulse: false },
+    stopping: { dot: 'bg-red-500', text: 'Stopping...', pulse: true },
+    stopped: { dot: 'bg-gray-400', text: 'Stopped', pulse: false },
+    error: { dot: 'bg-red-500', text: 'Error', pulse: false },
+    idle: { dot: 'bg-gray-400', text: 'Idle', pulse: false },
   };
-
-  const confirmDeleteProfile = async () => {
-    if (profileToDelete) {
-      await dispatch(deleteSimulationProfileAsync(profileToDelete));
-      if (profileId === profileToDelete) {
-        navigate('/simulator');
-      }
-      setProfileToDelete(null);
-      setShowDeleteConfirm(false);
-    }
-  };
+  const status = stateConfig[currentState] ?? stateConfig.idle;
 
   useEffect(() => {
     dispatch(fetchSimulationProfilesAsync());
@@ -81,23 +98,32 @@ export default function SimulationPage() {
     dispatch(fetchBrokersAsync());
   }, [dispatch]);
 
-  // Redirect if profileId is not found in profiles
   useEffect(() => {
-    if (profileId && !profiles.some((p) => p.id === profileId)) {
+    if (profileId) {
+      dispatch(getSimulationStatusAsync(profileId));
+    }
+  }, [dispatch, profileId]);
+
+  // Redirect if profileId not in profiles
+  useEffect(() => {
+    if (profileId && profiles.length > 0 && !selectedProfile) {
       navigate('/simulator');
     }
-  }, [profileId, profiles, navigate]);
+  }, [profileId, profiles, selectedProfile, navigate]);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleSelectProfile = useCallback(
+    (id: string) => {
+      if (id) {
+        navigate(`/simulator/${id}`);
+      } else {
+        navigate('/simulator');
+      }
+    },
+    [navigate]
+  );
 
-  const handleCreateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreate = async () => {
+    if (!form.name.trim() || !form.schemaId || !form.brokerId) return;
     try {
       const result = await dispatch(
         createSimulationProfileAsync({
@@ -108,231 +134,296 @@ export default function SimulationPage() {
           },
         })
       ).unwrap();
-
-      setShowModal(false);
+      toast.success('Profile created!');
       setForm({ name: '', description: '', schemaId: '', brokerId: '' });
-
-      // Navigate to the newly created profile's detail page
+      setShowCreate(false);
       navigate(`/simulator/${result.id}`);
-    } catch (error) {
-      console.error('Failed to create profile:', error);
+    } catch {
+      toast.error('Failed to create profile');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!profileId) return;
+    try {
+      await dispatch(deleteSimulationProfileAsync(profileId));
+      toast.success('Profile deleted!');
+      navigate('/simulator');
+      setShowDeleteConfirm(false);
+    } catch {
+      toast.error('Failed to delete profile');
+    }
+  };
+
+  // Simulation control handlers
+  const handleStart = async () => {
+    if (!profileId) return;
+    const brokerId = selectedProfile?.brokerId;
+    const brokerStatus =
+      brokerId && brokerStatuses[brokerId]
+        ? (brokerStatuses[brokerId] as { status: string }).status
+        : 'disconnected';
+
+    if (brokerStatus !== 'connected') {
+      toast.error(
+        'Broker not connected. Please connect to the broker from the Brokers page first.'
+      );
+      return;
+    }
+
+    try {
+      await dispatch(startSimulationAsync(profileId));
+      dispatch(getSimulationStatusAsync(profileId));
+    } catch {
+      toast.error('Could not start simulation. Server may be offline.');
+    }
+  };
+
+  const handleStop = async () => {
+    if (!profileId) return;
+    try {
+      await dispatch(stopSimulationAsync(profileId));
+      dispatch(getSimulationStatusAsync(profileId));
+    } catch {
+      toast.error('Could not stop simulation.');
+    }
+  };
+
+  const handlePause = async () => {
+    if (!profileId) return;
+    try {
+      await dispatch(pauseSimulationAsync(profileId));
+      dispatch(getSimulationStatusAsync(profileId));
+    } catch {
+      toast.error('Could not pause simulation.');
+    }
+  };
+
+  const handleResume = async () => {
+    if (!profileId) return;
+    try {
+      await dispatch(resumeSimulationAsync(profileId));
+      dispatch(getSimulationStatusAsync(profileId));
+    } catch {
+      toast.error('Could not resume simulation.');
     }
   };
 
   // Fetch nodes by IDs utility
-  const fetchNodesByIds = async (ids: string[]) => {
-    // Find all nodes in all schemas that match the given IDs
-    const allNodes = schemas.flatMap((schema) => schema.nodes ?? []);
-    return allNodes.filter((node) => ids.includes(node.id));
-  };
-
-  const brokerStatuses = useSelector(
-    (state: RootState) => state.mqtt.connections
+  const fetchNodesByIds = useCallback(
+    async (ids: string[]) => {
+      const allNodes = schemas.flatMap((schema) => schema.nodes ?? []);
+      return allNodes.filter((node) => ids.includes(node.id));
+    },
+    [schemas]
   );
 
-  const handleConnectBroker = (brokerId: string) => {
-    const broker = brokers.find((b) => b.id === brokerId);
-    if (broker) {
-      dispatch(connectToBrokerAsync(broker));
-    }
-  };
-
   return (
-    <>
-      <div className="grid grid-cols-3 gap-8 h-full min-h-0">
-        {/* Profiles Section */}
-        <div className="col-span-1 flex flex-col gap-6 min-h-0">
-          <SimulationCard title="Profiles">
-            <ProfilesCardContent
-              profiles={profiles}
-              loading={loading}
-              error={error}
-              onCreateProfileClick={() => setShowModal(true)}
-              schemas={schemas}
-              onDeleteProfile={handleDeleteProfile} // <-- now opens dialog
-            />
-          </SimulationCard>
-        </div>
+    <div className="flex flex-col gap-2 h-full min-h-0">
+      {/* Compact toolbar header */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 px-4 py-3 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Profile selector */}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <select
+              value={profileId || ''}
+              onChange={(e) => handleSelectProfile(e.target.value)}
+              className="px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm font-medium min-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-400"
+            >
+              <option value="">Select a profile...</option>
+              {profiles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
 
-        {/* Simulator Section */}
-        <div className="col-span-2 flex flex-col gap-6">
-          <SimulationCard title="Simulator">
-            <SimulatorCardContent fetchNodesByIds={fetchNodesByIds} />
-          </SimulationCard>
-        </div>
-      </div>
+            {/* Status badge */}
+            {profileId && selectedProfile && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                <span className="relative flex h-2 w-2">
+                  {status.pulse && (
+                    <span
+                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${status.dot}`}
+                    />
+                  )}
+                  <span
+                    className={`relative inline-flex rounded-full h-2 w-2 ${status.dot}`}
+                  />
+                </span>
+                {status.text}
+              </span>
+            )}
+          </div>
 
-      {/* Modal for creating profile */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-8 w-full max-w-md">
-            <h3 className="text-xl font-bold mb-4 dark:text-white text-gray-900">
-              Create Simulation Profile
-            </h3>
-            <form onSubmit={handleCreateProfile} className="space-y-4">
-              <div>
-                <label className="block mb-1 font-medium" htmlFor="name">
-                  Name
-                </label>
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            {/* Create profile inline */}
+            {showCreate ? (
+              <div className="flex items-center gap-2">
                 <input
-                  id="name"
-                  name="name"
+                  type="text"
+                  placeholder="Profile name"
                   value={form.name}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  required
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, name: e.target.value }))
+                  }
+                  className="px-3 py-1.5 border rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 w-32 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  autoFocus
                 />
-              </div>
-              <div>
-                <label className="block mb-1 font-medium" htmlFor="description">
-                  Description
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={form.description}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  rows={2}
-                />
-              </div>
-              <div>
-                <label className="block mb-1 font-medium" htmlFor="schemaId">
-                  Schema
-                </label>
                 <select
-                  id="schemaId"
-                  name="schemaId"
                   value={form.schemaId}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  required
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, schemaId: e.target.value }))
+                  }
+                  className="px-3 py-1.5 border rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 w-36 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
-                  <option value="">Select a schema...</option>
-                  {schemas.map((schema: ISchema) => (
-                    <option key={schema.id} value={schema.id}>
-                      {schema.name}
+                  <option value="">Schema...</option>
+                  {schemas.map((s: ISchema) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name}
                     </option>
                   ))}
                 </select>
-              </div>
-              <div>
-                <label className="block mb-1 font-medium" htmlFor="brokerId">
-                  Broker
-                </label>
                 <select
-                  id="brokerId"
-                  name="brokerId"
                   value={form.brokerId}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, brokerId: e.target.value }))
+                  }
+                  className="px-3 py-1.5 border rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 w-36 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
-                  <option value="">Select a broker...</option>
-                  {brokers.map((broker: IBroker) => (
-                    <option key={broker.id} value={broker.id}>
-                      {broker.name}
+                  <option value="">Broker...</option>
+                  {brokers.map((b: IBroker) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
                     </option>
                   ))}
                 </select>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
                 <button
-                  type="button"
-                  className="px-4 py-2 rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-100"
-                  onClick={() => setShowModal(false)}
+                  onClick={handleCreate}
+                  disabled={
+                    !form.name.trim() || !form.schemaId || !form.brokerId
+                  }
+                  className="px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Create
+                </button>
+                <button
+                  onClick={() => {
+                    setShowCreate(false);
+                    setForm({
+                      name: '',
+                      description: '',
+                      schemaId: '',
+                      brokerId: '',
+                    });
+                  }}
+                  className="px-2 py-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm transition-colors"
                 >
                   Cancel
                 </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowCreate(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                New Profile
+              </button>
+            )}
+
+            {/* Delete button */}
+            {profileId && selectedProfile && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm rounded-lg transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Simulation controls */}
+            {profileId && selectedProfile && (
+              <div className="flex items-center gap-1 ml-2 pl-2 border-l border-gray-200 dark:border-gray-700">
                 <button
-                  type="submit"
-                  className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+                  onClick={handleStart}
+                  disabled={isLoading || currentState === 'running'}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Start simulation"
                 >
-                  Create Profile
+                  <Play className="w-3.5 h-3.5" />
+                  Start
+                </button>
+                <button
+                  onClick={handlePause}
+                  disabled={isLoading || currentState !== 'running'}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-yellow-700 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Pause simulation"
+                >
+                  <Pause className="w-3.5 h-3.5" />
+                  Pause
+                </button>
+                <button
+                  onClick={handleResume}
+                  disabled={isLoading || currentState !== 'paused'}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Resume simulation"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Resume
+                </button>
+                <button
+                  onClick={handleStop}
+                  disabled={
+                    isLoading ||
+                    currentState === 'idle' ||
+                    currentState === 'stopped'
+                  }
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  title="Stop simulation"
+                >
+                  <Square className="w-3.5 h-3.5" />
+                  Stop
                 </button>
               </div>
-            </form>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* ── Confirm delete dialog ── */}
+      {/* Main content area */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 flex-1 min-h-0 overflow-hidden">
+        {selectedProfile ? (
+          <div className="flex h-full min-h-0">
+            {/* Left: Settings Panel */}
+            <div className="w-1/2 flex flex-col min-h-0 border-r border-gray-200 dark:border-gray-700">
+              <SimulatorCardContent fetchNodesByIds={fetchNodesByIds} />
+            </div>
+
+            {/* Right: Status Panel */}
+            <div className="w-1/2 flex flex-col min-h-0">
+              <SimulationStatusPanel />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 gap-3">
+            <Cpu className="w-12 h-12 opacity-40" />
+            <p className="text-sm font-medium">
+              Select or create a simulation profile to get started
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Confirm delete dialog */}
       <ConfirmDialog
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={confirmDeleteProfile}
+        onConfirm={handleDelete}
         title="Delete Simulation Profile"
-        message="This will permanently delete the selected simulation profile. Are you sure?"
+        message={`Are you sure you want to delete "${selectedProfile?.name}"? This cannot be undone.`}
       />
-
-      {/* Brokers Section - Table Format */}
-      <div className="mb-6">
-        <h3 className="font-semibold mb-4 text-gray-900 dark:text-gray-100 text-lg">
-          Brokers
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Action
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
-              {brokers.map((broker: IBroker) => {
-                const status =
-                  brokerStatuses[broker.id]?.status || 'disconnected';
-                return (
-                  <tr
-                    key={broker.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                  >
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                      {broker.name}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          status === 'connected'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm">
-                      <button
-                        onClick={() => handleConnectBroker(broker.id)}
-                        disabled={status === 'connected'}
-                        className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm disabled:bg-gray-400"
-                      >
-                        Connect
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {brokers.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={3}
-                    className="px-4 py-4 text-center text-gray-500 dark:text-gray-400 text-sm"
-                  >
-                    No brokers found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </>
+    </div>
   );
 }

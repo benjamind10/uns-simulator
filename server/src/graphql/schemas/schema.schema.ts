@@ -11,6 +11,7 @@ export const schemaTypeDefs = gql`
     Int
     Float
     Bool
+    Boolean
     String
   }
 

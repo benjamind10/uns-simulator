@@ -32,7 +32,7 @@ export interface SchemaNodeInput {
   parent?: string | null;
   path?: string;
   order?: number;
-  dataType?: 'Int' | 'Float' | 'Bool' | 'String';
+  dataType?: 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String';
   unit?: string;
   engineering?: Record<string, unknown>;
   objectData?: Record<string, unknown>; // Custom data for 'object' kind nodes
@@ -45,7 +45,7 @@ export interface ISchemaNode {
   parent: string | null;
   path: string;
   order: number;
-  dataType?: 'Int' | 'Float' | 'Bool' | 'String';
+  dataType?: 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String';
   unit?: string;
   engineering?: Record<string, unknown>;
   objectData?: Record<string, unknown>; // <-- Add objectData for returned nodes

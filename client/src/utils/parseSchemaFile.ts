@@ -7,7 +7,7 @@ type RawNode = {
   name: string;
   kind: 'group' | 'metric';
   parent?: string | null; // may be name OR id
-  dataType?: 'Int' | 'Float' | 'Bool' | 'String';
+  dataType?: 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String';
   unit?: string;
   engineering?: Record<string, unknown>;
   order?: number;

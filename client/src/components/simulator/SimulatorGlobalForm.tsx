@@ -27,9 +27,9 @@ const SimulatorGlobalForm: React.FC<SimulatorConfigFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-lg mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-3">
       <div>
-        <label className="block mb-1 font-medium">
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
           Default Update Frequency (ms)
         </label>
         <input
@@ -37,13 +37,13 @@ const SimulatorGlobalForm: React.FC<SimulatorConfigFormProps> = ({
           name="defaultUpdateFrequency"
           value={settings.defaultUpdateFrequency}
           onChange={handleChange}
-          className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           min={1}
           required
         />
       </div>
       <div>
-        <label className="block mb-1 font-medium">
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
           Time Scale (multiplier)
         </label>
         <input
@@ -51,52 +51,58 @@ const SimulatorGlobalForm: React.FC<SimulatorConfigFormProps> = ({
           name="timeScale"
           value={settings.timeScale}
           onChange={handleChange}
-          className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           min={0}
           step={0.01}
           required
         />
       </div>
       <div>
-        <label className="block mb-1 font-medium">Publish Root</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+          Publish Root
+        </label>
         <input
           type="text"
           name="publishRoot"
           value={settings.publishRoot || ''}
           onChange={handleChange}
-          className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          placeholder="Optional topic prefix"
         />
       </div>
       <div>
-        <label className="block mb-1 font-medium">Start Delay (ms)</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+          Start Delay (ms)
+        </label>
         <input
           type="number"
           name="startDelay"
           value={settings.startDelay || 0}
           onChange={handleChange}
-          className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           min={0}
         />
       </div>
       <div>
-        <label className="block mb-1 font-medium">Simulation Length (ms)</label>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+          Simulation Length (ms)
+        </label>
         <input
           type="number"
           name="simulationLength"
           value={settings.simulationLength || 0}
           onChange={handleChange}
-          className="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+          className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           min={0}
+          placeholder="0 = unlimited"
         />
       </div>
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          className="px-4 py-2 rounded bg-blue-600 text-white font-semibold"
-        >
-          Save Config
-        </button>
-      </div>
+      <button
+        type="submit"
+        className="w-full px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+      >
+        Save Global Settings
+      </button>
     </form>
   );
 };

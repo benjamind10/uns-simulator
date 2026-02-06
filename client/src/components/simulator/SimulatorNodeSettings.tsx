@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { ChevronRight } from 'lucide-react';
 
 import type { ISchemaNode, NodeSettings } from '../../types';
 
@@ -26,7 +27,6 @@ export default function SimulatorNodeSettings({
   const [settings, setSettings] = useState<Record<string, NodeSettings>>({});
   const didInit = useRef(false);
 
-  // Fetch or create nodes
   useEffect(() => {
     let isMounted = true;
 
@@ -53,7 +53,6 @@ export default function SimulatorNodeSettings({
     };
   }, [nodeIds, fetchNodesByIds]);
 
-  // Initialize settings once
   useEffect(() => {
     if (nodes.length > 0 && !didInit.current) {
       const metricNodes = nodes.filter((node) => node.kind === 'metric');
@@ -89,31 +88,54 @@ export default function SimulatorNodeSettings({
     setSettings(cleared);
   };
 
+  if (metricNodes.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
+        No metric nodes in this schema
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <h2 className="text-lg font-bold mb-4">Node Settings</h2>
+    <div className="space-y-3">
       {metricNodes.map((node) => (
         <div
           key={node.id}
-          className="mb-6 p-4 rounded bg-gray-100 dark:bg-gray-800"
+          className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
         >
-          <h3 className="font-semibold mb-2">
-            Node: {node.name ? node.path : node.id}
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Node header */}
+          <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 font-mono">
+              {node.path?.split('/').map((part, i) => (
+                <span key={i} className="inline-flex items-center gap-0.5">
+                  {i > 0 && (
+                    <ChevronRight className="w-2.5 h-2.5 text-gray-400" />
+                  )}
+                  <span>{part}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+          {/* Settings */}
+          <div className="px-3 py-3 grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm mb-1">Frequency (ms)</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                Frequency (ms)
+              </label>
               <input
                 type="number"
                 value={settings[node.id]?.frequency ?? ''}
                 onChange={(e) =>
                   handleChange(node.id, 'frequency', Number(e.target.value))
                 }
-                className="w-full px-2 py-1 rounded border"
+                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                placeholder="Default"
               />
             </div>
             <div>
-              <label className="block text-sm mb-1">Fail Rate (ms)</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                Fail Rate (0-1)
+              </label>
               <input
                 type="number"
                 step="0.01"
@@ -123,22 +145,24 @@ export default function SimulatorNodeSettings({
                 onChange={(e) =>
                   handleChange(node.id, 'failRate', Number(e.target.value))
                 }
-                className="w-full px-2 py-1 rounded border"
+                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                placeholder="0"
               />
             </div>
           </div>
         </div>
       ))}
-      <div className="flex justify-end gap-2">
+
+      <div className="flex gap-2 pt-2">
         <button
-          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded font-semibold"
+          className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
           onClick={handleClear}
           type="button"
         >
-          Clear
+          Clear All
         </button>
         <button
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
+          className="flex-1 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
           onClick={() => onSave(settings)}
           type="button"
         >

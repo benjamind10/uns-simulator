@@ -1,18 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
+import { ChevronRight } from 'lucide-react';
 
-import type { RootState } from '../../types';
-import {
-  startSimulationAsync,
-  stopSimulationAsync,
-  pauseSimulationAsync,
-  resumeSimulationAsync,
-  getSimulationStatusAsync,
-} from '../../store/simulationProfile/simulationProfieThunk';
+import type { AppDispatch, RootState, ISchema, IBroker } from '../../types';
+import { getSimulationStatusAsync } from '../../store/simulationProfile/simulationProfieThunk';
+import { selectSchemas } from '../../store/schema/schemaSlice';
+import { selectBrokers } from '../../store/brokers';
 
-const SimulationControls: React.FC = () => {
-  const dispatch = useDispatch();
+const SimulationStatusPanel: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
   const { profileId } = useParams<{ profileId: string }>();
 
   const profiles = useSelector(
@@ -23,257 +20,221 @@ const SimulationControls: React.FC = () => {
   const simulationStates = useSelector(
     (state: RootState) => state.simulationProfile.simulationStates
   );
-  const simulationLoading = useSelector(
-    (state: RootState) => state.simulationProfile.simulationLoading
-  );
   const simulationErrors = useSelector(
     (state: RootState) => state.simulationProfile.simulationErrors
   );
-
-  // Broker connection check
-  const brokerStatuses = useSelector(
-    (state: RootState) => state.mqtt.connections
-  );
-
-  const [showAlert, setShowAlert] = useState(false);
+  const schemas = useSelector(selectSchemas);
+  const brokers = useSelector(selectBrokers);
 
   const currentState = profileId
     ? simulationStates[profileId] || 'idle'
     : 'idle';
+  const error = profileId ? simulationErrors[profileId] : null;
 
-  // Fetch simulation status on mount and when profileId changes
   useEffect(() => {
     if (profileId) {
-      dispatch(getSimulationStatusAsync(profileId) as any);
+      dispatch(getSimulationStatusAsync(profileId));
     }
   }, [dispatch, profileId]);
 
-  // Handle backend errors gracefully
-  const [serverError, setServerError] = useState<string | null>(null);
-
-  const handleStart = async () => {
-    const requiredBrokerId = selectedProfile?.brokerId;
-    const brokerStatus =
-      requiredBrokerId && brokerStatuses[requiredBrokerId]
-        ? brokerStatuses[requiredBrokerId]
-        : { status: 'disconnected' };
-
-    const status =
-      typeof brokerStatus === 'object' && 'status' in brokerStatus
-        ? (brokerStatus as any).status
-        : 'disconnected';
-
-    if (status !== 'connected') {
-      setShowAlert(true);
-      return;
-    }
-
-    if (profileId) {
-      try {
-        await dispatch(startSimulationAsync(profileId) as any);
-        dispatch(getSimulationStatusAsync(profileId) as any);
-        setServerError(null);
-      } catch {
-        setServerError('Could not start simulation. Server may be offline.');
-      }
-    }
-  };
-
-  const handleStop = async () => {
-    if (profileId) {
-      try {
-        await dispatch(stopSimulationAsync(profileId) as any);
-        dispatch(getSimulationStatusAsync(profileId) as any);
-        setServerError(null);
-      } catch {
-        setServerError('Could not stop simulation. Server may be offline.');
-      }
-    }
-  };
-
-  const handlePause = async () => {
-    if (profileId) {
-      try {
-        await dispatch(pauseSimulationAsync(profileId) as any);
-        dispatch(getSimulationStatusAsync(profileId) as any);
-        setServerError(null);
-      } catch {
-        setServerError('Could not pause simulation. Server may be offline.');
-      }
-    }
-  };
-
-  const handleResume = async () => {
-    if (profileId) {
-      try {
-        await dispatch(resumeSimulationAsync(profileId) as any);
-        dispatch(getSimulationStatusAsync(profileId) as any);
-        setServerError(null);
-      } catch {
-        setServerError('Could not resume simulation. Server may be offline.');
-      }
-    }
-  };
-
-  const isLoading = profileId ? simulationLoading[profileId] || false : false;
-  const error = profileId ? simulationErrors[profileId] : null;
-
   if (!profileId || !selectedProfile) {
     return (
-      <div className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-2xl mx-auto">
-        <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">
-          Simulation Controls
-        </h2>
-        <div className="text-center text-gray-500 dark:text-gray-400">
-          {!profileId ? 'No profile ID in URL' : 'Profile not found'}
-        </div>
+      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+        No profile selected
       </div>
     );
   }
 
-  return (
-    <div className="p-6 bg-white dark:bg-gray-800 rounded-lg max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-gray-100">
-        Simulation Controls
-      </h2>
+  const schema = schemas.find(
+    (s: ISchema) => s.id === selectedProfile.schemaId
+  );
+  const broker = brokers.find(
+    (b: IBroker) => b.id === selectedProfile.brokerId
+  );
 
-      {/* Profile Info */}
-      <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded">
-        <h3 className="font-semibold mb-1 text-gray-900 dark:text-gray-100">
-          {selectedProfile.name}
+  // State badge styling
+  const stateStyles: Record<string, string> = {
+    running:
+      'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+    starting:
+      'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+    paused:
+      'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+    stopped:
+      'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+    stopping:
+      'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+    error:
+      'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+    idle: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+  };
+
+  const badgeClass =
+    stateStyles[currentState] ?? stateStyles.idle;
+
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      {/* Header */}
+      <div className="px-3 py-2.5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+          Profile Details
         </h3>
-        {selectedProfile.description && (
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {selectedProfile.description}
-          </p>
-        )}
       </div>
 
-      {/* Status Display */}
-      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded">
-        <h3 className="font-semibold mb-2 text-gray-900 dark:text-gray-100">
-          Status:
-        </h3>
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-gray-600 dark:text-gray-400">State:</span>
-            <span
-              className={`font-medium ${
-                currentState === 'running'
-                  ? 'text-green-600 dark:text-green-400'
-                  : currentState === 'paused'
-                  ? 'text-yellow-600 dark:text-yellow-400'
-                  : currentState === 'stopped'
-                  ? 'text-red-600 dark:text-red-400'
-                  : currentState === 'error'
-                  ? 'text-red-600 dark:text-red-400'
-                  : 'text-gray-600 dark:text-gray-400'
-              }`}
-            >
-              {currentState.toUpperCase()}
-            </span>
+      {/* Content */}
+      <div className="flex-1 min-h-0 overflow-auto p-4 space-y-4">
+        {/* Profile info */}
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
+            <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+              {selectedProfile.name}
+            </h4>
+            {selectedProfile.description && (
+              <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-0.5">
+                {selectedProfile.description}
+              </p>
+            )}
           </div>
-          {isLoading && (
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">Loading:</span>
-              <span className="text-blue-600 dark:text-blue-400">
-                Processing...
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            <InfoRow label="Schema" value={schema?.name ?? 'Unknown'} />
+            <InfoRow label="Broker" value={broker?.name ?? 'Unknown'} />
+            <InfoRow
+              label="Broker URL"
+              value={
+                broker ? `${broker.url}:${broker.port}` : '—'
+              }
+            />
+            <InfoRow
+              label="Nodes"
+              value={`${schema?.nodes?.length ?? 0} total`}
+            />
+          </div>
+        </div>
+
+        {/* Status */}
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+              Simulation Status
+            </h4>
+          </div>
+          <div className="p-4">
+            <div className="flex items-center gap-3 mb-3">
+              <span
+                className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${badgeClass}`}
+              >
+                {currentState.toUpperCase()}
               </span>
             </div>
-          )}
-          {error && (
-            <div className="text-red-600 dark:text-red-400 text-sm">
-              Error: {error}
-            </div>
-          )}
-          {serverError && (
-            <div className="text-red-600 dark:text-red-400 text-sm">
-              {serverError}
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Control Buttons */}
-      <div className="flex gap-3 flex-wrap">
-        <button
-          onClick={handleStart}
-          disabled={isLoading || currentState === 'running'}
-          className="px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded hover:bg-green-700 dark:hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          Start
-        </button>
-        <button
-          onClick={handleStop}
-          disabled={
-            isLoading || currentState === 'idle' || currentState === 'stopped'
-          }
-          className="px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded hover:bg-red-700 dark:hover:bg-red-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          Stop
-        </button>
-        <button
-          onClick={handlePause}
-          disabled={isLoading || currentState !== 'running'}
-          className="px-4 py-2 bg-yellow-600 dark:bg-yellow-700 text-white rounded hover:bg-yellow-700 dark:hover:bg-yellow-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          Pause
-        </button>
-        <button
-          onClick={handleResume}
-          disabled={isLoading || currentState !== 'paused'}
-          className="px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded hover:bg-blue-700 dark:hover:bg-blue-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          Resume
-        </button>
-      </div>
-
-      {/* Simple Alert Popup */}
-      {showAlert && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
-              Broker Not Connected
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Please connect to the required broker in the dashboard before
-              starting the simulation.
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowAlert(false)}
-                className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
-              >
-                OK
-              </button>
-            </div>
+            {error && (
+              <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3 text-xs text-red-700 dark:text-red-400">
+                {error}
+              </div>
+            )}
           </div>
         </div>
-      )}
 
-      {/* Debug Info */}
-      <details className="mt-6">
-        <summary className="cursor-pointer text-sm text-gray-600 dark:text-gray-400">
-          Debug Info
-        </summary>
-        <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded text-xs overflow-auto">
-          {JSON.stringify(
-            {
-              profileId,
-              profileExists: !!selectedProfile,
-              profileName: selectedProfile?.name || 'N/A',
-              currentState,
-              isLoading,
-              error,
-              serverError,
-            },
-            null,
-            2
+        {/* Global settings summary */}
+        {selectedProfile.globalSettings && (
+          <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                Active Settings
+              </h4>
+            </div>
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
+              <InfoRow
+                label="Update Frequency"
+                value={`${selectedProfile.globalSettings.defaultUpdateFrequency ?? 1000}ms`}
+              />
+              <InfoRow
+                label="Time Scale"
+                value={`${selectedProfile.globalSettings.timeScale ?? 1}x`}
+              />
+              {selectedProfile.globalSettings.publishRoot && (
+                <InfoRow
+                  label="Publish Root"
+                  value={selectedProfile.globalSettings.publishRoot}
+                />
+              )}
+              {selectedProfile.globalSettings.startDelay ? (
+                <InfoRow
+                  label="Start Delay"
+                  value={`${selectedProfile.globalSettings.startDelay}ms`}
+                />
+              ) : null}
+              {selectedProfile.globalSettings.simulationLength ? (
+                <InfoRow
+                  label="Duration"
+                  value={`${selectedProfile.globalSettings.simulationLength}ms`}
+                />
+              ) : null}
+            </div>
+          </div>
+        )}
+
+        {/* Node settings summary */}
+        {selectedProfile.nodeSettings &&
+          selectedProfile.nodeSettings.length > 0 && (
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                  Node Overrides
+                  <span className="ml-1.5 text-xs font-normal text-gray-400">
+                    ({selectedProfile.nodeSettings.length})
+                  </span>
+                </h4>
+              </div>
+              <div className="divide-y divide-gray-100 dark:divide-gray-800">
+                {selectedProfile.nodeSettings.map((ns) => {
+                  const node = schema?.nodes?.find(
+                    (n) => n.id === ns.nodeId
+                  );
+                  return (
+                    <div
+                      key={ns.nodeId}
+                      className="px-4 py-2.5 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 font-mono min-w-0">
+                        <ChevronRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                        <span className="truncate">
+                          {node?.path ?? node?.name ?? ns.nodeId}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                        {ns.frequency ? (
+                          <span>{ns.frequency}ms</span>
+                        ) : null}
+                        {ns.failRate ? (
+                          <span className="text-red-500">
+                            {(Number(ns.failRate) * 100).toFixed(0)}% fail
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
-        </pre>
-      </details>
+      </div>
     </div>
   );
 };
 
-export default SimulationControls;
+/* Small helper for info rows */
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="px-4 py-2.5 flex items-center justify-between">
+      <span className="text-xs text-gray-500 dark:text-gray-400">
+        {label}
+      </span>
+      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+export default SimulationStatusPanel;
