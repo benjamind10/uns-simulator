@@ -20,6 +20,11 @@ import { simulationProfileResolvers } from './graphql/resolvers/simulationProfil
 import User from './graphql/models/User';
 import SimulationProfile from './graphql/models/SimulationProfile';
 import simulationManager from './simulation/SimulationManager';
+import {
+  metricsRegistry,
+  graphqlRequestsTotal,
+  graphqlRequestDuration,
+} from './metrics';
 
 // Load environment variables
 dotenv.config();
@@ -134,6 +139,16 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Metrics endpoint (before CORS, like /health)
+app.get('/metrics', async (_req, res) => {
+  try {
+    res.set('Content-Type', metricsRegistry.contentType);
+    res.end(await metricsRegistry.metrics());
+  } catch {
+    res.status(500).end();
+  }
+});
+
 // CORS configuration
 app.use(
   cors({
@@ -157,6 +172,25 @@ const server = new ApolloServer({
   typeDefs,
   resolvers,
   context: getContext,
+  plugins: [
+    {
+      async requestDidStart() {
+        const start = process.hrtime.bigint();
+        return {
+          async willSendResponse(requestContext: any) {
+            const operationName =
+              requestContext.request.operationName || 'unknown';
+            graphqlRequestsTotal.inc({ operation: operationName });
+            const durationNs = Number(process.hrtime.bigint() - start);
+            graphqlRequestDuration.observe(
+              { operation: operationName },
+              durationNs / 1e9
+            );
+          },
+        };
+      },
+    },
+  ],
 });
 
 // Cleanup orphaned simulation states on startup

@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npm run test:server && npm run test:client",
+    "test:server": "cd server && npm test",
+    "test:client": "cd client && npm test",
     "lint": "eslint \"{client,server}/**/*.{ts,tsx,js,jsx}\" --max-warnings=0",
     "lint:fix": "npm run lint -- --fix"
   },
