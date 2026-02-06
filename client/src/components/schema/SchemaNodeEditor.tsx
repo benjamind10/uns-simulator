@@ -33,6 +33,7 @@ import {
 import { selectSchemas } from '../../store/schema/schemaSlice';
 import type { ISchemaNode } from '../../types';
 import { buildTree, collectAllIds, recomputePaths } from '../../utils/tree';
+import { generateUUID } from '../../utils/uuid';
 import ConfirmDialog from '../global/ConfirmDialog';
 
 import TreeNode from './TreeNode';
@@ -205,7 +206,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     if (!form.name.trim()) return;
     const isRoot = !selectedNode;
     const newNode: ISchemaNode = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       name: form.name.trim(),
       kind: form.kind,
       parent: isRoot ? null : selectedNode!.id,
@@ -432,7 +433,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
               onImport={(nodes) => {
                 const normalized = nodes.map((n) => ({
                   ...n,
-                  id: n.id ?? crypto.randomUUID(),
+                  id: n.id ?? generateUUID(),
                   name: n.name ?? '',
                   kind: n.kind ?? 'group',
                   parent: !n.parent || n.parent === '' ? null : n.parent,

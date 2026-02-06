@@ -1,5 +1,7 @@
 import type { ISchemaNode } from '../types';
 
+import { generateUUID } from './uuid';
+
 type RawNode = {
   id?: string;
   name: string;
@@ -49,7 +51,7 @@ export async function parseSchemaFile(
     }
 
     const schemaNode: ISchemaNode = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       name: n.name,
       kind: n.kind,
       parent: null, // Will be fixed in second pass
