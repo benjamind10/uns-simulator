@@ -19,6 +19,14 @@ function getBrowserAccessibleUrl(brokerUrl: string): string {
   return dockerServiceMappings[brokerUrl] || brokerUrl;
 }
 
+// Map MQTT port to WebSocket port for browser connections
+// Standard MQTT port 1883 -> WebSocket port 9001
+// All other ports are assumed to be already configured for WebSocket
+function getWebSocketPort(mqttPort: number): number {
+  if (mqttPort === 1883) return 9001;
+  return mqttPort;
+}
+
 class MqttConnectionManager {
   private connections = new Map<string, BrokerConnection>();
   private statusCallbacks = new Set<
@@ -55,10 +63,11 @@ class MqttConnectionManager {
     });
     this.notifyStatusChange();
 
-    // Use WebSocket port 9001 for browser connections
+    // Use broker's configured port with WebSocket mapping
     // Map Docker service names to localhost since browser runs on host
     const browserUrl = getBrowserAccessibleUrl(broker.url);
-    const url = `ws://${browserUrl}:9001`;
+    const wsPort = getWebSocketPort(broker.port);
+    const url = `ws://${browserUrl}:${wsPort}`;
     const client = mqtt.connect(url, {
       clientId: broker.clientId,
       username: broker.username,

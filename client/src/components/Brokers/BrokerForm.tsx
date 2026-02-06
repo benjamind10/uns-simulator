@@ -85,26 +85,134 @@ export default function BrokerForm({
         {initialData ? 'Edit Broker' : 'Add Broker'}
       </h2>
 
-      {['name', 'url', 'port', 'clientId', 'username', 'password'].map(
-        (field) => (
-          <input
-            key={field}
-            name={field}
-            type={field === 'port' ? 'number' : 'text'}
-            placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-            value={formData[field as keyof typeof formData]}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, [field]: e.target.value }))
-            }
-            className="w-full mb-4 px-4 py-2 rounded 
-                       bg-white dark:bg-gray-900 
-                       text-gray-800 dark:text-white 
-                       border border-gray-300 dark:border-gray-700 
-                       placeholder-gray-400 dark:placeholder-gray-500 
-                       focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        )
-      )}
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Name
+        </label>
+        <input
+          name="name"
+          type="text"
+          placeholder="My MQTT Broker"
+          value={formData.name}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, name: e.target.value }))
+          }
+          className="w-full px-4 py-2 rounded 
+                     bg-white dark:bg-gray-900 
+                     text-gray-800 dark:text-white 
+                     border border-gray-300 dark:border-gray-700 
+                     placeholder-gray-400 dark:placeholder-gray-500 
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          URL
+        </label>
+        <input
+          name="url"
+          type="text"
+          placeholder="localhost or mqtt.example.com"
+          value={formData.url}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, url: e.target.value }))
+          }
+          className="w-full px-4 py-2 rounded 
+                     bg-white dark:bg-gray-900 
+                     text-gray-800 dark:text-white 
+                     border border-gray-300 dark:border-gray-700 
+                     placeholder-gray-400 dark:placeholder-gray-500 
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Port
+        </label>
+        <input
+          name="port"
+          type="number"
+          placeholder="1883 (MQTT) or 9001 (WebSocket)"
+          value={formData.port}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, port: e.target.value }))
+          }
+          className="w-full px-4 py-2 rounded 
+                     bg-white dark:bg-gray-900 
+                     text-gray-800 dark:text-white 
+                     border border-gray-300 dark:border-gray-700 
+                     placeholder-gray-400 dark:placeholder-gray-500 
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Use 1883 for standard MQTT (auto-converts to WebSocket 9001), or specify WebSocket port directly
+        </p>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Client ID
+        </label>
+        <input
+          name="clientId"
+          type="text"
+          placeholder="Auto-generated if empty"
+          value={formData.clientId}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, clientId: e.target.value }))
+          }
+          className="w-full px-4 py-2 rounded 
+                     bg-white dark:bg-gray-900 
+                     text-gray-800 dark:text-white 
+                     border border-gray-300 dark:border-gray-700 
+                     placeholder-gray-400 dark:placeholder-gray-500 
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Username (optional)
+        </label>
+        <input
+          name="username"
+          type="text"
+          placeholder="Username"
+          value={formData.username}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, username: e.target.value }))
+          }
+          className="w-full px-4 py-2 rounded 
+                     bg-white dark:bg-gray-900 
+                     text-gray-800 dark:text-white 
+                     border border-gray-300 dark:border-gray-700 
+                     placeholder-gray-400 dark:placeholder-gray-500 
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          Password (optional)
+        </label>
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, password: e.target.value }))
+          }
+          className="w-full px-4 py-2 rounded 
+                     bg-white dark:bg-gray-900 
+                     text-gray-800 dark:text-white 
+                     border border-gray-300 dark:border-gray-700 
+                     placeholder-gray-400 dark:placeholder-gray-500 
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
 
       <div className="flex justify-end gap-4">
         {onCancel && (
