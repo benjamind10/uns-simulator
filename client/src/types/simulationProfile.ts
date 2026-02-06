@@ -4,6 +4,26 @@ export interface GlobalSettings {
   publishRoot?: string;
   startDelay?: number;
   simulationLength?: number;
+  defaultPayload?: {
+    // Core fields
+    quality?: string;
+    timestampMode?: 'auto' | 'fixed';
+    fixedTimestamp?: number;
+    // Value generation
+    value?: string | number | boolean;
+    valueMode?: 'static' | 'random' | 'increment';
+    minValue?: number;
+    maxValue?: number;
+    step?: number;
+    precision?: number;
+    // Custom fields
+    customFields?: Array<{
+      key: string;
+      value: string | number | boolean;
+      type: 'string' | 'number' | 'boolean';
+    }>;
+    [key: string]: any;
+  };
 }
 
 export interface NodeSettings {
@@ -11,9 +31,23 @@ export interface NodeSettings {
   frequency?: number;
   failRate?: number;
   payload?: {
+    // Core fields
     quality?: string;
-    value?: string | number;
-    timestamp?: number;
+    timestampMode?: 'auto' | 'fixed';
+    fixedTimestamp?: number;
+    // Value generation
+    value?: string | number | boolean;
+    valueMode?: 'static' | 'random' | 'increment';
+    minValue?: number;
+    maxValue?: number;
+    step?: number;
+    precision?: number;
+    // Custom fields
+    customFields?: Array<{
+      key: string;
+      value: string | number | boolean;
+      type: 'string' | 'number' | 'boolean';
+    }>;
     [key: string]: any;
   };
   [key: string]: any;

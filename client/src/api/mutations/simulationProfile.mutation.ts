@@ -23,8 +23,19 @@ export const CREATE_SIMULATION_PROFILE = gql`
         failRate
         payload {
           quality
+          timestampMode
+          fixedTimestamp
           value
-          timestamp
+          valueMode
+          minValue
+          maxValue
+          step
+          precision
+          customFields {
+            key
+            value
+            type
+          }
         }
       }
       defaultScenario
@@ -69,8 +80,19 @@ export const UPDATE_SIMULATION_PROFILE = gql`
         failRate
         payload {
           quality
+          timestampMode
+          fixedTimestamp
           value
-          timestamp
+          valueMode
+          minValue
+          maxValue
+          step
+          precision
+          customFields {
+            key
+            value
+            type
+          }
         }
       }
       defaultScenario
@@ -116,8 +138,19 @@ export const UPSERT_NODE_SETTINGS = gql`
       failRate
       payload {
         quality
+        timestampMode
+        fixedTimestamp
         value
-        timestamp
+        valueMode
+        minValue
+        maxValue
+        step
+        precision
+        customFields {
+          key
+          value
+          type
+        }
       }
     }
   }
@@ -152,5 +185,16 @@ export const PAUSE_SIMULATION = gql`
 export const RESUME_SIMULATION = gql`
   mutation ResumeSimulation($profileId: ID!) {
     resumeSimulation(profileId: $profileId)
+  }
+`;
+
+export const TEST_PUBLISH_NODE = gql`
+  mutation TestPublishNode($profileId: ID!, $nodeId: ID!) {
+    testPublishNode(profileId: $profileId, nodeId: $nodeId) {
+      success
+      topic
+      payload
+      error
+    }
   }
 `;

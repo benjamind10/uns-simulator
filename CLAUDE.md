@@ -60,7 +60,7 @@ npm run test:watch              # Watch mode (vitest)
 - `graphql/models/` — Mongoose models: `User`, `Broker`, `Schema`, `SimulationProfile`
 
 **Simulation engine** — The core domain logic:
-- `simulation/SimulationEngine.ts` — EventEmitter-based engine that manages MQTT connections, publishes data per schema node at configured frequencies, handles reconnection with exponential backoff
+- `simulation/SimulationEngine.ts` — EventEmitter-based engine that manages MQTT connections, publishes data per schema node at configured frequencies, handles reconnection with exponential backoff. Supports three value generation modes: **static** (fixed value), **random** (range with precision), **increment** (stepped sequence with wrap). Payload generation respects per-node settings with fallback to global defaults.
 - `simulation/SimulationManager.ts` — Singleton that orchestrates multiple concurrent SimulationEngine instances (keyed by profile ID)
 
 **Key patterns:**
@@ -68,6 +68,7 @@ npm run test:watch              # Watch mode (vitest)
 - All resources (brokers, schemas, profiles) are scoped to the authenticated user
 - On server startup, orphaned simulations (left running from a previous crash) are reset to "stopped"
 - SimulationProfile tracks detailed state: idle/starting/running/paused/stopping/stopped/error
+- Payload configuration uses a 3-tier merge: `nodeSettings.payload` overrides `globalSettings.defaultPayload` which overrides engine defaults. This ensures backwards compatibility (existing profiles without payload config use default random generation)
 
 ### Frontend (client/src/)
 
@@ -95,11 +96,40 @@ npm run test:watch              # Watch mode (vitest)
 - `TreeNode.tsx` — Recursive tree node with folder/metric icons, expand/collapse, inline rename (double-click), drag handles, data type badges, hover-visible delete
 - `utils/tree.ts` — `buildTree()`, `collectAllIds()`, `recomputePaths()` helpers for tree operations
 
+**Simulator UI** — Per-node and global payload configuration:
+- `SimulatorCardContent.tsx` — Main simulation control panel with tabs (Overview, Node Settings, Global Settings)
+- `SimulatorNodeSettings.tsx` — Per-node frequency/failRate settings with collapsible payload editor for each metric
+- `SimulatorGlobalForm.tsx` — Global simulation settings including default payload template (inherited by all nodes unless overridden)
+- `NodePayloadEditor.tsx` — Comprehensive payload configuration form with quality, timestamp mode, value generation (static/random/increment), custom fields, live preview, and inline validation
+
 ### Data Flow for Simulations
 1. User creates a **Broker** (MQTT connection details)
 2. User creates a **Schema** (tree of namespace nodes: groups, metrics, objects)
-3. User creates a **SimulationProfile** linking a schema + broker with per-node settings (frequency, failure rate, payload overrides)
+3. User creates a **SimulationProfile** linking a schema + broker with:
+   - **Global settings**: publishRoot, default payload template (quality, timestamp mode, value generation, custom fields)
+   - **Per-node settings**: frequency, failRate, payload overrides (merge priority: per-node > global defaults > hardcoded defaults)
 4. User starts simulation → server-side `SimulationEngine` connects to the MQTT broker and publishes data on configured topics at configured intervals
+
+### Payload Configuration System
+
+Each node can publish fully customizable JSON payloads with the following structure:
+```json
+{
+  "quality": "good",           // Configurable: good, bad, uncertain, etc.
+  "timestamp": 1738857600000,  // Auto (Date.now()) or Fixed
+  "value": 42.5,               // Generated via static/random/increment mode
+  "custom_field": "value"      // User-defined custom fields
+}
+```
+
+**Value Generation Modes:**
+- **Static**: Returns exact configured value (supports Int, Float, Bool, String)
+- **Random**: Generates random values within minValue/maxValue range with optional precision (for Float)
+- **Increment**: Steps through values using a configured step size, wraps at maxValue
+
+**Payload Merge Priority:** Per-node payload config > Global default payload > Engine defaults
+
+**Testing:** Users can send single test messages via `testPublishNode` mutation (GraphQL) without starting a full simulation
 
 ## Code Style
 

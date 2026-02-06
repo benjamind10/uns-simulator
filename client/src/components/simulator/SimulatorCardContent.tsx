@@ -75,8 +75,10 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
   };
 
   function sanitizeNodeSettings(settings: Record<string, NodeSettings>) {
-    const sanitizeNumber = (val: number | string | undefined | null) =>
-      val === '' || val === undefined || val === null ? undefined : Number(val);
+    const sanitizeNumber = (val: number | string | boolean | undefined | null) =>
+      val === '' || val === undefined || val === null || typeof val === 'boolean'
+        ? undefined
+        : Number(val);
 
     const sanitized: Record<string, NodeSettings> = {};
     for (const [nodeId, nodeSetting] of Object.entries(settings)) {
@@ -87,8 +89,8 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
         payload: nodeSetting.payload
           ? {
               ...nodeSetting.payload,
-              value: sanitizeNumber(nodeSetting.payload.value),
-              timestamp: sanitizeNumber(nodeSetting.payload.timestamp),
+              value: nodeSetting.payload.value,
+              fixedTimestamp: sanitizeNumber(nodeSetting.payload.fixedTimestamp),
             }
           : undefined,
       };
@@ -184,6 +186,7 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
                   )
                 : {}
             }
+            profileId={selectedProfile.id}
           />
         )}
       </div>

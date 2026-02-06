@@ -19,7 +19,9 @@ export interface SimulationNode {
   path: string;
   frequency: number;
   failRate: number;
-  payload: Record<string, any>;
+  payload: Record<string, any> & {
+    _currentValue?: number; // internal state for increment mode
+  };
   intervalId?: NodeJS.Timeout;
 }
 
@@ -88,13 +90,18 @@ export class SimulationEngine extends EventEmitter {
       //   globalSettings.defaultUpdateFrequency
       // );
 
+      // Merge payloads with priority: per-node > global defaults > hardcoded defaults
+      const globalDefaults = this.profile.globalSettings?.defaultPayload || {};
+      const nodePayloadConfig = nodeSettings?.payload || {};
+
       const node: SimulationNode = {
         id: schemaNode.id,
         path: schemaNode.path,
         frequency,
         failRate: nodeSettings?.failRate ?? 0,
         payload: {
-          ...nodeSettings?.payload,
+          ...globalDefaults,    // global defaults first
+          ...nodePayloadConfig, // per-node overrides win
         },
       };
 
@@ -363,10 +370,22 @@ export class SimulationEngine extends EventEmitter {
       return;
     }
 
+    const payloadConfig = node.payload || {};
+
+    // Build custom fields object
+    const customFieldsObj: Record<string, any> = {};
+    if (payloadConfig.customFields?.length) {
+      for (const field of payloadConfig.customFields) {
+        customFieldsObj[field.key] = field.value;
+      }
+    }
+
     const payload = {
-      ...node.payload,
-      timestamp: Date.now(),
-      quality: 'good',
+      ...customFieldsObj,
+      quality: payloadConfig.quality || 'good',
+      timestamp: payloadConfig.timestampMode === 'fixed'
+        ? (payloadConfig.fixedTimestamp ?? Date.now())
+        : Date.now(),
       value: this.generateNodeValue(node),
     };
 
@@ -414,45 +433,52 @@ export class SimulationEngine extends EventEmitter {
   }
 
   private generateNodeValue(node: SimulationNode): any {
-    // Try to get the dataType from the schema node definition
     const schemaNode = this.schema.nodes.find((n) => n.id === node.id);
     const dataType = schemaNode?.dataType ?? 'Float';
+    const config = node.payload || {};
+    const mode = config.valueMode || 'random';
 
-    let value;
-    if (typeof node.payload?.value === 'number') {
-      const baseValue = node.payload.value;
-      if (dataType === 'Int') {
-        // Integer between 1 and 100
-        value = Math.max(
-          1,
-          Math.min(100, Math.round(baseValue + (Math.random() - 0.5) * 10))
-        );
-      } else if (dataType === 'Float') {
-        // Float between 0 and 1.0
-        value = Math.max(
-          0,
-          Math.min(
-            1,
-            Math.round((baseValue + (Math.random() - 0.5) * 0.2) * 100) / 100
-          )
-        );
-      } else {
-        value = baseValue;
-      }
-    } else if (!node.payload?.value) {
-      if (dataType === 'Int') {
-        // Integer between 1 and 100
-        value = Math.floor(Math.random() * 100) + 1;
-      } else if (dataType === 'Float') {
-        // Float between 0 and 1.0
-        value = Math.round(Math.random() * 100) / 100;
-      } else {
-        value = 0;
-      }
-    } else {
-      value = node.payload.value;
+    // --- STATIC MODE ---
+    if (mode === 'static') {
+      return config.value ?? 0;
     }
-    return value;
+
+    // --- INCREMENT MODE ---
+    if (mode === 'increment') {
+      const step = config.step ?? 1;
+      const current = typeof node.payload?._currentValue === 'number'
+        ? node.payload._currentValue
+        : (typeof config.value === 'number' ? config.value : 0);
+      let next = current + step;
+      if (config.maxValue !== undefined && next > config.maxValue) {
+        next = typeof config.value === 'number' ? config.value : (config.minValue ?? 0);
+      }
+      node.payload._currentValue = next; // track state between ticks
+      return dataType === 'Int' ? Math.round(next) : this.applyPrecision(next, config.precision);
+    }
+
+    // --- RANDOM MODE (default) ---
+    if (dataType === 'Bool' || dataType === 'Boolean') {
+      return Math.random() > 0.5;
+    }
+    if (dataType === 'String') {
+      return typeof config.value === 'string' ? config.value : '';
+    }
+
+    const min = config.minValue ?? (dataType === 'Int' ? 1 : 0);
+    const max = config.maxValue ?? (dataType === 'Int' ? 100 : 1.0);
+    const raw = Math.random() * (max - min) + min;
+
+    if (dataType === 'Int') {
+      return Math.round(raw);
+    }
+    return this.applyPrecision(raw, config.precision);
+  }
+
+  private applyPrecision(value: number, precision?: number): number {
+    if (precision === undefined || precision < 0) return Math.round(value * 100) / 100;
+    const factor = Math.pow(10, precision);
+    return Math.round(value * factor) / factor;
   }
 
   private async publishToBroker(topic: string, payload: any) {

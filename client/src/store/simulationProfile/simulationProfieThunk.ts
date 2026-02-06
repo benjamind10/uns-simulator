@@ -74,7 +74,7 @@ export const upsertNodeSettingsAsync = createAsyncThunk<
     const result = await upsertNodeSettings(profileId, nodeId, settings);
     // Remove duplicate nodeId if present in result
     const { nodeId: _ignored, ...rest } = result;
-    return { nodeId, ...rest };
+    return { nodeId, ...rest } as NodeSettings;
   }
 );
 
