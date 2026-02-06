@@ -25,6 +25,10 @@ import {
 import { selectSchemas } from '../../store/schema/schemaSlice';
 import { fetchSchemasAsync } from '../../store/schema/schemaThunk';
 import { fetchBrokersAsync, selectBrokers } from '../../store/brokers';
+import {
+  connectToBrokerAsync,
+  disconnectFromBrokerAsync,
+} from '../../store/mqtt/mqttThunk';
 import SimulatorCardContent from '../../components/simulator/SimulatorCardContent';
 import SimulationStatusPanel from '../../components/simulator/SimulationControls';
 import ConfirmDialog from '../../components/global/ConfirmDialog';
@@ -166,7 +170,8 @@ export default function SimulationPage() {
 
     if (brokerStatus !== 'connected') {
       toast.error(
-        'Broker not connected. Please connect to the broker from the Brokers page first.'
+        'Broker not connected. Please connect using the button above.',
+        { duration: 4000 }
       );
       return;
     }
@@ -209,6 +214,31 @@ export default function SimulationPage() {
     }
   };
 
+  // Broker connection handlers
+  const handleConnectBroker = async (brokerId: string) => {
+    const broker = brokers.find((b) => b.id === brokerId);
+    if (!broker) return;
+
+    try {
+      await dispatch(connectToBrokerAsync(broker)).unwrap();
+      toast.success(`Connected to ${broker.name}`);
+    } catch (error) {
+      console.error('Error connecting to broker:', error);
+      toast.error(`Failed to connect to ${broker.name}`);
+    }
+  };
+
+  const handleDisconnectBroker = async (brokerId: string) => {
+    try {
+      await dispatch(disconnectFromBrokerAsync(brokerId)).unwrap();
+      const broker = brokers.find((b) => b.id === brokerId);
+      toast.success(`Disconnected from ${broker?.name || 'broker'}`);
+    } catch (error) {
+      console.error('Error disconnecting from broker:', error);
+      toast.error('Failed to disconnect from broker');
+    }
+  };
+
   // Fetch nodes by IDs utility
   const fetchNodesByIds = useCallback(
     async (ids: string[]) => {
@@ -240,19 +270,67 @@ export default function SimulationPage() {
 
             {/* Status badge */}
             {profileId && selectedProfile && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
-                <span className="relative flex h-2 w-2">
-                  {status.pulse && (
+              <>
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                  <span className="relative flex h-2 w-2">
+                    {status.pulse && (
+                      <span
+                        className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${status.dot}`}
+                      />
+                    )}
                     <span
-                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${status.dot}`}
+                      className={`relative inline-flex rounded-full h-2 w-2 ${status.dot}`}
                     />
-                  )}
-                  <span
-                    className={`relative inline-flex rounded-full h-2 w-2 ${status.dot}`}
-                  />
+                  </span>
+                  {status.text}
                 </span>
-                {status.text}
-              </span>
+
+                {/* Broker connection status and controls */}
+                {selectedProfile.brokerId && (() => {
+                  const broker = brokers.find((b) => b.id === selectedProfile.brokerId);
+                  const brokerStatus = brokerStatuses[selectedProfile.brokerId];
+                  const status = brokerStatus?.status || 'disconnected';
+                  const isConnected = status === 'connected';
+                  const isConnecting = status === 'connecting';
+
+                  return broker ? (
+                    <div className="inline-flex items-center gap-1.5 pl-2 ml-2 border-l border-gray-200 dark:border-gray-700">
+                      <span className={`relative flex h-2 w-2`}>
+                        <span
+                          className={`relative inline-flex rounded-full h-2 w-2 ${
+                            isConnected
+                              ? 'bg-green-500'
+                              : isConnecting
+                              ? 'bg-yellow-500 animate-pulse'
+                              : 'bg-gray-400'
+                          }`}
+                        />
+                      </span>
+                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                        {broker.name}
+                      </span>
+                      {isConnected ? (
+                        <button
+                          onClick={() => handleDisconnectBroker(broker.id)}
+                          className="px-2 py-1 text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                          title={`Disconnect from ${broker.name}`}
+                        >
+                          Disconnect
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleConnectBroker(broker.id)}
+                          disabled={isConnecting}
+                          className="px-2 py-1 text-xs text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={`Connect to ${broker.name}`}
+                        >
+                          {isConnecting ? 'Connecting...' : 'Connect'}
+                        </button>
+                      )}
+                    </div>
+                  ) : null;
+                })()}
+              </>
             )}
           </div>
 
