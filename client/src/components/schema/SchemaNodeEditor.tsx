@@ -309,7 +309,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     if (tempNodes.length === 0) return toast.error('No changes to save');
 
     try {
-      const nodesToSave = tempNodes.map(
+      // Combine existing saved nodes with new temp nodes
+      const existingNodesToKeep = savedNodes.map(
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         ({ isTemporary, children, ...n }) => ({
           id: n.id,
@@ -325,8 +326,26 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
         })
       );
 
+      const newNodesToSave = tempNodes.map(
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        ({ isTemporary, children, ...n }) => ({
+          id: n.id,
+          name: n.name,
+          kind: n.kind,
+          parent: n.parent ?? '',
+          path: n.path ?? '',
+          order: typeof n.order === 'number' ? n.order : 0,
+          dataType: n.kind === 'metric' ? n.dataType ?? 'Float' : undefined,
+          unit: n.unit ?? '',
+          engineering: n.engineering ?? {},
+          objectData: n.kind === 'metric' ? n.objectData ?? {} : undefined,
+        })
+      );
+
+      const allNodesToSave = [...existingNodesToKeep, ...newNodesToSave];
+
       await dispatch(
-        saveNodesToSchemaAsync({ schemaId, nodes: nodesToSave })
+        saveNodesToSchemaAsync({ schemaId, nodes: allNodesToSave })
       ).unwrap();
 
       setTempNodes([]);
