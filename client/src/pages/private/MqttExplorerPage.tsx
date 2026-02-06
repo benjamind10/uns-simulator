@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Pause, Play, Trash2, Radio } from 'lucide-react';
 
 import { selectBrokers, fetchBrokersAsync } from '../../store/brokers';
 import { selectBrokerStatus } from '../../store/mqtt/mqttSlice';
@@ -17,7 +18,8 @@ export default function MqttExplorerPage() {
   const [selectedBrokerId, setSelectedBrokerId] = React.useState<string>('');
   const [messages, setMessages] = React.useState<MqttMessage[]>([]);
   const [selectedTopic, setSelectedTopic] = React.useState<string | null>(null);
-  const [topicInput, setTopicInput] = React.useState<string>('');
+  const [paused, setPaused] = React.useState(false);
+  const pausedRef = useRef(false);
 
   const selectedBroker = brokers.find((b) => b.id === selectedBrokerId);
   const brokerStatus = useSelector((state: RootState) =>
@@ -36,8 +38,12 @@ export default function MqttExplorerPage() {
     }
     setMessages([]);
     setSelectedTopic(null);
-    setTopicInput('');
   }, [selectedBrokerId, selectedBroker, brokerStatus]);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   useEffect(() => {
     if (!selectedBroker) return;
@@ -47,13 +53,13 @@ export default function MqttExplorerPage() {
     if (!client) return;
 
     const handleMessage = (topic: string, payload: Buffer) => {
+      if (pausedRef.current) return;
       setMessages((prev) => {
         const newMessage = {
           topic,
           payload: payload.toString(),
           timestamp: new Date().toLocaleTimeString(),
         };
-        // Limit to max 1000 messages to prevent memory issues
         const newMessages = [newMessage, ...prev];
         return newMessages.slice(0, 1000);
       });
@@ -79,109 +85,160 @@ export default function MqttExplorerPage() {
       )
     : messages;
 
+  const handleSelectTopic = useCallback((topic: string) => {
+    setSelectedTopic(topic);
+  }, []);
+
+  const handleClearFilter = useCallback(() => {
+    setSelectedTopic(null);
+  }, []);
+
+  const handleClearMessages = useCallback(() => {
+    setMessages([]);
+    setSelectedTopic(null);
+  }, []);
+
+  // Status badge config
+  const statusConfig = {
+    connected: {
+      dot: 'bg-green-500',
+      text: 'Connected',
+      pulse: true,
+    },
+    connecting: {
+      dot: 'bg-yellow-500',
+      text: 'Connecting...',
+      pulse: true,
+    },
+    error: {
+      dot: 'bg-red-500',
+      text: 'Error',
+      pulse: false,
+    },
+    disconnected: {
+      dot: 'bg-gray-400',
+      text: 'Disconnected',
+      pulse: false,
+    },
+  };
+
+  const status = statusConfig[brokerStatus] ?? statusConfig.disconnected;
+
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <h1 className="text-3xl font-bold mb-6 flex-shrink-0">MQTT Explorer</h1>
-      {/* Broker Picker */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6 mb-6 flex-shrink-0">
-        <label htmlFor="broker-select" className="block mb-2 font-medium">
-          Select Broker
-        </label>
-        <select
-          id="broker-select"
-          value={selectedBrokerId}
-          onChange={(e) => setSelectedBrokerId(e.target.value)}
-          className="w-full px-4 py-2 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-        >
-          <option value="">-- Choose a broker --</option>
-          {brokers.map((broker) => (
-            <option key={broker.id} value={broker.id}>
-              {broker.name} ({broker.url}:{broker.port})
-            </option>
-          ))}
-        </select>
-        {selectedBrokerId && (
-          <div className="mt-2 text-sm">
-            Status:{' '}
-            <span
-              className={
-                brokerStatus === 'connected'
-                  ? 'text-green-600'
-                  : brokerStatus === 'connecting'
-                  ? 'text-yellow-600'
-                  : brokerStatus === 'error'
-                  ? 'text-red-600'
-                  : 'text-gray-600'
-              }
+    <div className="flex flex-col gap-2 h-full min-h-0">
+      {/* Compact toolbar header */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 px-4 py-3 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Broker selector */}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <select
+              value={selectedBrokerId}
+              onChange={(e) => setSelectedBrokerId(e.target.value)}
+              className="px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm font-medium min-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-400"
             >
-              {brokerStatus}
-            </span>
+              <option value="">Select a broker...</option>
+              {brokers.map((broker) => (
+                <option key={broker.id} value={broker.id}>
+                  {broker.name} ({broker.url}:{broker.port})
+                </option>
+              ))}
+            </select>
+
+            {/* Connection status badge */}
+            {selectedBrokerId && (
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
+                <span className="relative flex h-2 w-2">
+                  {status.pulse && (
+                    <span
+                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${status.dot}`}
+                    />
+                  )}
+                  <span
+                    className={`relative inline-flex rounded-full h-2 w-2 ${status.dot}`}
+                  />
+                </span>
+                {status.text}
+              </span>
+            )}
+          </div>
+
+          {/* Controls */}
+          {selectedBroker && (
+            <div className="flex items-center gap-2">
+              {/* Stats */}
+              <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">
+                {topics.length} topics · {messages.length} messages
+              </span>
+
+              {/* Pause/Resume */}
+              <button
+                type="button"
+                onClick={() => setPaused((p) => !p)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  paused
+                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+                title={paused ? 'Resume message stream' : 'Pause message stream'}
+              >
+                {paused ? (
+                  <Play className="w-3.5 h-3.5" />
+                ) : (
+                  <Pause className="w-3.5 h-3.5" />
+                )}
+                {paused ? 'Resume' : 'Pause'}
+              </button>
+
+              {/* Clear messages */}
+              {messages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearMessages}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  title="Clear all messages"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Clear
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main content area */}
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 flex-1 min-h-0 overflow-hidden">
+        {selectedBroker ? (
+          <div className="flex h-full min-h-0">
+            {/* Left: Topic Tree */}
+            <div className="w-1/2 flex flex-col min-h-0 border-r border-gray-200 dark:border-gray-700">
+              <MqttTopicTree
+                root={topicTreeRoot}
+                messages={messages}
+                selectedTopic={selectedTopic}
+                onSelectTopic={handleSelectTopic}
+              />
+            </div>
+
+            {/* Right: Message Viewer */}
+            <div className="w-1/2 flex flex-col min-h-0">
+              <MqttMessageViewer
+                messages={filteredMessages}
+                selectedTopic={selectedTopic}
+                onClearFilter={handleClearFilter}
+                paused={paused}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 gap-3">
+            <Radio className="w-12 h-12 opacity-40" />
+            <p className="text-sm font-medium">
+              Select a broker to start exploring MQTT topics
+            </p>
           </div>
         )}
       </div>
-
-      {selectedBroker ? (
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6 flex gap-6 flex-1 min-h-0">
-          <div className="flex-1 flex flex-col min-h-0">
-            {/* Topic selector input */}
-            <form
-              className="mb-4 flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                setSelectedTopic(topicInput.trim() || null);
-              }}
-            >
-              <input
-                type="text"
-                className="flex-1 px-2 py-1 rounded border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                placeholder="Type topic to filter (e.g. Test1/Test3)"
-                value={topicInput}
-                onChange={(e) => setTopicInput(e.target.value)}
-              />
-              <button
-                type="submit"
-                className="px-3 py-1 rounded bg-blue-500 text-white text-sm"
-              >
-                Go
-              </button>
-            </form>
-            <MqttTopicTree
-              root={topicTreeRoot}
-              messages={messages}
-              onSelectTopic={(topic: string) => {
-                setSelectedTopic(topic);
-                setTopicInput(topic);
-              }}
-            />
-          </div>
-          <div className="flex-1 flex flex-col min-h-0">
-            {selectedTopic && (
-              <div className="mb-2 flex items-center gap-2">
-                <span className="text-sm text-blue-600 dark:text-blue-400 font-semibold">
-                  Filtering by topic:{' '}
-                  <span className="font-mono">{selectedTopic}</span>
-                </span>
-                <button
-                  className="px-2 py-1 rounded bg-gray-300 dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-xs"
-                  onClick={() => {
-                    setSelectedTopic(null);
-                    setTopicInput('');
-                  }}
-                >
-                  Clear
-                </button>
-              </div>
-            )}
-            <MqttMessageViewer messages={filteredMessages} topics={[]} />
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 p-6 flex-1">
-          <p className="text-gray-500 dark:text-gray-400">
-            Please select a broker to begin exploring MQTT topics.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

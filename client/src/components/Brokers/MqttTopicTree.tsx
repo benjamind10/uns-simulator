@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import type { FC } from 'react';
 import {
   ChevronDown,
@@ -6,176 +6,15 @@ import {
   Folder,
   FolderOpen,
   FileText,
+  ChevronsUpDown,
+  ChevronsDownUp,
+  Search,
 } from 'lucide-react';
 
 import type { TopicNode } from '../../utils/mqttTopicTree';
 import type { MqttMessage } from '../../types';
 
-interface MqttTopicTreeProps {
-  root: TopicNode;
-  messages: MqttMessage[];
-  onSelectTopic?: (topic: string) => void;
-}
-
-const TreeNode: FC<{
-  node: TopicNode;
-  expanded: Set<string>;
-  toggle: (id: string) => void;
-  selected: string | null;
-  select: (id: string) => void;
-  onSelectTopic?: (topic: string) => void;
-  level?: number;
-  messages: MqttMessage[];
-}> = ({
-  node,
-  expanded,
-  toggle,
-  selected,
-  select,
-  onSelectTopic,
-  level = 0,
-  messages,
-}) => {
-  const hasChildren = Object.keys(node.children).length > 0;
-  const isExpanded = expanded.has(node.fullPath);
-
-  let prettyValue: string | undefined = undefined;
-  if (!hasChildren) {
-    const msg = messages.find((m) => m.topic === node.fullPath);
-    if (msg) {
-      try {
-        const parsed = JSON.parse(msg.payload);
-        prettyValue = JSON.stringify(parsed, null, 1);
-      } catch {
-        prettyValue = msg.payload;
-      }
-    }
-  }
-
-  return (
-    <li>
-      <div
-        className={`group flex items-center relative transition-all duration-100 ${
-          selected === node.fullPath ? 'bg-blue-100/60 dark:bg-blue-900/30' : ''
-        }`}
-        style={{
-          paddingLeft: `${level * 18}px`,
-          minHeight: 24,
-          fontSize: 14,
-          fontFamily: 'Segoe UI, Arial, sans-serif',
-        }}
-      >
-        {/* Indentation line */}
-        {level > 0 && (
-          <span
-            className="absolute border-l border-gray-300 dark:border-gray-700"
-            style={{
-              left: `${(level - 1) * 18 + 9}px`,
-              top: 0,
-              bottom: 0,
-              width: '1px',
-              height: '100%',
-            }}
-          />
-        )}
-        {/* Expand/Collapse Button and Folder/File Icon */}
-        <button
-          onClick={() => hasChildren && toggle(node.fullPath)}
-          className="w-6 h-6 flex items-center justify-center focus:outline-none mr-1"
-          aria-label={isExpanded ? 'Collapse' : 'Expand'}
-          tabIndex={-1}
-          style={{ minWidth: 24 }}
-        >
-          {hasChildren ? (
-            isExpanded ? (
-              <ChevronDown size={16} />
-            ) : (
-              <ChevronRight size={16} />
-            )
-          ) : (
-            <span className="inline-block w-4" />
-          )}
-        </button>
-        {hasChildren ? (
-          isExpanded ? (
-            <FolderOpen size={16} className="text-yellow-500 mr-1" />
-          ) : (
-            <Folder size={16} className="text-yellow-500 mr-1" />
-          )
-        ) : (
-          <FileText size={15} className="text-gray-400 mr-1" />
-        )}
-        {/* Node Name */}
-        <span
-          className={`cursor-pointer px-1 py-0.5 font-normal transition-colors duration-100 ${
-            selected === node.fullPath
-              ? 'text-blue-700 dark:text-blue-300 font-semibold'
-              : 'hover:bg-blue-50 dark:hover:bg-blue-900/30 text-gray-800 dark:text-gray-100'
-          }`}
-          style={{
-            borderRadius: 2,
-            fontSize: 14,
-            fontFamily: 'Segoe UI, Arial, sans-serif',
-          }}
-          onClick={() => {
-            select(node.fullPath);
-            onSelectTopic?.(node.fullPath);
-          }}
-        >
-          {node.name}
-        </span>
-        {/* Value for leaf nodes as single-line JSON with horizontal scroll */}
-        {prettyValue !== undefined && (
-          <span
-            className="ml-2 text-xs font-mono text-gray-700 dark:text-gray-200 whitespace-nowrap max-w-[320px] overflow-x-auto block bg-gray-100 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded px-2 py-0.5 shadow-sm"
-            style={{
-              fontSize: 13,
-              lineHeight: 1.3,
-              marginLeft: 8,
-              marginRight: 2,
-            }}
-          >
-            {'= '}
-            {typeof prettyValue === 'string'
-              ? prettyValue.replace(/\s+/g, ' ')
-              : prettyValue}
-          </span>
-        )}
-        {/* Counts */}
-        {/* {typeof node.topicCount === 'number' && (
-          <span className="ml-2 text-xs text-gray-400">
-            ({node.topicCount} topics
-            {typeof node.messageCount === 'number'
-              ? `, ${node.messageCount} messages`
-              : ''}
-            )
-          </span>
-        )} */}
-      </div>
-      {hasChildren && isExpanded && (
-        <ul>
-          {Object.values(node.children)
-            .sort((a, b) => a.name.localeCompare(b.name))
-            .map((child) => (
-              <TreeNode
-                key={child.fullPath}
-                node={child}
-                expanded={expanded}
-                toggle={toggle}
-                selected={selected}
-                select={select}
-                onSelectTopic={onSelectTopic}
-                level={level + 1}
-                messages={messages}
-              />
-            ))}
-        </ul>
-      )}
-    </li>
-  );
-};
-
-// Helper to recursively collect all fullPath values in the tree
+/* ── Helper: collect all fullPath values in the tree ── */
 function getAllFullPaths(node: TopicNode): string[] {
   let paths = [node.fullPath];
   for (const child of Object.values(node.children)) {
@@ -184,15 +23,185 @@ function getAllFullPaths(node: TopicNode): string[] {
   return paths;
 }
 
+/* ── Helper: count messages for a topic subtree ── */
+function countMessagesForNode(
+  node: TopicNode,
+  messageCounts: Map<string, number>
+): number {
+  let count = messageCounts.get(node.fullPath) ?? 0;
+  for (const child of Object.values(node.children)) {
+    count += countMessagesForNode(child, messageCounts);
+  }
+  return count;
+}
+
+/* ── Helper: check if a node or its descendants match a filter ── */
+function matchesFilter(node: TopicNode, filter: string): boolean {
+  if (node.name.toLowerCase().includes(filter)) return true;
+  if (node.fullPath.toLowerCase().includes(filter)) return true;
+  return Object.values(node.children).some((child) =>
+    matchesFilter(child, filter)
+  );
+}
+
+/* ── TreeNode component ── */
+const TreeNodeRow: FC<{
+  node: TopicNode;
+  expanded: Set<string>;
+  toggle: (id: string) => void;
+  selectedTopic: string | null;
+  onSelectTopic: (topic: string) => void;
+  level: number;
+  messageCounts: Map<string, number>;
+  filter: string;
+}> = ({
+  node,
+  expanded,
+  toggle,
+  selectedTopic,
+  onSelectTopic,
+  level,
+  messageCounts,
+  filter,
+}) => {
+  const hasChildren = Object.keys(node.children).length > 0;
+  const isExpanded = expanded.has(node.fullPath);
+  const isSelected = selectedTopic === node.fullPath;
+  const msgCount = countMessagesForNode(node, messageCounts);
+
+  // Filter: hide nodes that don't match when filter is active
+  if (filter && !matchesFilter(node, filter)) return null;
+
+  return (
+    <div>
+      {/* Node row */}
+      <div
+        className={`
+          group flex items-center gap-1.5 py-1 px-2 rounded-md cursor-pointer
+          transition-colors duration-100
+          ${isSelected ? 'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-400/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}
+        `}
+        style={{ paddingLeft: `${level * 20 + 8}px` }}
+        onClick={() => onSelectTopic(node.fullPath)}
+      >
+        {/* Expand/collapse chevron */}
+        {hasChildren ? (
+          <button
+            type="button"
+            className="flex-shrink-0 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggle(node.fullPath);
+            }}
+          >
+            {isExpanded ? (
+              <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 text-gray-500" />
+            )}
+          </button>
+        ) : (
+          <span className="w-5" />
+        )}
+
+        {/* Icon */}
+        {hasChildren ? (
+          isExpanded ? (
+            <FolderOpen className="w-4 h-4 text-amber-500 flex-shrink-0" />
+          ) : (
+            <Folder className="w-4 h-4 text-amber-500 flex-shrink-0" />
+          )
+        ) : (
+          <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" />
+        )}
+
+        {/* Name */}
+        <span
+          className={`text-sm truncate flex-1 min-w-0 ${
+            isSelected
+              ? 'font-semibold text-blue-700 dark:text-blue-300'
+              : 'font-medium'
+          }`}
+        >
+          {node.name}
+        </span>
+
+        {/* Message count badge */}
+        {msgCount > 0 && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-mono flex-shrink-0">
+            {msgCount}
+          </span>
+        )}
+      </div>
+
+      {/* Children */}
+      {hasChildren && isExpanded && (
+        <div className="relative">
+          {/* Indentation guide line */}
+          <div
+            className="absolute top-0 bottom-0 border-l border-gray-200 dark:border-gray-700"
+            style={{ left: `${level * 20 + 20}px` }}
+          />
+          {Object.values(node.children)
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((child) => (
+              <TreeNodeRow
+                key={child.fullPath}
+                node={child}
+                expanded={expanded}
+                toggle={toggle}
+                selectedTopic={selectedTopic}
+                onSelectTopic={onSelectTopic}
+                level={level + 1}
+                messageCounts={messageCounts}
+                filter={filter}
+              />
+            ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ── Main MqttTopicTree component ── */
+interface MqttTopicTreeProps {
+  root: TopicNode;
+  messages: MqttMessage[];
+  selectedTopic: string | null;
+  onSelectTopic: (topic: string) => void;
+}
+
 const MqttTopicTree: FC<MqttTopicTreeProps> = ({
   root,
   messages,
+  selectedTopic,
   onSelectTopic,
 }) => {
-  // Memoize expanded and selected state so the tree doesn't reset on parent re-render
-  const expandedRef = useRef<Set<string>>(new Set(getAllFullPaths(root)));
-  const selectedRef = useRef<string | null>(null);
-  const [, forceUpdate] = useState(0); // for rerender on state change
+  const expandedRef = useRef<Set<string>>(new Set());
+  const [, forceUpdate] = useState(0);
+  const [filter, setFilter] = useState('');
+  const prevPathsRef = useRef<Set<string>>(new Set());
+
+  // Build message count map
+  const messageCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const msg of messages) {
+      counts.set(msg.topic, (counts.get(msg.topic) ?? 0) + 1);
+    }
+    return counts;
+  }, [messages]);
+
+  // Auto-expand new topics as they arrive
+  useEffect(() => {
+    const currentPaths = new Set(getAllFullPaths(root));
+    for (const path of currentPaths) {
+      if (!prevPathsRef.current.has(path)) {
+        expandedRef.current.add(path);
+      }
+    }
+    prevPathsRef.current = currentPaths;
+    forceUpdate((n) => n + 1);
+  }, [root]);
 
   const toggle = (id: string) => {
     const next = new Set(expandedRef.current);
@@ -202,28 +211,83 @@ const MqttTopicTree: FC<MqttTopicTreeProps> = ({
     forceUpdate((n) => n + 1);
   };
 
-  const select = (id: string) => {
-    selectedRef.current = id;
+  const expandAll = () => {
+    expandedRef.current = new Set(getAllFullPaths(root));
     forceUpdate((n) => n + 1);
   };
 
+  const collapseAll = () => {
+    expandedRef.current = new Set();
+    forceUpdate((n) => n + 1);
+  };
+
+  const hasTopics = Object.keys(root.children).length > 0;
+
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-800 p-2 flex flex-col flex-1 min-h-0">
-      <h3 className="text-base font-semibold mb-2 tracking-tight text-gray-700 dark:text-gray-200 flex-shrink-0">
-        Topic Tree
-      </h3>
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <ul className="h-full overflow-y-auto pr-2">
-          <TreeNode
-            node={root}
-            expanded={expandedRef.current}
-            toggle={toggle}
-            selected={selectedRef.current}
-            select={select}
-            onSelectTopic={onSelectTopic}
-            messages={messages}
+    <div className="flex flex-col h-full min-h-0">
+      {/* Tree header */}
+      <div className="px-3 py-2.5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 space-y-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+            Topic Tree
+          </h3>
+          {hasTopics && (
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={expandAll}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
+                title="Expand all"
+              >
+                <ChevronsUpDown className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={collapseAll}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition-colors"
+                title="Collapse all"
+              >
+                <ChevronsDownUp className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+        </div>
+        {/* Search/filter */}
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Filter topics..."
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 text-xs border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
-        </ul>
+        </div>
+      </div>
+
+      {/* Tree body */}
+      <div className="flex-1 min-h-0 overflow-auto p-2">
+        {hasTopics ? (
+          Object.values(root.children)
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((child) => (
+              <TreeNodeRow
+                key={child.fullPath}
+                node={child}
+                expanded={expandedRef.current}
+                toggle={toggle}
+                selectedTopic={selectedTopic}
+                onSelectTopic={onSelectTopic}
+                level={0}
+                messageCounts={messageCounts}
+                filter={filter.toLowerCase().trim()}
+              />
+            ))
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+            Waiting for messages...
+          </div>
+        )}
       </div>
     </div>
   );
