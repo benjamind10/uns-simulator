@@ -4,7 +4,7 @@
 
 export const MQTT_CONFIG = {
   // Connection settings
-  CONNECT_TIMEOUT: 15000, // 15 seconds
+  CONNECT_TIMEOUT: 30000, // 30 seconds (for external brokers)
   RECONNECT_PERIOD: 0, // Disable auto-reconnect (manual control)
   KEEPALIVE: 30, // 30 seconds
   PROTOCOL_VERSION: 4,
