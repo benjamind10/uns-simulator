@@ -138,14 +138,14 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Tab header */}
-      <div className="px-3 py-2.5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <div className="flex items-center gap-1">
+      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="flex items-center gap-2">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                 activeTab === tab.key
                   ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                   : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -159,7 +159,7 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 min-h-0 overflow-auto p-4">
+      <div className="flex-1 min-h-0 overflow-auto px-6 py-4">
         {activeTab === 'global_settings' && (
           <SimulatorGlobalForm
             initialSettings={

@@ -249,10 +249,10 @@ export default function SimulationPage() {
   );
 
   return (
-    <div className="flex flex-col gap-2 h-full min-h-0">
+    <div className="flex flex-col gap-2 h-full min-h-0 px-6 py-4">
       {/* Compact toolbar header */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 px-4 py-3 flex-shrink-0">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 px-6 py-4 flex-shrink-0">
+        <div className="flex items-center gap-4 flex-wrap">
           {/* Profile selector */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <select
@@ -471,9 +471,9 @@ export default function SimulationPage() {
       </div>
 
       {/* Main content area */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 flex-1 min-h-0 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 flex-1 min-h-0 overflow-hidden flex">
         {selectedProfile ? (
-          <div className="flex h-full min-h-0">
+          <div className="flex h-full min-h-0 w-full">
             {/* Left: Settings Panel */}
             <div className="w-1/2 flex flex-col min-h-0 border-r border-gray-200 dark:border-gray-700">
               <SimulatorCardContent fetchNodesByIds={fetchNodesByIds} />
@@ -485,7 +485,7 @@ export default function SimulationPage() {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500 gap-3">
+          <div className="flex flex-col items-center justify-center h-full w-full text-gray-400 dark:text-gray-500 gap-3">
             <Cpu className="w-12 h-12 opacity-40" />
             <p className="text-sm font-medium">
               Select or create a simulation profile to get started
