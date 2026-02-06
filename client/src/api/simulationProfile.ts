@@ -12,6 +12,7 @@ import {
   STOP_SIMULATION,
   PAUSE_SIMULATION,
   RESUME_SIMULATION,
+  TEST_PUBLISH_NODE,
 } from './mutations/simulationProfile.mutation';
 import {
   GET_SIMULATION_PROFILES,
@@ -53,8 +54,19 @@ type UpsertNodeSettingsResponse = {
     failRate?: number;
     payload?: {
       quality?: string;
-      value?: string | number;
-      timestamp?: number;
+      timestampMode?: string;
+      fixedTimestamp?: number;
+      value?: string | number | boolean;
+      valueMode?: string;
+      minValue?: number;
+      maxValue?: number;
+      step?: number;
+      precision?: number;
+      customFields?: Array<{
+        key: string;
+        value: string | number | boolean;
+        type: string;
+      }>;
     };
   };
 };
@@ -66,6 +78,14 @@ type StartSimulationResponse = { startSimulation: boolean };
 type StopSimulationResponse = { stopSimulation: boolean };
 type PauseSimulationResponse = { pauseSimulation: boolean };
 type ResumeSimulationResponse = { resumeSimulation: boolean };
+type TestPublishNodeResponse = {
+  testPublishNode: {
+    success: boolean;
+    topic: string | null;
+    payload: any;
+    error: string | null;
+  };
+};
 
 // Add Simulation Status Response Type
 type SimulationStatusResponse = {
@@ -94,9 +114,20 @@ export type CreateSimulationProfileInput = {
     startDelay?: number;
     simulationLength?: number;
     defaultPayload?: {
-      quality: string;
-      value: string | number;
-      timestamp: number;
+      quality?: string;
+      timestampMode?: string;
+      fixedTimestamp?: number;
+      value?: string | number | boolean;
+      valueMode?: string;
+      minValue?: number;
+      maxValue?: number;
+      step?: number;
+      precision?: number;
+      customFields?: Array<{
+        key: string;
+        value: string | number | boolean;
+        type: string;
+      }>;
     };
   };
   defaultScenario?: string;
@@ -111,8 +142,19 @@ export type NodeSettingsInput = {
   failRate?: number;
   payload?: {
     quality?: string;
-    value?: string | number;
-    timestamp?: number;
+    timestampMode?: string;
+    fixedTimestamp?: number;
+    value?: string | number | boolean;
+    valueMode?: string;
+    minValue?: number;
+    maxValue?: number;
+    step?: number;
+    precision?: number;
+    customFields?: Array<{
+      key: string;
+      value: string | number | boolean;
+      type: string;
+    }>;
   };
 };
 
@@ -259,4 +301,18 @@ export async function resumeSimulation(profileId: string): Promise<boolean> {
     variables
   );
   return data.resumeSimulation;
+}
+
+// Test publish a single node
+export async function testPublishNode(
+  profileId: string,
+  nodeId: string
+): Promise<TestPublishNodeResponse['testPublishNode']> {
+  const client = getClient();
+  const variables = { profileId, nodeId };
+  const data: TestPublishNodeResponse = await client.request(
+    TEST_PUBLISH_NODE,
+    variables
+  );
+  return data.testPublishNode;
 }

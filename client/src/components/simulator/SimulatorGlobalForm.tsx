@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 import type { GlobalSettings } from '../../types';
+
+import NodePayloadEditor from './NodePayloadEditor';
 
 interface SimulatorConfigFormProps {
   initialSettings: GlobalSettings;
@@ -12,12 +15,20 @@ const SimulatorGlobalForm: React.FC<SimulatorConfigFormProps> = ({
   onSave,
 }) => {
   const [settings, setSettings] = useState<GlobalSettings>(initialSettings);
+  const [isPayloadExpanded, setIsPayloadExpanded] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     setSettings((prev) => ({
       ...prev,
       [name]: type === 'number' ? Number(value) : value,
+    }));
+  };
+
+  const handlePayloadChange = (payload: GlobalSettings['defaultPayload']) => {
+    setSettings((prev) => ({
+      ...prev,
+      defaultPayload: payload,
     }));
   };
 
@@ -97,6 +108,34 @@ const SimulatorGlobalForm: React.FC<SimulatorConfigFormProps> = ({
           placeholder="0 = unlimited"
         />
       </div>
+
+      {/* Default Payload Template Section */}
+      <div className="border-t pt-3 mt-2 dark:border-gray-700">
+        <button
+          type="button"
+          onClick={() => setIsPayloadExpanded(!isPayloadExpanded)}
+          className="flex items-center gap-2 w-full text-left text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+        >
+          {isPayloadExpanded ? (
+            <ChevronDown className="w-4 h-4" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
+          )}
+          Default Payload Template
+        </button>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
+          Set global defaults for all nodes (can be overridden per-node)
+        </p>
+        {isPayloadExpanded && (
+          <div className="mt-3">
+            <NodePayloadEditor
+              payload={settings.defaultPayload || {}}
+              onChange={handlePayloadChange}
+            />
+          </div>
+        )}
+      </div>
+
       <button
         type="submit"
         className="w-full px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"

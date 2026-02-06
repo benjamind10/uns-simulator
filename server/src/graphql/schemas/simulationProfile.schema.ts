@@ -225,10 +225,23 @@ export const simulationProfileTypeDefs = gql`
     payload: PayloadInput
   }
 
+  input PayloadCustomFieldInput {
+    key: String!
+    value: JSON!
+    type: String!
+  }
+
   input PayloadInput {
     quality: String
+    timestampMode: String
+    fixedTimestamp: Float
     value: JSON
-    timestamp: Float
+    valueMode: String
+    minValue: Float
+    maxValue: Float
+    step: Float
+    precision: Int
+    customFields: [PayloadCustomFieldInput!]
   }
 
   # ROOT OPERATIONS
@@ -260,12 +273,33 @@ export const simulationProfileTypeDefs = gql`
     stopSimulation(profileId: ID!): Boolean!
     pauseSimulation(profileId: ID!): Boolean!
     resumeSimulation(profileId: ID!): Boolean!
+    testPublishNode(profileId: ID!, nodeId: ID!): TestPublishResult!
+  }
+
+  type TestPublishResult {
+    success: Boolean!
+    topic: String
+    payload: JSON
+    error: String
+  }
+
+  type PayloadCustomField {
+    key: String!
+    value: JSON!
+    type: String!
   }
 
   type Payload {
     quality: String
+    timestampMode: String
+    fixedTimestamp: Float
     value: JSON
-    timestamp: Float
+    valueMode: String
+    minValue: Float
+    maxValue: Float
+    step: Float
+    precision: Int
+    customFields: [PayloadCustomField!]
   }
 
   type NodeSettings {

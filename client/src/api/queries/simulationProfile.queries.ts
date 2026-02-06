@@ -23,8 +23,19 @@ export const GET_SIMULATION_PROFILES = gql`
         failRate
         payload {
           quality
+          timestampMode
+          fixedTimestamp
           value
-          timestamp
+          valueMode
+          minValue
+          maxValue
+          step
+          precision
+          customFields {
+            key
+            value
+            type
+          }
         }
       }
       defaultScenario
@@ -69,8 +80,19 @@ export const GET_SIMULATION_PROFILE = gql`
         failRate
         payload {
           quality
+          timestampMode
+          fixedTimestamp
           value
-          timestamp
+          valueMode
+          minValue
+          maxValue
+          step
+          precision
+          customFields {
+            key
+            value
+            type
+          }
         }
       }
       defaultScenario
@@ -157,8 +179,19 @@ export const CREATE_SIMULATION_PROFILE = gql`
         failRate
         payload {
           quality
+          timestampMode
+          fixedTimestamp
           value
-          timestamp
+          valueMode
+          minValue
+          maxValue
+          step
+          precision
+          customFields {
+            key
+            value
+            type
+          }
         }
       }
       defaultScenario
