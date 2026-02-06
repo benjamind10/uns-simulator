@@ -90,32 +90,70 @@ export const deleteNodeSettingsAsync = createAsyncThunk<
   }
 );
 
+// Extract a clean error message from graphql-request errors
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const resp = (error as any).response;
+    if (resp?.errors?.[0]?.message) {
+      return resp.errors[0].message;
+    }
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return fallback;
+}
+
 // Simulation Control Thunks
 export const startSimulationAsync = createAsyncThunk<boolean, string>(
   SIMULATION_PROFILE_ACTIONS.START_SIMULATION,
-  async (profileId) => {
-    return await startSimulation(profileId);
+  async (profileId, { rejectWithValue }) => {
+    try {
+      return await startSimulation(profileId);
+    } catch (error) {
+      return rejectWithValue(
+        extractErrorMessage(error, 'Failed to start simulation')
+      );
+    }
   }
 );
 
 export const stopSimulationAsync = createAsyncThunk<boolean, string>(
   SIMULATION_PROFILE_ACTIONS.STOP_SIMULATION,
-  async (profileId) => {
-    return await stopSimulation(profileId);
+  async (profileId, { rejectWithValue }) => {
+    try {
+      return await stopSimulation(profileId);
+    } catch (error) {
+      return rejectWithValue(
+        extractErrorMessage(error, 'Failed to stop simulation')
+      );
+    }
   }
 );
 
 export const pauseSimulationAsync = createAsyncThunk<boolean, string>(
   SIMULATION_PROFILE_ACTIONS.PAUSE_SIMULATION,
-  async (profileId) => {
-    return await pauseSimulation(profileId);
+  async (profileId, { rejectWithValue }) => {
+    try {
+      return await pauseSimulation(profileId);
+    } catch (error) {
+      return rejectWithValue(
+        extractErrorMessage(error, 'Failed to pause simulation')
+      );
+    }
   }
 );
 
 export const resumeSimulationAsync = createAsyncThunk<boolean, string>(
   SIMULATION_PROFILE_ACTIONS.RESUME_SIMULATION,
-  async (profileId) => {
-    return await resumeSimulation(profileId);
+  async (profileId, { rejectWithValue }) => {
+    try {
+      return await resumeSimulation(profileId);
+    } catch (error) {
+      return rejectWithValue(
+        extractErrorMessage(error, 'Failed to resume simulation')
+      );
+    }
   }
 );
 

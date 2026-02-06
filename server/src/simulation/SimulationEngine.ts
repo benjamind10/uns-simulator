@@ -7,6 +7,12 @@ import { ISchema } from '../graphql/models/Schema';
 import { IBroker } from '../graphql/models/Broker';
 import SimulationProfile from '../graphql/models/SimulationProfile';
 import { MQTT_CONFIG } from '../config/constants';
+import {
+  simulationStartsTotal,
+  simulationStopsTotal,
+  mqttMessagesPublishedTotal,
+  mqttPublishErrorsTotal,
+} from '../metrics';
 
 export interface SimulationNode {
   id: string;
@@ -99,16 +105,33 @@ export class SimulationEngine extends EventEmitter {
   private async connectToBroker(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        const protocol =
-          typeof this.broker.ssl === 'boolean'
-            ? this.broker.ssl
-              ? 'wss'
-              : 'ws'
-            : 'ws';
+        const useSsl =
+          typeof this.broker.ssl === 'boolean' ? this.broker.ssl : false;
 
-        let brokerUrl = this.broker.url;
-        brokerUrl = brokerUrl.replace(/^wss?:\/\//, '');
-        const url = `${protocol}://${brokerUrl}:${this.broker.port}`;
+        // Strip any existing protocol prefix from the URL
+        let brokerHost = this.broker.url
+          .replace(/^(wss?|mqtts?):\/\//, '')
+          .replace(/\/+$/, '');
+        let brokerPort = this.broker.port;
+
+        // In Docker, localhost/127.0.0.1 won't reach the MQTT broker.
+        // Use MQTT_HOST and MQTT_PORT env vars to override when set.
+        const mqttHostOverride = process.env.MQTT_HOST;
+        const mqttPortOverride = process.env.MQTT_PORT;
+
+        if (
+          mqttHostOverride &&
+          (brokerHost === 'localhost' || brokerHost === '127.0.0.1')
+        ) {
+          brokerHost = mqttHostOverride;
+          if (mqttPortOverride) {
+            brokerPort = parseInt(mqttPortOverride, 10);
+          }
+        }
+
+        // Use mqtt:// for TCP connections (server-side)
+        const protocol = useSsl ? 'mqtts' : 'mqtt';
+        const url = `${protocol}://${brokerHost}:${brokerPort}`;
 
         const options: mqtt.IClientOptions = {
           clientId: `uns-sim-${this.profile.id
@@ -297,6 +320,7 @@ export class SimulationEngine extends EventEmitter {
         }, this.profile.globalSettings.simulationLength * 1000);
       }
 
+      simulationStartsTotal.inc();
       console.log(
         `🚀 Simulation started: ${this.profile.name} (${this.nodes.size} nodes)`
       );
@@ -309,12 +333,14 @@ export class SimulationEngine extends EventEmitter {
         error: error instanceof Error ? error.message : String(error),
       });
 
-      console.error(`❌ Failed to start simulation: ${error}`);
-      this.emit('error', {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error(`❌ Failed to start simulation: ${errorMessage}`);
+      this.emit('startError', {
         profileId: this.profile.id,
-        error: `Failed to start simulation: ${error}`,
+        error: `Failed to start simulation: ${errorMessage}`,
       });
-      throw error;
+      throw new Error(`Failed to start simulation: ${errorMessage}`);
     }
   }
 
@@ -358,6 +384,7 @@ export class SimulationEngine extends EventEmitter {
     try {
       await this.publishToBroker(topic, payload);
 
+      mqttMessagesPublishedTotal.inc();
       this.emit('nodePublished', {
         nodeId: node.id,
         topic,
@@ -373,6 +400,7 @@ export class SimulationEngine extends EventEmitter {
       //   );
       // }
     } catch (error) {
+      mqttPublishErrorsTotal.inc();
       console.error(`🚨 Publish error for ${node.path}: ${error}`);
       this.emit('publishError', {
         nodeId: node.id,
@@ -491,6 +519,7 @@ export class SimulationEngine extends EventEmitter {
       mqttConnected: false,
     });
 
+    simulationStopsTotal.inc();
     console.log(`🛑 Simulation stopped: ${this.profile.name}`);
     this.emit('stopped', { profileId: this.profile.id });
   }

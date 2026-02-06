@@ -245,8 +245,11 @@ const simulationProfileSlice = createSlice({
       .addCase(startSimulationAsync.rejected, (state, action) => {
         const profileId = action.meta.arg;
         state.simulationLoading[profileId] = false;
+        state.simulationStates[profileId] = 'error';
         state.simulationErrors[profileId] =
-          action.error.message || 'Failed to start simulation';
+          (action.payload as string) ||
+          action.error.message ||
+          'Failed to start simulation';
       })
       // Stop simulation
       .addCase(stopSimulationAsync.pending, (state, action) => {
@@ -263,7 +266,9 @@ const simulationProfileSlice = createSlice({
         const profileId = action.meta.arg;
         state.simulationLoading[profileId] = false;
         state.simulationErrors[profileId] =
-          action.error.message || 'Failed to stop simulation';
+          (action.payload as string) ||
+          action.error.message ||
+          'Failed to stop simulation';
       })
       // Pause simulation
       .addCase(pauseSimulationAsync.pending, (state, action) => {
@@ -280,7 +285,9 @@ const simulationProfileSlice = createSlice({
         const profileId = action.meta.arg;
         state.simulationLoading[profileId] = false;
         state.simulationErrors[profileId] =
-          action.error.message || 'Failed to pause simulation';
+          (action.payload as string) ||
+          action.error.message ||
+          'Failed to pause simulation';
       })
       // Resume simulation
       .addCase(resumeSimulationAsync.pending, (state, action) => {
@@ -297,7 +304,9 @@ const simulationProfileSlice = createSlice({
         const profileId = action.meta.arg;
         state.simulationLoading[profileId] = false;
         state.simulationErrors[profileId] =
-          action.error.message || 'Failed to resume simulation';
+          (action.payload as string) ||
+          action.error.message ||
+          'Failed to resume simulation';
       })
       // Get simulation status
       .addCase(getSimulationStatusAsync.fulfilled, (state, action) => {
