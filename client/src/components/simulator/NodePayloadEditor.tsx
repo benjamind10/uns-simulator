@@ -173,249 +173,139 @@ export default function NodePayloadEditor({
     return warnings;
   }, [localPayload, dataType, currentValueMode]);
 
+  const randomDescription =
+    dataType === 'Bool' || dataType === 'Boolean'
+      ? 'Randomly toggle between true and false'
+      : `Generate random ${dataType || 'numeric'} values within a range`;
+
   return (
     <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
-      <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300">
-        Payload Configuration
-      </h4>
-
-      {/* Quality */}
+      {/* Title with data type badge */}
       <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-          Quality
-        </label>
-        <select
-          className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-          value={localPayload.quality || 'good'}
-          onChange={(e) => handleChange('quality', e.target.value)}
-        >
-          <option value="good">Good</option>
-          <option value="bad">Bad</option>
-          <option value="uncertain">Uncertain</option>
-        </select>
-      </div>
-
-      {/* Timestamp Mode */}
-      <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-          Timestamp
-        </label>
-        <div className="space-y-2">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="timestampMode"
-              value="auto"
-              checked={currentTimestampMode === 'auto'}
-              onChange={(e) => handleChange('timestampMode', e.target.value)}
-              className="text-blue-500 focus:ring-2 focus:ring-blue-400"
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Auto (current time)
+        <h4 className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
+          Value Behavior
+          {dataType && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-mono">
+              {dataType}
             </span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="timestampMode"
-              value="fixed"
-              checked={currentTimestampMode === 'fixed'}
-              onChange={(e) => handleChange('timestampMode', e.target.value)}
-              className="text-blue-500 focus:ring-2 focus:ring-blue-400"
-            />
-            <span className="text-sm text-gray-700 dark:text-gray-300">
-              Fixed
-            </span>
-          </label>
-          {currentTimestampMode === 'fixed' && (
-            <input
-              type="number"
-              placeholder="Timestamp (ms)"
-              value={localPayload.fixedTimestamp || ''}
-              onChange={(e) =>
-                handleChange('fixedTimestamp', Number(e.target.value))
-              }
-              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ml-6"
-            />
           )}
-        </div>
+        </h4>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Define how this {dataType || 'metric'} generates values during
+          simulation
+        </p>
       </div>
 
-      {/* Value Mode */}
-      <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-          Value Mode
-        </label>
-        <div className="space-y-2">
-          {allowedValueModes.includes('static') && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="valueMode"
-                value="static"
-                checked={currentValueMode === 'static'}
-                onChange={(e) => handleChange('valueMode', e.target.value)}
-                className="text-blue-500 focus:ring-2 focus:ring-blue-400"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Static
-              </span>
-            </label>
-          )}
-          {allowedValueModes.includes('random') && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="valueMode"
-                value="random"
-                checked={currentValueMode === 'random'}
-                onChange={(e) => handleChange('valueMode', e.target.value)}
-                className="text-blue-500 focus:ring-2 focus:ring-blue-400"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Random
-              </span>
-            </label>
-          )}
-          {allowedValueModes.includes('increment') && (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="valueMode"
-                value="increment"
-                checked={currentValueMode === 'increment'}
-                onChange={(e) => handleChange('valueMode', e.target.value)}
-                className="text-blue-500 focus:ring-2 focus:ring-blue-400"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                Increment
-              </span>
-            </label>
-          )}
-        </div>
-      </div>
+      {/* ── Section 1: Value Generation ── */}
+      <div className="space-y-3">
+        <h5 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          Value Generation
+        </h5>
 
-      {/* Conditional fields based on value mode */}
-      {currentValueMode === 'static' && (
+        {/* Generation Mode */}
         <div>
-          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-            Value
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+            Generation Mode
           </label>
-          {dataType === 'Bool' || dataType === 'Boolean' ? (
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={!!localPayload.value}
-                onChange={(e) => handleChange('value', e.target.checked)}
-                className="w-4 h-4 text-blue-500 rounded focus:ring-2 focus:ring-blue-400"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                {localPayload.value ? 'True' : 'False'}
-              </span>
-            </label>
-          ) : dataType === 'String' ? (
-            <input
-              type="text"
-              placeholder="Enter static value"
-              value={
-                typeof localPayload.value === 'string'
-                  ? localPayload.value
-                  : ''
-              }
-              onChange={(e) => handleChange('value', e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          ) : (
-            <input
-              type="number"
-              step={dataType === 'Float' ? '0.01' : '1'}
-              placeholder="Enter static value"
-              value={
-                typeof localPayload.value === 'number'
-                  ? localPayload.value
-                  : ''
-              }
-              onChange={(e) => handleChange('value', Number(e.target.value))}
-              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          )}
-        </div>
-      )}
-
-      {currentValueMode === 'random' && (
-        <div className="space-y-3">
-          {dataType !== 'Bool' && dataType !== 'Boolean' && dataType !== 'String' && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            {allowedValueModes.includes('static') && (
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="valueMode"
+                  value="static"
+                  checked={currentValueMode === 'static'}
+                  onChange={(e) => handleChange('valueMode', e.target.value)}
+                  className="mt-0.5 text-blue-500 focus:ring-2 focus:ring-blue-400"
+                />
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    Min Value
-                  </label>
-                  <input
-                    type="number"
-                    step={dataType === 'Float' ? '0.01' : '1'}
-                    placeholder={dataType === 'Int' ? '1' : '0'}
-                    value={localPayload.minValue ?? ''}
-                    onChange={(e) =>
-                      handleChange('minValue', Number(e.target.value))
-                    }
-                    className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    Static
+                  </span>
+                  <span className="block text-xs text-gray-400 dark:text-gray-500">
+                    Always publish the same value
+                  </span>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    Max Value
-                  </label>
-                  <input
-                    type="number"
-                    step={dataType === 'Float' ? '0.01' : '1'}
-                    placeholder={dataType === 'Int' ? '100' : '1.0'}
-                    value={localPayload.maxValue ?? ''}
-                    onChange={(e) =>
-                      handleChange('maxValue', Number(e.target.value))
-                    }
-                    className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                </div>
-              </div>
-              {dataType === 'Float' && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    Precision (decimal places)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="2"
-                    value={localPayload.precision ?? ''}
-                    onChange={(e) =>
-                      handleChange('precision', Number(e.target.value))
-                    }
-                    className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                  />
-                </div>
-              )}
-            </>
-          )}
-          {(dataType === 'Bool' || dataType === 'Boolean') && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Will randomly toggle between true and false
-            </p>
-          )}
-        </div>
-      )}
-
-      {currentValueMode === 'increment' && (
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                Start Value
               </label>
+            )}
+            {allowedValueModes.includes('random') && (
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="valueMode"
+                  value="random"
+                  checked={currentValueMode === 'random'}
+                  onChange={(e) => handleChange('valueMode', e.target.value)}
+                  className="mt-0.5 text-blue-500 focus:ring-2 focus:ring-blue-400"
+                />
+                <div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    Random
+                  </span>
+                  <span className="block text-xs text-gray-400 dark:text-gray-500">
+                    {randomDescription}
+                  </span>
+                </div>
+              </label>
+            )}
+            {allowedValueModes.includes('increment') && (
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="valueMode"
+                  value="increment"
+                  checked={currentValueMode === 'increment'}
+                  onChange={(e) => handleChange('valueMode', e.target.value)}
+                  className="mt-0.5 text-blue-500 focus:ring-2 focus:ring-blue-400"
+                />
+                <div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    Increment
+                  </span>
+                  <span className="block text-xs text-gray-400 dark:text-gray-500">
+                    Step through values sequentially, wrapping at max
+                  </span>
+                </div>
+              </label>
+            )}
+          </div>
+        </div>
+
+        {/* Conditional fields based on value mode */}
+        {currentValueMode === 'static' && (
+          <div>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+              Value
+            </label>
+            {dataType === 'Bool' || dataType === 'Boolean' ? (
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={!!localPayload.value}
+                  onChange={(e) => handleChange('value', e.target.checked)}
+                  className="w-4 h-4 text-blue-500 rounded focus:ring-2 focus:ring-blue-400"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {localPayload.value ? 'True' : 'False'}
+                </span>
+              </label>
+            ) : dataType === 'String' ? (
+              <input
+                type="text"
+                placeholder="Enter static value"
+                value={
+                  typeof localPayload.value === 'string'
+                    ? localPayload.value
+                    : ''
+                }
+                onChange={(e) => handleChange('value', e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+            ) : (
               <input
                 type="number"
                 step={dataType === 'Float' ? '0.01' : '1'}
-                placeholder="0"
+                placeholder="Enter static value"
                 value={
                   typeof localPayload.value === 'number'
                     ? localPayload.value
@@ -424,72 +314,228 @@ export default function NodePayloadEditor({
                 onChange={(e) => handleChange('value', Number(e.target.value))}
                 className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
+            )}
+          </div>
+        )}
+
+        {currentValueMode === 'random' && (
+          <div className="space-y-3">
+            {dataType !== 'Bool' && dataType !== 'Boolean' && dataType !== 'String' && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Min Value
+                    </label>
+                    <input
+                      type="number"
+                      step={dataType === 'Float' ? '0.01' : '1'}
+                      placeholder={dataType === 'Int' ? '1' : '0'}
+                      value={localPayload.minValue ?? ''}
+                      onChange={(e) =>
+                        handleChange('minValue', Number(e.target.value))
+                      }
+                      className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Max Value
+                    </label>
+                    <input
+                      type="number"
+                      step={dataType === 'Float' ? '0.01' : '1'}
+                      placeholder={dataType === 'Int' ? '100' : '1.0'}
+                      value={localPayload.maxValue ?? ''}
+                      onChange={(e) =>
+                        handleChange('maxValue', Number(e.target.value))
+                      }
+                      className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  </div>
+                </div>
+                {dataType === 'Float' && (
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Precision (decimal places)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="2"
+                      value={localPayload.precision ?? ''}
+                      onChange={(e) =>
+                        handleChange('precision', Number(e.target.value))
+                      }
+                      className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    />
+                  </div>
+                )}
+              </>
+            )}
+            {(dataType === 'Bool' || dataType === 'Boolean') && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Will randomly toggle between true and false
+              </p>
+            )}
+          </div>
+        )}
+
+        {currentValueMode === 'increment' && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Start Value
+                </label>
+                <input
+                  type="number"
+                  step={dataType === 'Float' ? '0.01' : '1'}
+                  placeholder="0"
+                  value={
+                    typeof localPayload.value === 'number'
+                      ? localPayload.value
+                      : ''
+                  }
+                  onChange={(e) => handleChange('value', Number(e.target.value))}
+                  className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Step
+                </label>
+                <input
+                  type="number"
+                  step={dataType === 'Float' ? '0.01' : '1'}
+                  placeholder="1"
+                  value={localPayload.step ?? ''}
+                  onChange={(e) => handleChange('step', Number(e.target.value))}
+                  className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                Step
+                Max (wrap to start)
               </label>
               <input
                 type="number"
                 step={dataType === 'Float' ? '0.01' : '1'}
-                placeholder="1"
-                value={localPayload.step ?? ''}
-                onChange={(e) => handleChange('step', Number(e.target.value))}
-                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-              Max (wrap to start)
-            </label>
-            <input
-              type="number"
-              step={dataType === 'Float' ? '0.01' : '1'}
-              placeholder="Optional"
-              value={localPayload.maxValue ?? ''}
-              onChange={(e) =>
-                handleChange('maxValue', Number(e.target.value))
-              }
-              className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
-          {dataType === 'Float' && (
-            <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                Precision (decimal places)
-              </label>
-              <input
-                type="number"
-                min="0"
-                placeholder="2"
-                value={localPayload.precision ?? ''}
+                placeholder="Optional"
+                value={localPayload.maxValue ?? ''}
                 onChange={(e) =>
-                  handleChange('precision', Number(e.target.value))
+                  handleChange('maxValue', Number(e.target.value))
                 }
                 className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
-          )}
-        </div>
-      )}
+            {dataType === 'Float' && (
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  Precision (decimal places)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="2"
+                  value={localPayload.precision ?? ''}
+                  onChange={(e) =>
+                    handleChange('precision', Number(e.target.value))
+                  }
+                  className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+              </div>
+            )}
+          </div>
+        )}
 
-      {/* Validation warnings */}
-      {validationWarnings.length > 0 && (
-        <div className="space-y-1">
-          {validationWarnings.map((warning, i) => (
-            <p key={i} className="text-xs text-orange-500 dark:text-orange-400">
-              {warning}
-            </p>
-          ))}
-        </div>
-      )}
+        {/* Validation warnings */}
+        {validationWarnings.length > 0 && (
+          <div className="space-y-1">
+            {validationWarnings.map((warning, i) => (
+              <p key={i} className="text-xs text-orange-500 dark:text-orange-400">
+                {warning}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
 
-      {/* Custom Fields */}
-      <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+      {/* ── Section 2: Message Metadata ── */}
+      <div className="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4">
+        <h5 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          Message Metadata
+        </h5>
+
+        {/* Quality */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            Quality
+          </label>
+          <select
+            className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            value={localPayload.quality || 'good'}
+            onChange={(e) => handleChange('quality', e.target.value)}
+          >
+            <option value="good">Good</option>
+            <option value="bad">Bad</option>
+            <option value="uncertain">Uncertain</option>
+          </select>
+        </div>
+
+        {/* Timestamp Mode */}
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+            Timestamp
+          </label>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="timestampMode"
+                value="auto"
+                checked={currentTimestampMode === 'auto'}
+                onChange={(e) => handleChange('timestampMode', e.target.value)}
+                className="text-blue-500 focus:ring-2 focus:ring-blue-400"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                Auto (current time)
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="timestampMode"
+                value="fixed"
+                checked={currentTimestampMode === 'fixed'}
+                onChange={(e) => handleChange('timestampMode', e.target.value)}
+                className="text-blue-500 focus:ring-2 focus:ring-blue-400"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                Fixed
+              </span>
+            </label>
+            {currentTimestampMode === 'fixed' && (
+              <input
+                type="number"
+                placeholder="Timestamp (ms)"
+                value={localPayload.fixedTimestamp || ''}
+                onChange={(e) =>
+                  handleChange('fixedTimestamp', Number(e.target.value))
+                }
+                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 ml-6"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Section 3: Custom Fields ── */}
+      <div className="space-y-3 border-t border-gray-200 dark:border-gray-700 pt-4">
+        <h5 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
           Custom Fields
-        </label>
+        </h5>
         <div className="space-y-2">
           {(localPayload?.customFields ?? []).map((field, index) => (
             <div
@@ -553,11 +599,14 @@ export default function NodePayloadEditor({
         </div>
       </div>
 
-      {/* Live Preview */}
-      <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-          Live Preview
-        </label>
+      {/* ── Section 4: Message Preview ── */}
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+        <h5 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+          Message Preview
+        </h5>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">
+          Sample MQTT message published for this node
+        </p>
         <pre className="bg-gray-900 dark:bg-gray-950 text-gray-100 rounded-lg p-3 text-xs font-mono overflow-x-auto">
           {JSON.stringify(previewPayload, null, 2)}
         </pre>
