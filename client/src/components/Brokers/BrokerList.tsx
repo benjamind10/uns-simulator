@@ -37,34 +37,40 @@ export default function BrokerList({
         return (
           <li
             key={broker.id}
-            className="p-4 bg-white dark:bg-gray-800 rounded shadow flex items-center justify-between"
+            className="p-4 bg-white dark:bg-gray-800 rounded shadow flex flex-col gap-3 h-full"
           >
-            <div className="flex flex-col">
+            <div className="flex items-start justify-between mb-1">
               <span className="font-bold text-gray-800 dark:text-white">
                 {broker.name}
               </span>
-              <span className="text-sm text-gray-500 dark:text-gray-300">
-                {broker.url}:{broker.port} — {broker.clientId}
-              </span>
-              <span className="text-xs mt-1">
-                Status:{' '}
-                <span
-                  className={
-                    status === 'connected'
-                      ? 'text-green-600'
-                      : status === 'connecting'
-                      ? 'text-yellow-600'
-                      : status === 'error'
-                      ? 'text-red-600'
-                      : 'text-gray-600'
-                  }
-                >
-                  {status}
-                </span>
+
+              {/* status pill */}
+              <span
+                className={`inline-flex items-center gap-1 text-xs font-medium ${getStatusColor(
+                  status
+                )}`}
+              >
+                {getStatusText(status)}
               </span>
             </div>
 
-            <div className="flex gap-2 items-center">
+            {/* connection details - fixed height to ensure alignment */}
+            <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1 flex-1">
+              <p>
+                <span className="font-medium">URL:</span> {broker.url}:{broker.port}
+              </p>
+              <p>
+                <span className="font-medium">Client ID:</span> {broker.clientId}
+              </p>
+              {broker.username && (
+                <p>
+                  <span className="font-medium">User:</span> {broker.username}
+                </p>
+              )}
+            </div>
+
+            {/* actions */}
+            <div className="flex gap-2 items-center mt-auto">
               {status === 'connected' ? (
                 <button
                   onClick={() => onDisconnect?.(broker)}
