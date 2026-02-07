@@ -85,7 +85,7 @@ export class SimulationManager {
   async pauseSimulation(profileId: string): Promise<void> {
     const engine = this.engines.get(profileId);
     if (engine) {
-      engine.pause();
+      await engine.pause();
     } else {
       // If engine doesn't exist, can't pause - maybe it was never started
       console.log(
@@ -100,7 +100,7 @@ export class SimulationManager {
   async resumeSimulation(profileId: string): Promise<void> {
     const engine = this.engines.get(profileId);
     if (engine) {
-      engine.resume();
+      await engine.resume();
     } else {
       console.log(
         `⚠️ Cannot resume simulation ${profileId} - not found in memory`

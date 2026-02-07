@@ -54,9 +54,11 @@ export const simulationProfileResolvers = {
       { profileId }: { profileId: string },
       ctx: Context
     ) => {
-      // Optionally require auth
       requireAuth(ctx);
-      const profile = await SimulationProfile.findById(profileId);
+      const profile = await SimulationProfile.findOne({
+        _id: profileId,
+        userId: ctx.user!._id,
+      });
       if (!profile) throw new Error('Profile not found');
       // Always return a valid status object
       if (!profile.status) {
@@ -243,9 +245,17 @@ export const simulationProfileResolvers = {
       return removedCount;
     },
 
-    startSimulation: async (_: any, { profileId }: { profileId: string }) => {
-      // Fetch profile, schema, and broker from DB
-      const profile = await SimulationProfile.findById(profileId);
+    startSimulation: async (
+      _: any,
+      { profileId }: { profileId: string },
+      ctx: Context
+    ) => {
+      requireAuth(ctx);
+      // Fetch profile with ownership check
+      const profile = await SimulationProfile.findOne({
+        _id: profileId,
+        userId: ctx.user!._id,
+      });
       if (!profile) throw new Error('Profile not found');
       const schema = await SchemaModel.findById(profile.schemaId);
       if (!schema) throw new Error('Schema not found');
@@ -258,17 +268,50 @@ export const simulationProfileResolvers = {
       return true;
     },
 
-    stopSimulation: async (_: any, { profileId }: { profileId: string }) => {
+    stopSimulation: async (
+      _: any,
+      { profileId }: { profileId: string },
+      ctx: Context
+    ) => {
+      requireAuth(ctx);
+      // Verify ownership before stopping
+      const profile = await SimulationProfile.findOne({
+        _id: profileId,
+        userId: ctx.user!._id,
+      });
+      if (!profile) throw new Error('Profile not found');
       await simulationManager.stopSimulation(profileId);
       return true;
     },
 
-    pauseSimulation: async (_: any, { profileId }: { profileId: string }) => {
+    pauseSimulation: async (
+      _: any,
+      { profileId }: { profileId: string },
+      ctx: Context
+    ) => {
+      requireAuth(ctx);
+      // Verify ownership before pausing
+      const profile = await SimulationProfile.findOne({
+        _id: profileId,
+        userId: ctx.user!._id,
+      });
+      if (!profile) throw new Error('Profile not found');
       await simulationManager.pauseSimulation(profileId);
       return true;
     },
 
-    resumeSimulation: async (_: any, { profileId }: { profileId: string }) => {
+    resumeSimulation: async (
+      _: any,
+      { profileId }: { profileId: string },
+      ctx: Context
+    ) => {
+      requireAuth(ctx);
+      // Verify ownership before resuming
+      const profile = await SimulationProfile.findOne({
+        _id: profileId,
+        userId: ctx.user!._id,
+      });
+      if (!profile) throw new Error('Profile not found');
       await simulationManager.resumeSimulation(profileId);
       return true;
     },

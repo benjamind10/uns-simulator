@@ -41,22 +41,9 @@ const getClient = () => {
 
 // Fetch brokers for current user
 export async function fetchBrokers(): Promise<IBroker[]> {
-  let client: GraphQLClient;
-  try {
-    client = getClient();
-  } catch (err) {
-    console.error('No authentication token found:', err);
-    // Optionally: return [] or throw a custom error
-    return [];
-  }
-  try {
-    const data: BrokersResponse = await client.request(GET_BROKERS);
-    return data.brokers;
-  } catch (err) {
-    console.error('Error fetching brokers:', err);
-    // Optionally: return [] or throw a custom error
-    return [];
-  }
+  const client = getClient();
+  const data: BrokersResponse = await client.request(GET_BROKERS);
+  return data.brokers;
 }
 
 // Create a new broker

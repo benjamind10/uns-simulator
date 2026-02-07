@@ -29,6 +29,12 @@ import {
 // Load environment variables
 dotenv.config();
 
+// Validate critical environment variables at startup
+if (!process.env.JWT_SECRET) {
+  console.error('❌ FATAL: JWT_SECRET is not defined in environment variables');
+  process.exit(1);
+}
+
 // Merge all schema parts
 export const typeDefs = mergeTypeDefs([
   userTypeDefs,

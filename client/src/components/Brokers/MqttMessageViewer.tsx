@@ -21,24 +21,37 @@ function formatJsonPayload(payload: string): { isJson: boolean; formatted: strin
   }
 }
 
+/* ── HTML entity escape helper ── */
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 function JsonHighlight({ text }: { text: string }) {
-  // Simple syntax coloring for JSON
-  const highlighted = text.replace(
-    /("(?:[^"\\]|\\.)*")\s*:/g, // keys
-    '<span class="text-blue-600 dark:text-blue-400">$1</span>:'
-  ).replace(
-    /:\s*("(?:[^"\\]|\\.)*")/g, // string values
-    ': <span class="text-green-600 dark:text-green-400">$1</span>'
-  ).replace(
-    /:\s*(-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g, // numbers
-    ': <span class="text-orange-600 dark:text-orange-400">$1</span>'
-  ).replace(
-    /:\s*(true|false)/g, // booleans
-    ': <span class="text-purple-600 dark:text-purple-400">$1</span>'
-  ).replace(
-    /:\s*(null)/g, // null
-    ': <span class="text-gray-500">$1</span>'
-  );
+  // Simple syntax coloring for JSON with HTML escaping
+  const escaped = escapeHtml(text);
+  const highlighted = escaped
+    .replace(
+      /("(?:[^"\\]|\\.)*")\s*:/g, // keys
+      '<span class="text-blue-600 dark:text-blue-400">$1</span>:'
+    )
+    .replace(
+      /:\s*("(?:[^"\\]|\\.)*")/g, // string values
+      ': <span class="text-green-600 dark:text-green-400">$1</span>'
+    )
+    .replace(
+      /:\s*(-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g, // numbers
+      ': <span class="text-orange-600 dark:text-orange-400">$1</span>'
+    )
+    .replace(
+      /:\s*(true|false)/g, // booleans
+      ': <span class="text-purple-600 dark:text-purple-400">$1</span>'
+    )
+    .replace(
+      /:\s*(null)/g, // null
+      ': <span class="text-gray-500">$1</span>'
+    );
 
   return (
     <pre

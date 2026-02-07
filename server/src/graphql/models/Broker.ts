@@ -34,4 +34,7 @@ BrokerSchema.set('toJSON', {
   },
 });
 
+BrokerSchema.index({ users: 1 });
+BrokerSchema.index({ name: 1 });
+
 export default mongoose.model<IBroker>('Broker', BrokerSchema);

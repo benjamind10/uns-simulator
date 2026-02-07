@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import mongoose from 'mongoose';
 
 import User from '../models/User';
 import Broker, { IBroker } from '../models/Broker';
@@ -80,53 +81,58 @@ export const brokerResolvers = {
     ): Promise<boolean> => {
       requireAuth(context);
 
-      // Get count of affected simulation profiles
-      const SimulationProfile = (await import('../models/SimulationProfile')).default;
+      // Start a MongoDB session for transaction
+      const session = await mongoose.startSession();
+
       try {
+        // Start transaction
+        await session.startTransaction();
+
+        // Get count of affected simulation profiles
+        const SimulationProfile = (await import('../models/SimulationProfile')).default;
         const affectedProfiles = await SimulationProfile.countDocuments({
           brokerId: args.id,
-        });
+        }).session(session);
 
         // Delete the broker
-        await Broker.findByIdAndDelete(args.id);
+        await Broker.findByIdAndDelete(args.id).session(session);
 
         // Remove broker reference from all users
         await User.updateMany(
           { brokers: args.id },
           { $pull: { brokers: args.id } }
-        );
+        ).session(session);
 
         // Remove broker reference from all schemas (if applicable)
         await SchemaModel.updateMany(
           { brokerIds: args.id },
           { $pull: { brokerIds: args.id } }
-        );
+        ).session(session);
 
         // Clear brokerId from all simulation profiles using this broker
         if (affectedProfiles > 0) {
           await SimulationProfile.updateMany(
             { brokerId: args.id },
             { $unset: { brokerId: '' } }
-          );
+          ).session(session);
           console.log(
             `🗑️  Deleted broker and cleared reference from ${affectedProfiles} simulation profile(s)`
           );
         }
 
+        // Commit the transaction
+        await session.commitTransaction();
         return true;
-      } catch {
-        // Handle ObjectId cast errors gracefully (e.g., in tests with string IDs)
-        // Just delete the broker without the cascade
-        await Broker.findByIdAndDelete(args.id);
-        await User.updateMany(
-          { brokers: args.id },
-          { $pull: { brokers: args.id } }
-        );
-        await SchemaModel.updateMany(
-          { brokerIds: args.id },
-          { $pull: { brokerIds: args.id } }
-        );
-        return true;
+      } catch (error) {
+        // Abort transaction on any error
+        await session.abortTransaction();
+        console.error('❌ Transaction aborted due to error:', error);
+
+        // Re-throw the error to propagate it to the client
+        throw error;
+      } finally {
+        // Always end the session
+        await session.endSession();
       }
     },
 

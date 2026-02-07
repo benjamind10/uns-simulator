@@ -1,5 +1,6 @@
 import { UploadCloud } from 'lucide-react';
 import { useRef } from 'react';
+import { toast } from 'react-hot-toast';
 
 import type { ISchemaNode } from '../../types';
 
@@ -13,13 +14,22 @@ export default function FileUpload({ onImport }: FileUploadProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    file.text().then((json) => {
-      try {
-        onImport(JSON.parse(json));
-      } catch {
-        /* JSON parse error */
-      }
-    });
+    file
+      .text()
+      .then((json) => {
+        try {
+          const parsed = JSON.parse(json);
+          onImport(parsed);
+          toast.success('Schema imported successfully');
+        } catch (err) {
+          console.error('JSON parse error:', err);
+          toast.error('Failed to import: Invalid JSON file');
+        }
+      })
+      .catch((err) => {
+        console.error('File read error:', err);
+        toast.error('Failed to read file');
+      });
     e.target.value = ''; // allow re‑selecting same file later
   };
 
