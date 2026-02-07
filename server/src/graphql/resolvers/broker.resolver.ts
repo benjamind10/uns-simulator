@@ -82,11 +82,11 @@ export const brokerResolvers = {
       requireAuth(context);
 
       try {
-        // Get count of affected simulation profiles
         const SimulationProfile = (await import('../models/SimulationProfile')).default;
-        const affectedProfiles = await SimulationProfile.countDocuments({
-          brokerId: args.id,
-        });
+        const isValidObjectId = Types.ObjectId.isValid(args.id);
+        const affectedProfiles = isValidObjectId
+          ? await SimulationProfile.countDocuments({ brokerId: args.id })
+          : 0;
 
         // Delete the broker
         await Broker.findByIdAndDelete(args.id);
@@ -104,7 +104,7 @@ export const brokerResolvers = {
         );
 
         // Clear brokerId from all simulation profiles using this broker
-        if (affectedProfiles > 0) {
+        if (isValidObjectId && affectedProfiles > 0) {
           await SimulationProfile.updateMany(
             { brokerId: args.id },
             { $unset: { brokerId: '' } }

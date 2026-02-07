@@ -1,16 +1,6 @@
-import type { AuthState } from './auth';
 import type { ISchema } from './schema';
-import type { MqttMessage } from './mqtt';
 
 import type { IBroker, ISimulationProfile, SimulationState } from '.';
-
-export interface RootState {
-  auth: AuthState;
-  brokers: BrokersState;
-  schema: SchemaState;
-  simulationProfile: SimulationProfileState;
-  mqtt: MqttState;
-}
 
 export interface BrokersState {
   brokers: IBroker[];
@@ -24,6 +14,18 @@ export interface SchemaState {
   error: string | null;
 }
 
+export interface SimulationStatus {
+  state: SimulationState;
+  isRunning: boolean;
+  isPaused: boolean;
+  startTime?: string | number | Date;
+  lastActivity?: string | number | Date;
+  nodeCount?: number;
+  mqttConnected?: boolean;
+  reconnectAttempts?: number;
+  error?: string;
+}
+
 export interface SimulationProfileState {
   profiles: Record<string, ISimulationProfile>;
   selectedProfileId: string | null;
@@ -33,21 +35,5 @@ export interface SimulationProfileState {
   simulationStates: Record<string, SimulationState>; // profileId -> state
   simulationLoading: Record<string, boolean>; // profileId -> loading
   simulationErrors: Record<string, string | null>; // profileId -> error
-}
-
-export interface MqttState {
-  connections: Record<string, MqttConnection>; // brokerId -> connection
-  messages: MqttMessage[];
-  loading: boolean;
-  error: string | null;
-}
-
-export interface MqttConnection {
-  status: string;
-  brokerId: string;
-  isConnected: boolean;
-  isConnecting: boolean;
-  error: string | null;
-  lastConnected?: Date;
-  subscriptions: string[];
+  simulationStatus: Record<string, SimulationStatus>; // profileId -> status
 }

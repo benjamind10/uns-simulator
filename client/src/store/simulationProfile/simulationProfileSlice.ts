@@ -5,6 +5,8 @@ import type {
   ISimulationProfile,
   RootState,
   SimulationState,
+  SimulationProfileState,
+  SimulationStatus,
 } from '../../types';
 
 import {
@@ -17,32 +19,8 @@ import {
   stopSimulationAsync,
   pauseSimulationAsync,
   resumeSimulationAsync,
-  getSimulationStatusAsync, // <-- Add this import
+  getSimulationStatusAsync,
 } from './simulationProfieThunk';
-
-// Add SimulationStatus type
-interface SimulationStatus {
-  state: SimulationState;
-  isRunning: boolean;
-  isPaused: boolean;
-  startTime?: string;
-  lastActivity?: string;
-  nodeCount?: number;
-  mqttConnected?: boolean;
-  reconnectAttempts?: number;
-  error?: string;
-}
-
-interface SimulationProfileState {
-  profiles: Record<string, ISimulationProfile>;
-  selectedProfileId: string | null;
-  loading: boolean;
-  error: string | null;
-  simulationStates: Record<string, SimulationState>;
-  simulationLoading: Record<string, boolean>;
-  simulationErrors: Record<string, string | null>;
-  simulationStatus: Record<string, SimulationStatus>; // <-- Add this
-}
 
 const initialState: SimulationProfileState = {
   profiles: {},
