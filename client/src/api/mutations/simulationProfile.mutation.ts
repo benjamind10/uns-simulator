@@ -163,6 +163,13 @@ export const DELETE_NODE_SETTINGS = gql`
   }
 `;
 
+// Cleanup node settings with default-only payloads
+export const CLEANUP_DEFAULT_NODE_SETTINGS = gql`
+  mutation CleanupDefaultNodeSettings($profileId: ID!) {
+    cleanupDefaultNodeSettings(profileId: $profileId)
+  }
+`;
+
 // Simulation Control Mutations
 export const START_SIMULATION = gql`
   mutation StartSimulation($profileId: ID!) {

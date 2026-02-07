@@ -268,6 +268,7 @@ export const simulationProfileTypeDefs = gql`
       settings: NodeSettingsInput!
     ): NodeSettings!
     deleteNodeSettings(profileId: ID!, nodeId: ID!): Boolean!
+    cleanupDefaultNodeSettings(profileId: ID!): Int!
 
     startSimulation(profileId: ID!): Boolean!
     stopSimulation(profileId: ID!): Boolean!

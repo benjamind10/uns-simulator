@@ -8,6 +8,7 @@ import {
   DELETE_SIMULATION_PROFILE,
   UPSERT_NODE_SETTINGS,
   DELETE_NODE_SETTINGS,
+  CLEANUP_DEFAULT_NODE_SETTINGS,
   START_SIMULATION,
   STOP_SIMULATION,
   PAUSE_SIMULATION,
@@ -72,6 +73,7 @@ type UpsertNodeSettingsResponse = {
 };
 
 type DeleteNodeSettingsResponse = { deleteNodeSettings: boolean };
+type CleanupDefaultNodeSettingsResponse = { cleanupDefaultNodeSettings: number };
 
 // Simulation Control Response Types
 type StartSimulationResponse = { startSimulation: boolean };
@@ -257,6 +259,19 @@ export async function deleteNodeSettings(
     variables
   );
   return data.deleteNodeSettings;
+}
+
+// Cleanup node settings with default-only payloads
+export async function cleanupDefaultNodeSettings(
+  profileId: string
+): Promise<number> {
+  const client = getClient();
+  const variables = { profileId };
+  const data: CleanupDefaultNodeSettingsResponse = await client.request(
+    CLEANUP_DEFAULT_NODE_SETTINGS,
+    variables
+  );
+  return data.cleanupDefaultNodeSettings;
 }
 
 // Start a simulation

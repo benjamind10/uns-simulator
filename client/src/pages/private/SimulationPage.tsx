@@ -21,6 +21,7 @@ import {
   pauseSimulationAsync,
   resumeSimulationAsync,
   getSimulationStatusAsync,
+  updateSimulationProfileAsync,
 } from '../../store/simulationProfile/simulationProfieThunk';
 import { selectSchemas } from '../../store/schema/schemaSlice';
 import { fetchSchemasAsync } from '../../store/schema/schemaThunk';
@@ -54,6 +55,8 @@ export default function SimulationPage() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditOrphaned, setShowEditOrphaned] = useState(false);
+  const [editForm, setEditForm] = useState({ brokerId: '', schemaId: '' });
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -156,6 +159,35 @@ export default function SimulationPage() {
       setShowDeleteConfirm(false);
     } catch {
       toast.error('Failed to delete profile');
+    }
+  };
+
+  const handleOpenEditOrphaned = () => {
+    if (selectedProfile) {
+      setEditForm({
+        brokerId: selectedProfile.brokerId || '',
+        schemaId: selectedProfile.schemaId || '',
+      });
+      setShowEditOrphaned(true);
+    }
+  };
+
+  const handleSaveOrphaned = async () => {
+    if (!profileId) return;
+    try {
+      await dispatch(
+        updateSimulationProfileAsync({
+          id: profileId,
+          input: {
+            brokerId: editForm.brokerId || undefined,
+            schemaId: editForm.schemaId || undefined,
+          },
+        })
+      ).unwrap();
+      toast.success('Profile updated!');
+      setShowEditOrphaned(false);
+    } catch {
+      toast.error('Failed to update profile');
     }
   };
 
@@ -471,6 +503,38 @@ export default function SimulationPage() {
       </div>
 
       {/* Main content area */}
+      {selectedProfile && (!selectedProfile.brokerId || !selectedProfile.schemaId) && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 flex-shrink-0">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1">
+              <span className="text-amber-600 dark:text-amber-400 text-lg mt-0.5">⚠️</span>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                  {!selectedProfile.brokerId && !selectedProfile.schemaId
+                    ? 'Missing Broker and Schema'
+                    : !selectedProfile.brokerId
+                    ? 'Missing Broker'
+                    : 'Missing Schema'}
+                </p>
+                <p className="text-xs text-amber-800 dark:text-amber-200 mt-1">
+                  {!selectedProfile.brokerId && !selectedProfile.schemaId
+                    ? 'This profile is missing broker and schema references. Click "Fix" to reassign them.'
+                    : !selectedProfile.brokerId
+                    ? 'This profile is missing a broker reference. Click "Fix" to reassign it.'
+                    : 'This profile is missing a schema reference. Click "Fix" to reassign it.'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleOpenEditOrphaned}
+              className="px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded transition-colors whitespace-nowrap"
+            >
+              Fix
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 flex-1 min-h-0 overflow-hidden flex">
         {selectedProfile ? (
           <div className="flex h-full min-h-0 w-full">
@@ -502,6 +566,82 @@ export default function SimulationPage() {
         title="Delete Simulation Profile"
         message={`Are you sure you want to delete "${selectedProfile?.name}"? This cannot be undone.`}
       />
+
+      {/* Edit orphaned references dialog */}
+      {showEditOrphaned && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Re-link Broker & Schema
+            </h2>
+
+            <div className="space-y-4">
+              {!selectedProfile?.brokerId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Broker
+                  </label>
+                  <select
+                    value={editForm.brokerId}
+                    onChange={(e) =>
+                      setEditForm((f) => ({ ...f, brokerId: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="">Select a broker...</option>
+                    {brokers.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {!selectedProfile?.schemaId && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Schema
+                  </label>
+                  <select
+                    value={editForm.schemaId}
+                    onChange={(e) =>
+                      setEditForm((f) => ({ ...f, schemaId: e.target.value }))
+                    }
+                    className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  >
+                    <option value="">Select a schema...</option>
+                    {schemas.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowEditOrphaned(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveOrphaned}
+                disabled={
+                  (!selectedProfile?.brokerId && !editForm.brokerId) ||
+                  (!selectedProfile?.schemaId && !editForm.schemaId)
+                }
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

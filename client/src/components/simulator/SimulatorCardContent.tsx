@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Settings, Sliders } from 'lucide-react';
+import { Settings, Sliders, Trash2 } from 'lucide-react';
 
+import { cleanupDefaultNodeSettings } from '../../api/simulationProfile';
 import {
   fetchSimulationProfilesAsync,
   updateSimulationProfileAsync,
@@ -80,20 +81,55 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
         ? undefined
         : Number(val);
 
+    // Helper to check if payload has meaningful non-default values
+    const hasNonDefaultPayload = (payload: any) => {
+      if (!payload) return false;
+      
+      const { quality, timestampMode, value, valueMode, customFields, ...rest } = payload;
+      
+      // If there are custom fields, that's a customization
+      if (customFields && customFields.length > 0) return true;
+      
+      // If there are any extra fields beyond defaults, that's a customization
+      if (Object.keys(rest).length > 0) return true;
+      
+      // If quality is not 'good', that's a customization
+      if (quality && quality !== 'good') return true;
+      
+      // If timestampMode is not 'auto', that's a customization
+      if (timestampMode && timestampMode !== 'auto') return true;
+      
+      // If valueMode is not 'random', that's a customization
+      if (valueMode && valueMode !== 'random') return true;
+      
+      // If value is set and not 0, that's a customization
+      if (value !== undefined && value !== null && value !== 0 && value !== '') return true;
+      
+      return false;
+    };
+
     const sanitized: Record<string, NodeSettings> = {};
     for (const [nodeId, nodeSetting] of Object.entries(settings)) {
-      sanitized[nodeId] = {
-        ...nodeSetting,
-        frequency: sanitizeNumber(nodeSetting.frequency),
-        failRate: sanitizeNumber(nodeSetting.failRate),
-        payload: nodeSetting.payload
-          ? {
-              ...nodeSetting.payload,
-              value: nodeSetting.payload.value,
-              fixedTimestamp: sanitizeNumber(nodeSetting.payload.fixedTimestamp),
-            }
-          : undefined,
-      };
+      // Only include nodes with actual overrides (non-default values)
+      const hasFrequency = nodeSetting.frequency && nodeSetting.frequency !== 0;
+      const hasFailRate = nodeSetting.failRate && nodeSetting.failRate !== 0;
+      const hasPayload = hasNonDefaultPayload(nodeSetting.payload);
+
+      // Only add to sanitized if it has actual customizations
+      if (hasFrequency || hasFailRate || hasPayload) {
+        sanitized[nodeId] = {
+          ...nodeSetting,
+          frequency: sanitizeNumber(nodeSetting.frequency),
+          failRate: sanitizeNumber(nodeSetting.failRate),
+          payload: nodeSetting.payload
+            ? {
+                ...nodeSetting.payload,
+                value: nodeSetting.payload.value,
+                fixedTimestamp: sanitizeNumber(nodeSetting.payload.fixedTimestamp),
+              }
+            : undefined,
+        };
+      }
     }
     return sanitized;
   }
@@ -124,6 +160,17 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
     }
   };
 
+  const handleCleanupDefaults = async () => {
+    if (!selectedProfile) return;
+    try {
+      const removedCount = await cleanupDefaultNodeSettings(selectedProfile.id);
+      await dispatch(fetchSimulationProfilesAsync());
+      toast.success(`Removed ${removedCount} node(s) with default-only settings`);
+    } catch {
+      toast.error('Failed to cleanup node settings');
+    }
+  };
+
   const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
     {
       key: 'global_settings',
@@ -141,22 +188,36 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
     <div className="flex flex-col h-full min-h-0">
       {/* Tab header */}
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          {tabs.map((tab) => (
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === tab.key
+                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                    : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === 'node_settings' && selectedProfile && selectedProfile.nodeSettings && selectedProfile.nodeSettings.length > 0 && (
             <button
-              key={tab.key}
               type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                activeTab === tab.key
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
-              }`}
+              onClick={handleCleanupDefaults}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+              title="Remove nodes with default-only settings"
             >
-              {tab.icon}
-              {tab.label}
+              <Trash2 className="w-3.5 h-3.5" />
+              Cleanup Defaults
             </button>
-          ))}
+          )}
         </div>
       </div>
 

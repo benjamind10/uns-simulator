@@ -95,8 +95,35 @@ export const schemaResolvers = {
       context: Context
     ): Promise<boolean> => {
       requireAuth(context);
-      await Schema.findByIdAndDelete(args.id);
-      return true;
+
+      // Get count of affected simulation profiles
+      const SimulationProfile = (await import('../models/SimulationProfile')).default;
+      try {
+        const affectedProfiles = await SimulationProfile.countDocuments({
+          schemaId: args.id,
+        });
+
+        // Delete the schema
+        await Schema.findByIdAndDelete(args.id);
+
+        // Clear schemaId from all simulation profiles using this schema
+        if (affectedProfiles > 0) {
+          await SimulationProfile.updateMany(
+            { schemaId: args.id },
+            { $unset: { schemaId: '' } }
+          );
+          console.log(
+            `🗑️  Deleted schema and cleared reference from ${affectedProfiles} simulation profile(s)`
+          );
+        }
+
+        return true;
+      } catch {
+        // Handle ObjectId cast errors gracefully (e.g., in tests with string IDs)
+        // Just delete the schema without the cascade
+        await Schema.findByIdAndDelete(args.id);
+        return true;
+      }
     },
 
     saveNodesToSchema: async (

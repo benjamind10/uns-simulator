@@ -5,6 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 
 import BrokerForm from '../../components/Brokers/BrokerForm';
 import BrokerList from '../../components/Brokers/BrokerList';
+import ConfirmDialog from '../../components/global/ConfirmDialog';
 import {
   createBrokerAsync,
   deleteBrokerAsync,
@@ -29,6 +30,10 @@ export default function BrokersPage() {
   );
   const [editingBroker, setEditingBroker] = useState<IBroker | null>(null);
   const { brokerId } = useParams();
+
+  // Confirmation dialog state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [brokerToDelete, setBrokerToDelete] = useState<IBroker | null>(null);
 
   // Fetch brokers on mount
   useEffect(() => {
@@ -93,6 +98,8 @@ export default function BrokersPage() {
     try {
       await dispatch(deleteBrokerAsync(id)).unwrap();
       toast.success('Broker deleted successfully');
+      setShowDeleteConfirm(false);
+      setBrokerToDelete(null);
       if (editingBroker?.id === id) {
         navigate('/dashboard/brokers'); // Return to main list if deleting currently edited broker
       }
@@ -100,6 +107,11 @@ export default function BrokersPage() {
       toast.error('Failed to delete broker');
       console.error(error);
     }
+  };
+
+  const handleDeleteClick = (broker: IBroker) => {
+    setBrokerToDelete(broker);
+    setShowDeleteConfirm(true);
   };
 
   // --- Connect/Disconnect handlers ---
@@ -143,12 +155,28 @@ export default function BrokersPage() {
           <BrokerList
             brokers={brokers}
             brokerStatuses={brokerStatuses}
-            onDelete={handleDeleteBroker}
+            onDelete={(id) => handleDeleteClick(brokers.find((b) => b.id === id)!)}
             onConnect={handleConnectBroker}
             onDisconnect={handleDisconnectBroker}
           />
         )}
       </div>
+
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => {
+          setShowDeleteConfirm(false);
+          setBrokerToDelete(null);
+        }}
+        onConfirm={() => {
+          if (brokerToDelete) {
+            handleDeleteBroker(brokerToDelete.id);
+          }
+        }}
+        title="Delete Broker?"
+        message={`Delete broker "${brokerToDelete?.name}"? Any simulation profiles using this broker will have their broker reference cleared.`}
+      />
     </div>
   );
 }
