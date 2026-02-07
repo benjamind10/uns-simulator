@@ -70,13 +70,18 @@ export default function BrokerCard({
         </div>
 
         {/* connection details */}
-        <div className="text-sm text-gray-600 dark:text-gray-300">
+        <div className="text-sm text-gray-600 dark:text-gray-300 space-y-1">
           <p>
             <span className="font-medium">URL:</span> {broker.url}:{broker.port}
           </p>
           <p>
             <span className="font-medium">Client ID:</span> {broker.clientId}
           </p>
+          {broker.username && (
+            <p>
+              <span className="font-medium">Username:</span> {broker.username}
+            </p>
+          )}
         </div>
 
         {/* actions */}
