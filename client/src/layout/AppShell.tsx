@@ -127,8 +127,12 @@ export default function AppShell() {
           )}
         >
           {/* Logo */}
-          <div className="flex h-14 items-center border-b border-gray-200/50 px-4 dark:border-gray-800/50">
-            {!collapsed && (
+          <div className="flex h-14 items-center justify-center border-b border-gray-200/50 px-4 dark:border-gray-800/50">
+            {collapsed ? (
+              <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                U
+              </span>
+            ) : (
               <span className="truncate text-sm font-semibold tracking-tight text-gray-900 dark:text-white">
                 UNS Simulator
               </span>
@@ -136,7 +140,7 @@ export default function AppShell() {
           </div>
 
           {/* Primary nav */}
-          <div className="mt-4 flex flex-1 flex-col gap-1 px-2 overflow-y-auto">
+          <div className="mt-4 flex flex-1 flex-col gap-1 px-2 overflow-y-auto scrollbar-hide">
             {NAV_ITEMS.map(({ to, label, icon, end }) => (
               <SidebarLink
                 key={to}
