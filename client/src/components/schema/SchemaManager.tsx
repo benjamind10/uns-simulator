@@ -52,13 +52,18 @@ export default function SchemaManager({
   const handleDelete = async () => {
     if (!selectedSchemaId) return;
     try {
+      // Navigate away first to avoid rendering deleted schema
+      setSelectedSchemaId(null);
+      setShowDeleteConfirm(false);
+      
       await dispatch(deleteSchemaAsync(selectedSchemaId)).unwrap();
       await dispatch(fetchSchemasAsync());
       toast.success('Schema deleted!');
-      setSelectedSchemaId(null);
-      setShowDeleteConfirm(false);
-    } catch {
+    } catch (error) {
+      console.error('Failed to delete schema:', error);
       toast.error('Failed to delete schema');
+      // Refetch to ensure UI is in sync
+      await dispatch(fetchSchemasAsync());
     }
   };
 
