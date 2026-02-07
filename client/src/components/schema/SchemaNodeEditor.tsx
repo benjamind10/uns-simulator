@@ -68,9 +68,16 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   // Refresh on schema change
   useEffect(() => {
     dispatch(fetchSchemasAsync());
+    // Warn user if there are unsaved changes before clearing
+    if (tempNodes.length > 0) {
+      toast.error(
+        `Warning: ${tempNodes.length} unsaved change(s) discarded due to schema switch`,
+        { duration: 4000 }
+      );
+    }
     setTempNodes([]);
     setSelectedNode(null);
-  }, [dispatch, schemaId]);
+  }, [dispatch, schemaId]); // Note: tempNodes intentionally omitted from deps to avoid infinite loop
 
   // Expand all nodes by default when schema loads
   useEffect(() => {

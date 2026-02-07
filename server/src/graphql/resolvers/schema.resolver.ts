@@ -35,7 +35,7 @@ export const schemaResolvers = {
   Query: {
     schemas: async (_: {}, __: {}, context: Context): Promise<ISchema[]> => {
       requireAuth(context);
-      return await Schema.find();
+      return await Schema.find({ users: context.user!._id });
     },
     schema: async (
       _: {},

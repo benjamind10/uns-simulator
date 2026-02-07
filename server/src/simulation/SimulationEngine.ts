@@ -111,6 +111,9 @@ export class SimulationEngine extends EventEmitter {
 
   private async connectToBroker(): Promise<void> {
     return new Promise((resolve, reject) => {
+      // Guard flag to prevent double settlement of promise
+      let settled = false;
+
       try {
         const useSsl =
           typeof this.broker.ssl === 'boolean' ? this.broker.ssl : false;
@@ -163,13 +166,21 @@ export class SimulationEngine extends EventEmitter {
 
         this.mqttClient = mqtt.connect(url, options);
 
+        // Remove all existing listeners to prevent accumulation and memory leaks
+        this.mqttClient.removeAllListeners();
+
         this.mqttClient.on('connect', () => {
+          if (settled) return; // Prevent double settlement
+          settled = true;
+          clearTimeout(connectionTimeout);
           console.log(`✅ Connected to MQTT broker: ${this.broker.name}`);
           this.reconnectAttempts = 0;
           resolve();
         });
 
         this.mqttClient.on('error', (error) => {
+          if (settled) return; // Prevent double settlement
+          settled = true;
           clearTimeout(connectionTimeout);
           console.error(`❌ MQTT connection error: ${error.message}`);
           if (this.mqttClient) {
@@ -191,6 +202,8 @@ export class SimulationEngine extends EventEmitter {
         });
 
         const connectionTimeout = setTimeout(() => {
+          if (settled) return; // Prevent double settlement
+          settled = true;
           console.error(`❌ Connection timeout to ${this.broker.name}`);
           if (this.mqttClient) {
             this.mqttClient.end(true);
@@ -198,11 +211,9 @@ export class SimulationEngine extends EventEmitter {
           }
           reject(new Error('MQTT connection timeout'));
         }, MQTT_CONFIG.CONNECT_TIMEOUT);
-
-        this.mqttClient.once('connect', () => {
-          clearTimeout(connectionTimeout);
-        });
       } catch (error) {
+        if (settled) return; // Prevent double settlement
+        settled = true;
         console.error(`❌ Failed to create MQTT connection:`, error);
         reject(error);
       }
@@ -550,7 +561,7 @@ export class SimulationEngine extends EventEmitter {
     this.emit('stopped', { profileId: this.profile.id });
   }
 
-  pause() {
+  async pause() {
     if (!this.isRunning || this.isPaused) return;
 
     this.nodes.forEach((node) => {
@@ -562,7 +573,7 @@ export class SimulationEngine extends EventEmitter {
 
     this.isPaused = true;
 
-    this.updateProfileStatus({
+    await this.updateProfileStatus({
       state: 'paused',
       isPaused: true,
     });
@@ -571,7 +582,7 @@ export class SimulationEngine extends EventEmitter {
     this.emit('paused', { profileId: this.profile.id });
   }
 
-  resume() {
+  async resume() {
     if (!this.isRunning || !this.isPaused) return;
 
     this.nodes.forEach((node) => {
@@ -580,7 +591,7 @@ export class SimulationEngine extends EventEmitter {
 
     this.isPaused = false;
 
-    this.updateProfileStatus({
+    await this.updateProfileStatus({
       state: 'running',
       isPaused: false,
     });

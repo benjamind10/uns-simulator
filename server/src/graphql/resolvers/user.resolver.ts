@@ -6,7 +6,11 @@ import Broker from '../models/Broker';
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET must be defined in environment variables');
+}
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 interface CreateUserInput {
   username: string;

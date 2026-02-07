@@ -7,7 +7,7 @@
     "test": "npm run test:server && npm run test:client",
     "test:server": "cd server && npm test",
     "test:client": "cd client && npm test",
-    "lint": "eslint \"{client,server}/**/*.{ts,tsx,js,jsx}\" --max-warnings=0",
+    "lint": "eslint \"{client,server}/**/*.{ts,tsx,js,jsx}\" --ignore-pattern \"**/dist/**\" --ignore-pattern \"**/build/**\" --ignore-pattern \"**/coverage/**\" --max-warnings=0",
     "lint:fix": "npm run lint -- --fix"
   },
   "keywords": [],

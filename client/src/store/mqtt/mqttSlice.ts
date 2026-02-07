@@ -75,13 +75,27 @@ export const selectConnectedBrokersCount = (state: { mqtt: MqttState }) =>
   ).length;
 
 export const selectBrokerStatuses = createSelector(
-  [(state: RootState) => state.brokers.brokers, (state: RootState) => state],
-  (brokers, state) => {
+  [
+    (state: RootState) => state.brokers.brokers,
+    (state: RootState) => state.mqtt.connections,
+  ],
+  (brokers, connections) => {
     const statuses: Record<string, string> = {};
     for (const b of brokers) {
-      statuses[b.id] = selectBrokerStatus(state, b.id);
+      statuses[b.id] = connections[b.id]?.status || 'disconnected';
     }
     return statuses;
+  },
+  {
+    memoizeOptions: {
+      resultEqualityCheck: (a, b) => {
+        if (Object.keys(a).length !== Object.keys(b).length) return false;
+        for (const key in a) {
+          if (a[key] !== b[key]) return false;
+        }
+        return true;
+      },
+    },
   }
 );
 

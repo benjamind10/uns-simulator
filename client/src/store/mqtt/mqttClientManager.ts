@@ -52,6 +52,12 @@ export function connectBroker(
     reconnectPeriod: 5000,
   });
 
+  // Remove all existing listeners to prevent memory leaks
+  // This is critical when reconnecting or hot module reloading
+  client.removeAllListeners('connect');
+  client.removeAllListeners('close');
+  client.removeAllListeners('error');
+
   client.on('connect', () => onStatus('connected'));
   client.on('close', () => onStatus('disconnected'));
   client.on('error', (err) => onStatus('error', err.message));
@@ -79,9 +85,20 @@ export function getClient(brokerId: string) {
   return clientMap.get(brokerId);
 }
 
+// Store the beforeunload listener reference for potential cleanup
+const beforeUnloadHandler = () => {
+  disconnectAllBrokers();
+};
+
 // Clean up all connections when the page is about to unload
 if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
-    disconnectAllBrokers();
-  });
+  window.addEventListener('beforeunload', beforeUnloadHandler);
+}
+
+// Export cleanup function for HMR scenarios
+export function cleanup() {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+  }
+  disconnectAllBrokers();
 }

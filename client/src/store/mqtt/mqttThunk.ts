@@ -21,22 +21,32 @@ export const connectToBrokerAsync = createAsyncThunk(
     );
 
     return new Promise<string>((resolve, reject) => {
+      let isSettled = false;
+      let timeoutId: NodeJS.Timeout | null = null;
+
       connectBroker(broker, (status, error) => {
         dispatch(setConnectionStatus({ brokerId: broker.id, status, error }));
-        
-        if (status === 'connected') {
+
+        if (status === 'connected' && !isSettled) {
+          isSettled = true;
+          if (timeoutId) clearTimeout(timeoutId);
           resolve(broker.id);
-        } else if (status === 'error') {
+        } else if (status === 'error' && !isSettled) {
+          isSettled = true;
+          if (timeoutId) clearTimeout(timeoutId);
           reject(rejectWithValue(error || 'Failed to connect to broker'));
         }
       });
 
       // Timeout after 15 seconds
-      setTimeout(() => {
-        const currentState = getState() as RootState;
-        const connection = currentState.mqtt.connections[broker.id];
-        if (connection?.status !== 'connected') {
-          reject(rejectWithValue('Connection timeout'));
+      timeoutId = setTimeout(() => {
+        if (!isSettled) {
+          isSettled = true;
+          const currentState = getState() as RootState;
+          const connection = currentState.mqtt.connections[broker.id];
+          if (connection?.status !== 'connected') {
+            reject(rejectWithValue('Connection timeout'));
+          }
         }
       }, 15000);
     });

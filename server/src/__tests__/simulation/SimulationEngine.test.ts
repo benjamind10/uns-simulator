@@ -224,18 +224,18 @@ describe('SimulationEngine', () => {
       engine.on('paused', pausedSpy);
 
       await engine.start();
-      engine.pause();
+      await engine.pause();
 
       expect(engine.getStatus().isPaused).toBe(true);
       expect(pausedSpy).toHaveBeenCalled();
     });
 
-    it('does nothing if not running', () => {
+    it('does nothing if not running', async () => {
       const { engine } = createEngine();
       const pausedSpy = jest.fn();
       engine.on('paused', pausedSpy);
 
-      engine.pause();
+      await engine.pause();
 
       expect(pausedSpy).not.toHaveBeenCalled();
     });
@@ -246,8 +246,8 @@ describe('SimulationEngine', () => {
       engine.on('paused', pausedSpy);
 
       await engine.start();
-      engine.pause();
-      engine.pause();
+      await engine.pause();
+      await engine.pause();
 
       expect(pausedSpy).toHaveBeenCalledTimes(1);
     });
@@ -260,8 +260,8 @@ describe('SimulationEngine', () => {
       engine.on('resumed', resumedSpy);
 
       await engine.start();
-      engine.pause();
-      engine.resume();
+      await engine.pause();
+      await engine.resume();
 
       expect(engine.getStatus().isPaused).toBe(false);
       expect(resumedSpy).toHaveBeenCalled();
@@ -273,7 +273,7 @@ describe('SimulationEngine', () => {
       engine.on('resumed', resumedSpy);
 
       await engine.start();
-      engine.resume();
+      await engine.resume();
 
       expect(resumedSpy).not.toHaveBeenCalled();
     });
