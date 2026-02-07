@@ -2,12 +2,13 @@
 
 A production-ready, web-based MQTT simulation platform for testing Unified Namespace (UNS) architectures, development, and educational purposes. Built with enterprise-grade reliability, security, and performance.
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-4.9+-blue.svg)](https://www.typescriptlang.org/)
-[![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://reactjs.org/)
-[![Node.js](https://img.shields.io/badge/Node.js-16+-339933.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+[![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-339933.svg)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-6+-47A248.svg)](https://www.mongodb.com/)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF.svg)](https://vite.dev/)
 
-> **Recent Updates (Nov 2025):** Major stability and security enhancements. See [CHANGELOG.md](CHANGELOG.md) for details.
+> **Recent Updates (Feb 2025):** Custom payload configuration, UI redesign with unified app shell, and major stability enhancements. See [CHANGELOG.md](CHANGELOG.md) for details.
 
 ---
 
@@ -45,6 +46,12 @@ A production-ready, web-based MQTT simulation platform for testing Unified Names
   - Simulate data with configurable failure rates
   - Time-scale control for accelerated testing
   - Automatic cleanup and resource management
+- **🎛️ Custom Payload Configuration**
+  - Three value generation modes: static, random, increment
+  - Per-node and global default payload settings
+  - Custom fields support (user-defined key/value pairs)
+  - Live payload preview and test publish
+  - Configurable quality, timestamp mode, and precision
 - **🌳 MQTT Topic Explorer**
   - Interactive topic tree visualization
   - Live message viewer with filtering
@@ -69,14 +76,16 @@ A production-ready, web-based MQTT simulation platform for testing Unified Names
   - Floating simulation control widget
   - Toast notifications and error handling
 
-### Recent Enhancements (Nov 2025)
+### Recent Enhancements
 
+- ✅ **Custom Payload Configuration** - Full control over published MQTT payloads with static/random/increment value modes, custom fields, and live preview
+- ✅ **UI Redesign** - Unified app shell with collapsible sidebar, redesigned dashboard, broker management with modals, and consistent design system
+- ✅ **Reusable UI Components** - Card, Badge, PageHeader, EmptyState, SlideOver, Avatar, Tooltip components
 - ✅ **Orphaned Simulation Recovery** - Automatic cleanup on server restart
 - ✅ **Graceful Shutdown** - Proper cleanup of all simulations
 - ✅ **Memory Leak Fixes** - Both client and server side
 - ✅ **Enhanced Security** - No credential exposure in logs/API
 - ✅ **Performance Optimizations** - Database indexes, optimized selectors
-- ✅ **Improved Error Handling** - Better error messages and recovery
 
 ---
 
@@ -114,13 +123,16 @@ A production-ready, web-based MQTT simulation platform for testing Unified Names
 
 ### Frontend
 
-- **React 18** with TypeScript for type safety
+- **React 19** with TypeScript for type safety
 - **Redux Toolkit** for predictable state management
 - **GraphQL Client** (graphql-request) for API communication
-- **TailwindCSS** for modern, responsive styling
-- **React Router** for client-side routing
+- **TailwindCSS 4** for modern, responsive styling
+- **React Router 7** for client-side routing
 - **MQTT.js** for WebSocket MQTT connections
-- **Vite** for fast development and builds
+- **Vite 6** for fast development and builds
+- **@dnd-kit** for drag-and-drop (schema builder)
+- **Lucide React** for icons
+- **@headlessui/react** for accessible UI primitives
 
 ### Backend
 
@@ -144,9 +156,9 @@ A production-ready, web-based MQTT simulation platform for testing Unified Names
 
 ### Prerequisites
 
-- **Node.js** v16 or higher
+- **Node.js** v20 or higher
 - **MongoDB** v6 or higher (running locally or cloud instance)
-- **npm** or **yarn** package manager
+- **npm** package manager
 - **MQTT Broker** (optional, e.g., Mosquitto for local testing)
 - **Docker** (optional, for containerized deployment)
 
@@ -156,7 +168,7 @@ The fastest way to get started with all services running:
 
 ```bash
 # Clone the repository
-git clone https://github.com/benduran-fbin/uns-simulator.git
+git clone https://github.com/benjamind10/uns-simulator.git
 cd uns-simulator
 
 # Create environment file from example
@@ -218,7 +230,7 @@ docker-compose up -d --build
 #### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/benduran-fbin/uns-simulator.git
+git clone https://github.com/benjamind10/uns-simulator.git
 cd uns-simulator
 ```
 
@@ -400,8 +412,8 @@ Optimized indexes for performance:
 
 1. **Create Profile**: Link a schema and broker
 2. **Configure Settings**:
-   - Global: Default frequency, time scale, publish root
-   - Per-Node: Override frequency, set failure rate, custom payloads
+   - Global: Default frequency, time scale, publish root, default payload template
+   - Per-Node: Override frequency, failure rate, payload (value mode, quality, custom fields)
 3. **Control Simulation**:
    - **Start**: Begin publishing data
    - **Pause**: Temporarily halt without disconnecting
@@ -428,17 +440,29 @@ uns-simulator/
 │   │   │   ├── mutations/           # GraphQL mutations
 │   │   │   └── queries/             # GraphQL queries
 │   │   ├── components/              # React components
-│   │   │   ├── brokers/             # Broker management
-│   │   │   ├── global/              # Shared components
-│   │   │   ├── schema/              # Schema management
-│   │   │   └── simulator/           # Simulation controls
+│   │   │   ├── Brokers/             # Broker management (cards, modals)
+│   │   │   ├── dashboard/           # Dashboard widgets (StatCard)
+│   │   │   ├── global/              # Shared components (Navbar, etc.)
+│   │   │   ├── schema/              # Schema builder (tree, node editor)
+│   │   │   ├── simulator/           # Simulation controls & payload editor
+│   │   │   └── ui/                  # Reusable UI primitives
+│   │   │       ├── Avatar.tsx
+│   │   │       ├── Badge.tsx
+│   │   │       ├── Card.tsx
+│   │   │       ├── EmptyState.tsx
+│   │   │       ├── PageHeader.tsx
+│   │   │       ├── SlideOver.tsx
+│   │   │       └── Tooltip.tsx
 │   │   ├── hooks/                   # Custom React hooks
 │   │   ├── layout/                  # Page layouts
+│   │   │   ├── AppShell.tsx         # Unified authenticated layout
+│   │   │   └── PublicLayout.tsx     # Unauthenticated layout
 │   │   ├── pages/                   # Route pages
-│   │   │   ├── auth/                # Login/register
-│   │   │   ├── dashboard/           # Dashboard views
-│   │   │   └── private/             # Protected routes
-│   │   ├── store/                   # Redux store
+│   │   │   ├── app/                 # App pages (Home, Brokers)
+│   │   │   ├── auth/                # Register
+│   │   │   ├── private/             # Tool pages (Simulator, Schema, Explorer)
+│   │   │   └── public/              # Landing, Login
+│   │   ├── store/                   # Redux Toolkit store
 │   │   │   ├── auth/                # Auth state
 │   │   │   ├── brokers/             # Broker state
 │   │   │   ├── mqtt/                # MQTT connection state
@@ -464,8 +488,8 @@ uns-simulator/
 │   │   │   ├── resolvers/           # GraphQL resolvers
 │   │   │   └── schemas/             # GraphQL type definitions
 │   │   ├── simulation/              # Simulation engine
-│   │   │   ├── SimulationEngine.ts  # Core engine
-│   │   │   └── SimulationManager.ts # Multi-sim orchestration
+│   │   │   ├── SimulationEngine.ts  # Core engine (value generation, MQTT publish)
+│   │   │   └── SimulationManager.ts # Multi-sim orchestration (singleton)
 │   │   ├── scripts/                 # Utility scripts
 │   │   ├── utils/                   # Helper functions
 │   │   └── index.ts                 # Server entry point
@@ -475,8 +499,12 @@ uns-simulator/
 ├── mqtt-broker/                     # Local Mosquitto config
 │   └── mosquitto.conf
 │
-├── docker-compose.yml               # Docker orchestration
+├── ARCHITECTURE.md                  # Technical architecture reference
 ├── CHANGELOG.md                     # Recent changes
+├── CLAUDE.md                        # AI assistant guidance
+├── DOCKER.md                        # Docker deployment guide
+├── FUTURE_ENHANCEMENTS.md           # Roadmap & future plans
+├── docker-compose.yml               # Docker orchestration
 └── README.md                        # This file
 ```
 
@@ -678,7 +706,7 @@ DEBUG=*
 ### Getting Help
 
 1. Check [CHANGELOG.md](CHANGELOG.md) for recent fixes
-2. Review [Issues](https://github.com/benduran-fbin/uns-simulator/issues) on GitHub
+2. Review [Issues](https://github.com/benjamind10/uns-simulator/issues) on GitHub
 3. Create a new issue with:
    - Steps to reproduce
    - Expected vs actual behavior
@@ -696,7 +724,7 @@ We welcome contributions! Please follow these guidelines:
 1. **Fork the repository**
 
    ```bash
-   git clone https://github.com/your-username/uns-simulator.git
+   git clone https://github.com/<your-username>/uns-simulator.git
    ```
 
 2. **Create a feature branch**
@@ -787,7 +815,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-See the [LICENSE](LICENSE) file for details.
+See the license text above for details.
 
 ---
 
@@ -822,21 +850,20 @@ See the [LICENSE](LICENSE) file for details.
 
 See [CHANGELOG.md](CHANGELOG.md) for detailed information about recent updates, bug fixes, and enhancements.
 
-**Latest Updates (November 2025):**
+**Latest Updates:**
 
-- ✅ Fixed critical simulation state bugs after server restart
-- ✅ Enhanced security (no credential exposure)
-- ✅ Performance optimizations (database indexes, React selectors)
-- ✅ Memory leak fixes (both client and server)
-- ✅ Graceful shutdown handling
+- ✅ Custom payload configuration with static/random/increment value modes
+- ✅ UI redesign with unified app shell and design system
+- ✅ Enhanced security and error handling
+- ✅ Performance optimizations and memory leak fixes
 
 ---
 
 ## Support
 
-- **Documentation**: This README and inline code comments
-- **Issues**: [GitHub Issues](https://github.com/benduran-fbin/uns-simulator/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/benduran-fbin/uns-simulator/discussions)
+- **Documentation**: This README, [ARCHITECTURE.md](ARCHITECTURE.md), and [DOCKER.md](DOCKER.md)
+- **Issues**: [GitHub Issues](https://github.com/benjamind10/uns-simulator/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/benjamind10/uns-simulator/discussions)
 
 ---
 

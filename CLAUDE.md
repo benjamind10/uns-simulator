@@ -40,7 +40,9 @@ docker compose down             # Stop all services
 npm test                        # Run all tests once (vitest run)
 npm run test:watch              # Watch mode (vitest)
 
-# Server has no test framework configured yet.
+# Server tests (from server/)
+npm test                        # Run all tests once (jest)
+npm run test:watch              # Watch mode (jest)
 ```
 
 ## Architecture
@@ -76,8 +78,8 @@ npm run test:watch              # Watch mode (vitest)
 
 **Routing layouts:**
 - `PublicLayout` — Landing, Login, Register (unauthenticated)
-- `DashboardLayout` — Brokers, Schemas, Simulators pages (authenticated list views)
-- `PrivateLayout` — MQTT Explorer, Schema Builder, Simulation page (authenticated detail views)
+- `AppShell` — Unified authenticated layout with collapsible sidebar and top bar. All `/app/*` routes (Home, Simulator, Schema Builder, MQTT Explorer, Brokers)
+- Legacy `DashboardLayout` and `PrivateLayout` still exist but routes redirect to `/app/*`
 
 **State management** — Redux Toolkit store with slices:
 - `auth` — JWT token in sessionStorage, login/register thunks
@@ -89,6 +91,10 @@ npm run test:watch              # Watch mode (vitest)
 **API layer:** `api/` directory contains GraphQL queries/mutations using `graphql-request`, organized by domain (auth, brokers, schema, simulationProfile).
 
 **MQTT client-side:** `utils/mqttConnection.ts` and `mqttConnectionManager.ts` manage browser-side WebSocket MQTT connections for the MQTT Explorer feature (separate from server-side simulation MQTT).
+
+**Reusable UI components** (`components/ui/`): Card, Badge, PageHeader, EmptyState, SlideOver, Avatar, Tooltip — shared design primitives used across all pages.
+
+**App pages** (`pages/app/`): HomePage (dashboard overview with stats, quick actions, recent profiles) and BrokersPage (card grid with modal add/edit).
 
 **Schema Builder UI** — 2-panel layout with drag-and-drop:
 - `SchemaManager.tsx` — Compact toolbar for schema CRUD (dropdown selector, inline create, delete with confirm)
