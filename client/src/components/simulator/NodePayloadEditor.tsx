@@ -322,7 +322,7 @@ export default function NodePayloadEditor({
           <div className="space-y-3">
             {dataType !== 'Bool' && dataType !== 'Boolean' && dataType !== 'String' && (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                       Min Value
@@ -383,7 +383,7 @@ export default function NodePayloadEditor({
 
         {currentValueMode === 'increment' && (
           <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                   Start Value
@@ -540,7 +540,7 @@ export default function NodePayloadEditor({
           {(localPayload?.customFields ?? []).map((field, index) => (
             <div
               key={index}
-              className="grid grid-cols-12 gap-2 items-center"
+              className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-center"
             >
               <input
                 type="text"
@@ -549,7 +549,7 @@ export default function NodePayloadEditor({
                 onChange={(e) =>
                   handleCustomFieldChange(index, 'key', e.target.value)
                 }
-                className="col-span-4 px-2 py-1.5 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="sm:col-span-4 px-2 py-1.5 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
               <input
                 type={field.type === 'number' ? 'number' : 'text'}
@@ -566,26 +566,28 @@ export default function NodePayloadEditor({
                         : e.target.value
                   )
                 }
-                className="col-span-4 px-2 py-1.5 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                className="sm:col-span-4 px-2 py-1.5 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
-              <select
-                value={field.type}
-                onChange={(e) =>
-                  handleCustomFieldChange(index, 'type', e.target.value)
-                }
-                className="col-span-3 px-2 py-1.5 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              >
-                <option value="string">string</option>
-                <option value="number">number</option>
-                <option value="boolean">boolean</option>
-              </select>
-              <button
-                type="button"
-                onClick={() => handleRemoveCustomField(index)}
-                className="col-span-1 text-red-500 hover:text-red-700 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex items-center gap-2 sm:col-span-4 sm:grid sm:grid-cols-4">
+                <select
+                  value={field.type}
+                  onChange={(e) =>
+                    handleCustomFieldChange(index, 'type', e.target.value)
+                  }
+                  className="flex-1 sm:col-span-3 px-2 py-1.5 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                >
+                  <option value="string">string</option>
+                  <option value="number">number</option>
+                  <option value="boolean">boolean</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveCustomField(index)}
+                  className="sm:col-span-1 text-red-500 hover:text-red-700 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
           <button

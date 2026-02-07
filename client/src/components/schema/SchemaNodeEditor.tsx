@@ -437,9 +437,9 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
 
   /* ── Render ── */
   return (
-    <div className="flex gap-6 h-full min-h-0 px-6 py-4">
+    <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-full min-h-0 px-3 md:px-6 py-4">
       {/* ── LEFT: Unified Tree ── */}
-      <div className="w-3/5 flex flex-col min-h-0">
+      <div className="w-full md:w-3/5 flex flex-col min-h-0">
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <div className="flex items-center gap-3">
             <h2 className="font-semibold text-base text-gray-900 dark:text-gray-100">
@@ -536,7 +536,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       </div>
 
       {/* ── RIGHT: Node Editor / Builder ── */}
-      <div className="w-2/5 flex flex-col min-h-0 overflow-auto px-6 py-4">
+      <div className="w-full md:w-2/5 flex flex-col min-h-0 overflow-auto px-3 md:px-6 py-4">
         {/* Mode toggle when a node is selected */}
         {selectedNode ? (
           <>

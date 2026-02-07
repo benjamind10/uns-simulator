@@ -57,6 +57,7 @@ export default function SimulationPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEditOrphaned, setShowEditOrphaned] = useState(false);
   const [editForm, setEditForm] = useState({ brokerId: '', schemaId: '' });
+  const [mobileView, setMobileView] = useState<'settings' | 'status'>('settings');
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -282,16 +283,16 @@ export default function SimulationPage() {
   );
 
   return (
-    <div className="flex flex-col gap-2 h-full min-h-0 px-6 py-4">
+    <div className="flex flex-col gap-2 h-full min-h-0 px-3 sm:px-6 py-3 sm:py-4">
       {/* Compact toolbar header */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 px-6 py-4 flex-shrink-0">
-        <div className="flex items-center gap-4 flex-wrap">
-          {/* Profile selector */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 px-3 sm:px-6 py-3 sm:py-4 flex-shrink-0">
+        <div className="flex flex-col gap-3">
+          {/* Top row: Profile selector + status */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 min-w-0">
             <select
               value={profileId || ''}
               onChange={(e) => handleSelectProfile(e.target.value)}
-              className="px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm font-medium min-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full sm:w-auto px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm font-medium sm:min-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-400"
             >
               <option value="">Select a profile...</option>
               {profiles.map((p) => (
@@ -303,7 +304,7 @@ export default function SimulationPage() {
 
             {/* Status badge */}
             {profileId && selectedProfile && (
-              <>
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400">
                   <span className="relative flex h-2 w-2">
                     {status.pulse && (
@@ -327,7 +328,7 @@ export default function SimulationPage() {
                   const isConnecting = status === 'connecting';
 
                   return broker ? (
-                    <div className="inline-flex items-center gap-1.5 pl-2 ml-2 border-l border-gray-200 dark:border-gray-700">
+                    <div className="inline-flex items-center gap-1.5 sm:pl-2 sm:ml-2 sm:border-l border-gray-200 dark:border-gray-700">
                       <span className={`relative flex h-2 w-2`}>
                         <span
                           className={`relative inline-flex rounded-full h-2 w-2 ${
@@ -339,7 +340,7 @@ export default function SimulationPage() {
                           }`}
                         />
                       </span>
-                      <span className="text-xs text-gray-600 dark:text-gray-400">
+                      <span className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-[120px] sm:max-w-none">
                         {broker.name}
                       </span>
                       {isConnected ? (
@@ -359,19 +360,19 @@ export default function SimulationPage() {
                         >
                           {isConnecting ? 'Connecting...' : 'Connect'}
                         </button>
-                      )}
+                      )}  
                     </div>
                   ) : null;
                 })()}
-              </>
+              </div>
             )}
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {/* Create profile inline */}
             {showCreate ? (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <input
                   type="text"
                   placeholder="Profile name"
@@ -379,7 +380,7 @@ export default function SimulationPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, name: e.target.value }))
                   }
-                  className="px-3 py-1.5 border rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 w-32 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="px-3 py-1.5 border rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 w-full sm:w-32 focus:outline-none focus:ring-2 focus:ring-blue-400"
                   autoFocus
                 />
                 <select
@@ -387,7 +388,7 @@ export default function SimulationPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, schemaId: e.target.value }))
                   }
-                  className="px-3 py-1.5 border rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 w-36 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="px-3 py-1.5 border rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 w-full sm:w-36 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   <option value="">Schema...</option>
                   {schemas.map((s: ISchema) => (
@@ -401,7 +402,7 @@ export default function SimulationPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, brokerId: e.target.value }))
                   }
-                  className="px-3 py-1.5 border rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 w-36 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="px-3 py-1.5 border rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 w-full sm:w-36 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 >
                   <option value="">Broker...</option>
                   {brokers.map((b: IBroker) => (
@@ -410,29 +411,31 @@ export default function SimulationPage() {
                     </option>
                   ))}
                 </select>
-                <button
-                  onClick={handleCreate}
-                  disabled={
-                    !form.name.trim() || !form.schemaId || !form.brokerId
-                  }
-                  className="px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  Create
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCreate(false);
-                    setForm({
-                      name: '',
-                      description: '',
-                      schemaId: '',
-                      brokerId: '',
-                    });
-                  }}
-                  className="px-2 py-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm transition-colors"
-                >
-                  Cancel
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleCreate}
+                    disabled={
+                      !form.name.trim() || !form.schemaId || !form.brokerId
+                    }
+                    className="flex-1 sm:flex-none px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Create
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCreate(false);
+                      setForm({
+                        name: '',
+                        description: '',
+                        schemaId: '',
+                        brokerId: '',
+                      });
+                    }}
+                    className="flex-1 sm:flex-none px-2 py-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             ) : (
               <button
@@ -456,33 +459,33 @@ export default function SimulationPage() {
 
             {/* Simulation controls */}
             {profileId && selectedProfile && (
-              <div className="flex items-center gap-1 ml-2 pl-2 border-l border-gray-200 dark:border-gray-700">
+              <div className="flex items-center gap-1 sm:ml-2 sm:pl-2 sm:border-l border-gray-200 dark:border-gray-700">
                 <button
                   onClick={handleStart}
                   disabled={isLoading || currentState === 'running'}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   title="Start simulation"
                 >
                   <Play className="w-3.5 h-3.5" />
-                  Start
+                  <span className="hidden sm:inline">Start</span>
                 </button>
                 <button
                   onClick={handlePause}
                   disabled={isLoading || currentState !== 'running'}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-yellow-700 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-medium text-yellow-700 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   title="Pause simulation"
                 >
                   <Pause className="w-3.5 h-3.5" />
-                  Pause
+                  <span className="hidden sm:inline">Pause</span>
                 </button>
                 <button
                   onClick={handleResume}
                   disabled={isLoading || currentState !== 'paused'}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   title="Resume simulation"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Resume
+                  <span className="hidden sm:inline">Resume</span>
                 </button>
                 <button
                   onClick={handleStop}
@@ -491,11 +494,11 @@ export default function SimulationPage() {
                     currentState === 'idle' ||
                     currentState === 'stopped'
                   }
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 text-xs font-medium text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   title="Stop simulation"
                 >
                   <Square className="w-3.5 h-3.5" />
-                  Stop
+                  <span className="hidden sm:inline">Stop</span>
                 </button>
               </div>
             )}
@@ -505,7 +508,7 @@ export default function SimulationPage() {
 
       {/* Main content area */}
       {selectedProfile && (!selectedProfile.brokerId || !selectedProfile.schemaId) && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3 flex-shrink-0">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-3 sm:px-4 py-3 flex-shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3 flex-1">
               <span className="text-amber-600 dark:text-amber-400 text-lg mt-0.5">⚠️</span>
@@ -536,19 +539,60 @@ export default function SimulationPage() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex-1 min-h-0 overflow-hidden flex">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex-1 min-h-0 flex flex-col overflow-hidden">
         {selectedProfile ? (
-          <div className="flex h-full min-h-0 w-full">
-            {/* Left: Settings Panel */}
-            <div className="w-1/2 flex flex-col min-h-0 border-r border-gray-200 dark:border-gray-700">
-              <SimulatorCardContent fetchNodesByIds={fetchNodesByIds} />
+          <>
+            {/* Mobile/Tablet Tab Switcher - visible below lg */}
+            <div className="flex lg:hidden border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gray-50 dark:bg-gray-800/50">
+              <button
+                onClick={() => setMobileView('settings')}
+                className={`flex-1 px-4 py-3 text-sm font-semibold transition-all relative ${
+                  mobileView === 'settings'
+                    ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                Settings
+                {mobileView === 'settings' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></span>
+                )}
+              </button>
+              <button
+                onClick={() => setMobileView('status')}
+                className={`flex-1 px-4 py-3 text-sm font-semibold transition-all relative ${
+                  mobileView === 'status'
+                    ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                }`}
+              >
+                Status
+                {mobileView === 'status' && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400"></span>
+                )}
+              </button>
             </div>
 
-            {/* Right: Status Panel */}
-            <div className="w-1/2 flex flex-col min-h-0">
-              <SimulationStatusPanel />
+            {/* Content panels */}
+            <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+              {/* Settings Panel */}
+              <div
+                className={`w-full lg:w-1/2 flex-col min-h-0 lg:border-r border-gray-200 dark:border-gray-700 overflow-hidden ${
+                  mobileView === 'settings' ? 'flex' : 'hidden'
+                } lg:flex`}
+              >
+                <SimulatorCardContent fetchNodesByIds={fetchNodesByIds} />
+              </div>
+
+              {/* Status Panel */}
+              <div
+                className={`w-full lg:w-1/2 flex-col min-h-0 overflow-hidden ${
+                  mobileView === 'status' ? 'flex' : 'hidden'
+                } lg:flex`}
+              >
+                <SimulationStatusPanel />
+              </div>
             </div>
-          </div>
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full w-full text-gray-400 dark:text-gray-500 gap-3">
             <Cpu className="w-12 h-12 opacity-40" />

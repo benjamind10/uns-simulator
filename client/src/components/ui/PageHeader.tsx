@@ -15,9 +15,14 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <div className={clsx('flex items-start justify-between', className)}>
+    <div
+      className={clsx(
+        'flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2',
+        className
+      )}
+    >
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+        <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-white">
           {title}
         </h1>
         {description && (
