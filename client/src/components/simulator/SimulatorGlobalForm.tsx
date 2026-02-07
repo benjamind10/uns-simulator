@@ -121,10 +121,11 @@ const SimulatorGlobalForm: React.FC<SimulatorConfigFormProps> = ({
           ) : (
             <ChevronRight className="w-4 h-4" />
           )}
-          Default Payload Template
+          Default Value Behavior
         </button>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
-          Set global defaults for all nodes (can be overridden per-node)
+          Default generation behavior for all metrics. Individual nodes can
+          override these.
         </p>
         {isPayloadExpanded && (
           <div className="mt-3">

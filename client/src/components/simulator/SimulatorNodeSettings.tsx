@@ -221,15 +221,22 @@ export default function SimulatorNodeSettings({
           {/* Node header */}
           <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 font-mono">
-                {node.path?.split('/').map((part, i) => (
-                  <span key={i} className="inline-flex items-center gap-0.5">
-                    {i > 0 && (
-                      <ChevronRight className="w-2.5 h-2.5 text-gray-400" />
-                    )}
-                    <span>{part}</span>
+              <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400 font-mono">
+                <div className="flex items-center gap-1">
+                  {node.path?.split('/').map((part, i) => (
+                    <span key={i} className="inline-flex items-center gap-0.5">
+                      {i > 0 && (
+                        <ChevronRight className="w-2.5 h-2.5 text-gray-400" />
+                      )}
+                      <span>{part}</span>
+                    </span>
+                  ))}
+                </div>
+                {node.dataType && (
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium">
+                    {node.dataType}
                   </span>
-                ))}
+                )}
               </div>
               {profileId && (
                 <button
@@ -290,12 +297,12 @@ export default function SimulatorNodeSettings({
               {expandedPayloads.has(node.id) ? (
                 <>
                   <ChevronDown className="w-4 h-4" />
-                  Hide Payload Configuration
+                  Hide Value Behavior
                 </>
               ) : (
                 <>
                   <ChevronRight className="w-4 h-4" />
-                  Configure Payload
+                  Configure Value Behavior
                 </>
               )}
             </button>

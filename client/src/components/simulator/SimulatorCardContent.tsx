@@ -179,7 +179,7 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
     },
     {
       key: 'node_settings',
-      label: 'Node Settings',
+      label: 'Metric Settings',
       icon: <Sliders className="w-3.5 h-3.5" />,
     },
   ];
