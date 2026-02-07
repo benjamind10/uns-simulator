@@ -1,5 +1,58 @@
 # Changelog - UNS Simulator
 
+## Documentation Cleanup - February 7, 2025
+
+- Removed stale implementation plan files (`PAYLOAD_CUSTOMIZATION_PLAN.md`, `UI_REDESIGN_PLAN.md`) — both features are fully implemented
+- Removed default Vite template `client/README.md`
+- Updated `README.md`: corrected version badges (React 19, Node 20+, Vite 6), fixed repo URLs, updated project structure tree, added payload customization and UI redesign to features
+- Created `ARCHITECTURE.md`: concise technical reference covering system architecture, backend/frontend patterns, data flows, payload system, and code conventions
+
+---
+
+## UI Redesign - February 2025
+
+### Overview
+
+Transformed the app from a two-layout dashboard into a modern SaaS-style application with a unified navigation shell.
+
+### Changes
+
+- **Unified App Shell** (`AppShell.tsx`): Collapsible sidebar with icon-only mode, top bar with breadcrumbs, user avatar menu — replaces the separate DashboardLayout/PrivateLayout split
+- **Route restructure**: All authenticated routes moved under `/app/*` with legacy redirects from old paths
+- **Redesigned Home page**: Clean overview with stat cards, quick actions, recent profiles, and broker health
+- **Redesigned Brokers page**: Card grid with modal-based add/edit instead of always-visible form
+- **Reusable UI components** (`components/ui/`): Card, Badge, PageHeader, EmptyState, SlideOver, Avatar, Tooltip
+- **Consistent design tokens**: Standardized surfaces, text colors, status indicators, spacing, and border radius across all pages
+
+---
+
+## Custom Payload Configuration - February 2025
+
+### Overview
+
+Full control over published MQTT payloads, replacing the previously hardcoded payload generation.
+
+### Changes
+
+- **Three value generation modes**: Static (exact value), Random (range with precision), Increment (stepped with wrap)
+- **Per-node payload editor** (`NodePayloadEditor.tsx`): Configure quality, timestamp mode, value generation, and custom fields per metric node
+- **Global default payload** (`SimulatorGlobalForm.tsx`): Set a default payload template inherited by all nodes unless overridden
+- **Payload merge priority**: Per-node config > global defaults > engine defaults (backwards compatible)
+- **Custom fields**: User-defined key/value pairs included in published JSON
+- **Live preview**: Real-time payload preview as settings are changed
+- **Test publish**: Send single test messages via `testPublishNode` mutation without starting a full simulation
+- **Type system updates**: Extended Mongoose models, GraphQL schema, and client types to support the new payload structure
+
+---
+
+## Enhanced Security & Error Handling - February 2025
+
+- Improved route protections and card layout security
+- Fixed TypeScript compilation errors
+- Enhanced error handling across the application
+
+---
+
 ## Docker Infrastructure Enhancements - November 10, 2025
 
 ### Overview
