@@ -125,16 +125,16 @@ export default function MqttExplorerPage() {
   const status = statusConfig[brokerStatus] ?? statusConfig.disconnected;
 
   return (
-    <div className="flex flex-col gap-2 h-full min-h-0 px-6 py-4">
+    <div className="flex flex-col gap-2 h-full min-h-0 px-3 sm:px-6 py-2 sm:py-4">
       {/* Compact toolbar header */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 px-6 py-4 flex-shrink-0">
-        <div className="flex items-center gap-3 flex-wrap">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 px-3 sm:px-6 py-3 sm:py-4 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {/* Broker selector */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
             <select
               value={selectedBrokerId}
               onChange={(e) => setSelectedBrokerId(e.target.value)}
-              className="px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm font-medium min-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm font-medium w-full sm:w-auto sm:min-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-400"
             >
               <option value="">Select a broker...</option>
               {brokers.map((broker) => (
@@ -164,17 +164,22 @@ export default function MqttExplorerPage() {
 
           {/* Controls */}
           {selectedBroker && (
-            <div className="flex items-center gap-2">
-              {/* Stats */}
-              <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">
-                {topics.length} topics · {messages.length} messages
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Stats — compact on mobile */}
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="sm:hidden">
+                  {topics.length}T &middot; {messages.length}M
+                </span>
+                <span className="hidden sm:inline">
+                  {topics.length} topics &middot; {messages.length} messages
+                </span>
               </span>
 
               {/* Pause/Resume */}
               <button
                 type="button"
                 onClick={() => setPaused((p) => !p)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-2.5 text-xs font-medium rounded-lg transition-colors ${
                   paused
                     ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                     : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -186,7 +191,9 @@ export default function MqttExplorerPage() {
                 ) : (
                   <Pause className="w-3.5 h-3.5" />
                 )}
-                {paused ? 'Resume' : 'Pause'}
+                <span className="hidden sm:inline">
+                  {paused ? 'Resume' : 'Pause'}
+                </span>
               </button>
 
               {/* Clear messages */}
@@ -194,11 +201,11 @@ export default function MqttExplorerPage() {
                 <button
                   type="button"
                   onClick={handleClearMessages}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 sm:px-2.5 text-xs font-medium text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                   title="Clear all messages"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  Clear
+                  <span className="hidden sm:inline">Clear</span>
                 </button>
               )}
             </div>
@@ -209,9 +216,9 @@ export default function MqttExplorerPage() {
       {/* Main content area */}
       <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex-1 min-h-0 overflow-hidden">
         {selectedBroker ? (
-          <div className="flex h-full min-h-0">
+          <div className="flex flex-col md:flex-row h-full min-h-0">
             {/* Left: Topic Tree */}
-            <div className="w-1/2 flex flex-col min-h-0 border-r border-gray-200 dark:border-gray-700">
+            <div className="w-full md:w-1/2 flex flex-col min-h-0 max-h-[50vh] md:max-h-none border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 overflow-auto">
               <MqttTopicTree
                 root={topicTreeRoot}
                 messages={messages}
@@ -221,7 +228,7 @@ export default function MqttExplorerPage() {
             </div>
 
             {/* Right: Message Viewer */}
-            <div className="w-1/2 flex flex-col min-h-0">
+            <div className="w-full md:w-1/2 flex flex-col min-h-0 max-h-[50vh] md:max-h-none overflow-auto">
               <MqttMessageViewer
                 messages={filteredMessages}
                 selectedTopic={selectedTopic}

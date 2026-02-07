@@ -15,6 +15,8 @@ import {
   Search,
   LogOut,
   ChevronRight,
+  MenuIcon,
+  X,
 } from 'lucide-react';
 import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react';
 import clsx from 'clsx';
@@ -66,6 +68,7 @@ export default function AppShell() {
   const [collapsed, setCollapsed] = useState<boolean>(
     () => localStorage.getItem(SIDEBAR_KEY) === 'true'
   );
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, toggleDarkMode] = useDarkMode();
 
   const location = useLocation();
@@ -116,14 +119,27 @@ export default function AppShell() {
       <Toast />
 
       <div className="flex h-screen w-screen overflow-hidden bg-gray-50 text-gray-800 dark:bg-gray-950 dark:text-gray-100">
+        {/* ────────────────── MOBILE SIDEBAR OVERLAY ────────────────── */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 z-50 bg-black/40 md:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
+
         {/* ────────────────── SIDEBAR ────────────────── */}
         <nav
           className={clsx(
-            'fixed inset-y-0 left-0 z-40 flex flex-col',
+            'fixed inset-y-0 left-0 z-50 flex flex-col',
             'border-r border-gray-200/50 dark:border-gray-800/50',
             'bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl',
-            'transition-all duration-200',
-            collapsed ? 'w-16' : 'w-56'
+            // Mobile: slide in/out
+            'transition-transform duration-300 md:transition-all md:duration-200',
+            mobileMenuOpen
+              ? 'translate-x-0'
+              : '-translate-x-full md:translate-x-0',
+            // Desktop: collapsible width
+            collapsed ? 'w-56 md:w-16' : 'w-56'
           )}
         >
           {/* Logo */}
@@ -149,6 +165,7 @@ export default function AppShell() {
                 icon={icon}
                 collapsed={collapsed}
                 end={end}
+                onNavigate={() => setMobileMenuOpen(false)}
               />
             ))}
 
@@ -171,6 +188,7 @@ export default function AppShell() {
                 label={label}
                 icon={icon}
                 collapsed={collapsed}
+                onNavigate={() => setMobileMenuOpen(false)}
               />
             ))}
           </div>
@@ -266,7 +284,8 @@ export default function AppShell() {
         <div
           className={clsx(
             'flex flex-1 flex-col transition-all duration-200',
-            collapsed ? 'ml-16' : 'ml-56'
+            'ml-0',
+            collapsed ? 'md:ml-16' : 'md:ml-56'
           )}
         >
           {/* Top bar */}
@@ -275,14 +294,29 @@ export default function AppShell() {
               'sticky top-0 z-30 flex h-14 items-center justify-between',
               'border-b border-gray-200/50 dark:border-gray-800/50',
               'bg-white/80 dark:bg-gray-950/80 backdrop-blur-lg',
-              'px-4 shrink-0'
+              'px-3 sm:px-4 shrink-0'
             )}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              {/* Hamburger — mobile only */}
+              <button
+                onClick={() => setMobileMenuOpen((p) => !p)}
+                className={clsx(
+                  'rounded-lg p-1.5 md:hidden flex-shrink-0',
+                  'text-gray-500 hover:bg-gray-100 hover:text-gray-700',
+                  'dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200',
+                  'transition-colors'
+                )}
+                aria-label="Toggle menu"
+              >
+                {mobileMenuOpen ? <X size={20} /> : <MenuIcon size={20} />}
+              </button>
+
+              {/* Collapse toggle — desktop only */}
               <button
                 onClick={toggleSidebar}
                 className={clsx(
-                  'rounded-lg p-1.5',
+                  'hidden md:inline-flex rounded-lg p-1.5 flex-shrink-0',
                   'text-gray-500 hover:bg-gray-100 hover:text-gray-700',
                   'dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200',
                   'transition-colors'
@@ -300,24 +334,24 @@ export default function AppShell() {
 
               <nav
                 aria-label="Breadcrumb"
-                className="flex items-center gap-1.5 text-sm"
+                className="flex items-center gap-1 sm:gap-1.5 text-sm min-w-0 overflow-hidden"
               >
                 {breadcrumbs.map((crumb, idx) => (
                   <Fragment key={crumb.to}>
                     {idx > 0 && (
                       <ChevronRight
                         size={14}
-                        className="text-gray-400 dark:text-gray-600"
+                        className="text-gray-400 dark:text-gray-600 flex-shrink-0"
                       />
                     )}
                     {idx === breadcrumbs.length - 1 ? (
-                      <span className="font-medium text-gray-900 dark:text-white">
+                      <span className="font-medium text-gray-900 dark:text-white truncate">
                         {crumb.label}
                       </span>
                     ) : (
                       <NavLink
                         to={crumb.to}
-                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 truncate flex-shrink-0"
                       >
                         {crumb.label}
                       </NavLink>
@@ -327,10 +361,10 @@ export default function AppShell() {
               </nav>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
               <div
                 className={clsx(
-                  'hidden items-center gap-2 rounded-lg border px-3 py-1.5 text-sm sm:flex',
+                  'hidden md:flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm',
                   'border-gray-200 bg-gray-50 text-gray-400',
                   'dark:border-gray-800 dark:bg-gray-900 dark:text-gray-500',
                   'cursor-not-allowed'
@@ -342,10 +376,10 @@ export default function AppShell() {
 
               <button
                 disabled
-                className="rounded-lg p-1.5 text-gray-400 dark:text-gray-500 cursor-not-allowed"
+                className="rounded-lg p-1.5 sm:p-2 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                 aria-label="Notifications"
               >
-                <Bell size={20} />
+                <Bell size={18} className="sm:w-5 sm:h-5" />
               </button>
             </div>
           </header>
@@ -370,6 +404,7 @@ interface SidebarLinkProps {
   icon: React.ComponentType<{ size?: number }>;
   collapsed: boolean;
   end?: boolean;
+  onNavigate?: () => void;
 }
 
 function SidebarLink({
@@ -378,11 +413,13 @@ function SidebarLink({
   icon: Icon,
   collapsed,
   end,
+  onNavigate,
 }: SidebarLinkProps) {
   const link = (
     <NavLink
       to={to}
       end={end}
+      onClick={onNavigate}
       className={({ isActive }) =>
         clsx(
           'group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium',

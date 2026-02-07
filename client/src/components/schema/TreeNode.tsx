@@ -106,12 +106,12 @@ export default function TreeNode({
       {/* Node row */}
       <div
         className={`
-          group flex items-center gap-1.5 py-1 px-2 rounded-md cursor-pointer
+          group flex items-center gap-1.5 py-1.5 sm:py-1 px-2 rounded-md cursor-pointer min-h-[40px] sm:min-h-0
           transition-colors duration-100
           ${isSelected ? 'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-400/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}
           ${isDragOver && isGroup ? 'ring-2 ring-blue-400 bg-blue-50/50 dark:bg-blue-900/20' : ''}
         `}
-        style={{ paddingLeft: `${depth * 20 + 8}px` }}
+        style={{ paddingLeft: `${Math.min(depth * 20 + 8, 120)}px` }}
         onClick={() => onSelect(node)}
       >
         {/* Drag handle */}

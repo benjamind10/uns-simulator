@@ -254,7 +254,7 @@ export default function SimulatorNodeSettings({
           </div>
           {/* Settings */}
           <div className="px-3 py-3 space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                   Frequency (ms)

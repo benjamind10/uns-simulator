@@ -20,7 +20,7 @@ export function EmptyState({
   return (
     <div
       className={clsx(
-        'flex flex-col items-center justify-center py-16 px-6 text-center',
+        'flex flex-col items-center justify-center py-8 sm:py-16 px-4 sm:px-6 text-center',
         className
       )}
     >
