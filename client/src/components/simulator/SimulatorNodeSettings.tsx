@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronRight, ChevronDown, Send } from 'lucide-react';
+import { ChevronRight, ChevronDown, Send, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 import { testPublishNode } from '../../api/simulationProfile';
@@ -41,6 +41,7 @@ export default function SimulatorNodeSettings({
     new Set()
   );
   const [testingNodes, setTestingNodes] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
   const didInit = useRef(false);
 
   useEffect(() => {
@@ -85,6 +86,14 @@ export default function SimulatorNodeSettings({
   }, [nodes, nodeSettings]);
 
   const metricNodes = nodes.filter((node) => node.kind === 'metric');
+
+  // Filter nodes based on search term
+  const filteredNodes = metricNodes.filter(
+    (node) =>
+      !searchTerm ||
+      node.path?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      node.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleChange = (
     nodeId: string,
@@ -170,7 +179,41 @@ export default function SimulatorNodeSettings({
 
   return (
     <div className="space-y-3">
-      {metricNodes.map((node) => (
+      {/* Search bar */}
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Search nodes by name or path..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-4 py-2.5 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 pr-10"
+        />
+        {searchTerm && (
+          <button
+            onClick={() => setSearchTerm('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            type="button"
+            title="Clear search"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+
+      {/* Results count */}
+      {searchTerm && (
+        <div className="text-xs text-gray-500 dark:text-gray-400 px-1">
+          Found {filteredNodes.length} of {metricNodes.length} nodes
+        </div>
+      )}
+
+      {/* Filtered nodes list */}
+      {filteredNodes.length === 0 ? (
+        <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
+          {searchTerm ? 'No nodes match your search' : 'No metric nodes in this schema'}
+        </div>
+      ) : (
+        filteredNodes.map((node) => (
         <div
           key={node.id}
           className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
@@ -269,7 +312,8 @@ export default function SimulatorNodeSettings({
             )}
           </div>
         </div>
-      ))}
+        ))
+      )}
 
       <div className="flex gap-2 pt-2">
         <button
