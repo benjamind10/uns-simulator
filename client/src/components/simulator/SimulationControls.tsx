@@ -133,22 +133,22 @@ const SimulationStatusPanel: React.FC = () => {
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+      <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
           Profile Details
         </h3>
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-auto px-6 py-4 space-y-4">
+      <div className="flex-1 min-h-0 overflow-auto px-3 sm:px-6 py-3 sm:py-4 space-y-4">
         {/* Profile info */}
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-6 py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
-            <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+          <div className="px-3 sm:px-6 py-3 sm:py-4 bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800">
+            <h4 className="text-sm font-semibold text-blue-700 dark:text-blue-300 truncate">
               {selectedProfile.name}
             </h4>
             {selectedProfile.description && (
-              <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1">
+              <p className="text-xs text-blue-600/70 dark:text-blue-400/70 mt-1 line-clamp-2">
                 {selectedProfile.description}
               </p>
             )}
@@ -171,26 +171,26 @@ const SimulationStatusPanel: React.FC = () => {
 
         {/* Status */}
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               Simulation Status
             </h4>
           </div>
-          <div className="px-6 py-4 space-y-4">
-            <div className="flex items-center gap-3">
+          <div className="px-3 sm:px-6 py-3 sm:py-4 space-y-4">
+            <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 xs:gap-3">
               <span
-                className={`inline-flex px-4 py-2 rounded-full text-xs font-semibold ${badgeClass}`}
+                className={`inline-flex px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold ${badgeClass}`}
               >
                 {currentState.toUpperCase()}
               </span>
               {status?.error && (
-                <span className="text-xs text-red-600 dark:text-red-400">
+                <span className="text-xs text-red-600 dark:text-red-400 line-clamp-2">
                   {status.error}
                 </span>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               <MetricItem label="MQTT" value={mqttConnectedLabel} />
               <MetricItem label="Nodes Active" value={status?.nodeCount ?? nodesTotal} />
               <MetricItem label="Overrides" value={nodeOverrides} />
@@ -212,7 +212,7 @@ const SimulationStatusPanel: React.FC = () => {
         {/* Global settings summary */}
         {selectedProfile.globalSettings && (
           <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+            <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                 Active Settings
               </h4>
@@ -296,7 +296,7 @@ const SimulationStatusPanel: React.FC = () => {
             
             return (
               <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                   <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                     Node Overrides
                     <span className="ml-2 text-xs font-normal text-gray-400">
@@ -313,26 +313,26 @@ const SimulationStatusPanel: React.FC = () => {
                       return (
                         <div
                           key={ns.nodeId}
-                          className="px-6 py-3 flex items-center justify-between"
+                          className="px-3 sm:px-6 py-3 flex flex-col xs:flex-row items-start xs:items-center justify-between gap-2"
                         >
-                          <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 font-mono min-w-0">
+                          <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 font-mono min-w-0 flex-1 w-full xs:w-auto">
                             <ChevronRight className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                            <span className="truncate">
+                            <span className="truncate max-w-full">
                               {node?.path ?? node?.name ?? ns.nodeId}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
                             {ns.frequency && ns.frequency !== 0 ? (
-                              <span>{ns.frequency}ms</span>
+                              <span className="whitespace-nowrap">{ns.frequency}ms</span>
                             ) : null}
                             {ns.failRate && ns.failRate !== 0 ? (
-                              <span className="text-red-500">
+                              <span className="text-red-500 whitespace-nowrap">
                                 {(Number(ns.failRate) * 100).toFixed(0)}% fail
                               </span>
                             ) : null}
                             {ns.payload &&
                             Object.keys(ns.payload).length > 0 ? (
-                              <span className="text-blue-500">
+                              <span className="text-blue-500 whitespace-nowrap">
                                 payload
                               </span>
                             ) : null}
@@ -341,7 +341,7 @@ const SimulationStatusPanel: React.FC = () => {
                       );
                     })
                   ) : (
-                    <div className="px-6 py-3 text-xs text-gray-500 dark:text-gray-400 italic">
+                    <div className="px-3 sm:px-6 py-3 text-xs text-gray-500 dark:text-gray-400 italic">
                       No node overrides configured
                     </div>
                   )}
@@ -357,11 +357,11 @@ const SimulationStatusPanel: React.FC = () => {
 /* Small helper for info rows */
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="px-6 py-3 flex items-center justify-between">
+    <div className="px-3 sm:px-6 py-3 flex items-center justify-between gap-2">
       <span className="text-xs text-gray-500 dark:text-gray-400">
         {label}
       </span>
-      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+      <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-right truncate">
         {value}
       </span>
     </div>
@@ -376,11 +376,11 @@ function MetricItem({
   value: string | number;
 }) {
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-3 py-2">
-      <p className="text-[11px] uppercase tracking-wide text-gray-400">
+    <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-2 sm:px-3 py-2">
+      <p className="text-[10px] sm:text-[11px] uppercase tracking-wide text-gray-400 truncate">
         {label}
       </p>
-      <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+      <p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 truncate">
         {value}
       </p>
     </div>

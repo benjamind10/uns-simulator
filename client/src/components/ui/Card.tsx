@@ -12,7 +12,7 @@ export function Card({ children, className, onClick, hoverable }: CardProps) {
   return (
     <div
       className={clsx(
-        'flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm',
+        'flex flex-col bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-sm overflow-hidden',
         hoverable &&
           'hover:shadow-md hover:border-gray-300 dark:hover:border-gray-700 transition-all cursor-pointer hover:-translate-y-0.5',
         onClick && 'cursor-pointer',

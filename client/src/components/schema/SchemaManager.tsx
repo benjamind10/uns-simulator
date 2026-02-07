@@ -108,7 +108,7 @@ export default function SchemaManager({
         <select
           value={selectedSchemaId || ''}
           onChange={(e) => setSelectedSchemaId(e.target.value || null)}
-          className="px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm font-medium min-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm font-medium w-full sm:w-auto sm:min-w-[200px] focus:outline-none focus:ring-2 focus:ring-blue-400"
           disabled={loading}
         >
           <option value="">Select a schema...</option>

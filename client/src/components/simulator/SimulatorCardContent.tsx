@@ -187,22 +187,22 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Tab header */}
-      <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+      <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-shrink-0 ${
                   activeTab === tab.key
                     ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                     : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}
               >
                 {tab.icon}
-                {tab.label}
+                <span className="hidden xs:inline sm:inline">{tab.label}</span>
               </button>
             ))}
           </div>
@@ -211,18 +211,19 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
             <button
               type="button"
               onClick={handleCleanupDefaults}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
               title="Remove nodes with default-only settings"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              Cleanup Defaults
+              <span className="hidden sm:inline">Cleanup Defaults</span>
+              <span className="sm:hidden">Cleanup</span>
             </button>
           )}
         </div>
       </div>
 
       {/* Tab content */}
-      <div className="flex-1 min-h-0 overflow-auto px-6 py-4">
+      <div className="flex-1 min-h-0 overflow-auto px-3 sm:px-6 py-3 sm:py-4 scrollbar-thin">
         {activeTab === 'global_settings' && (
           <SimulatorGlobalForm
             initialSettings={
