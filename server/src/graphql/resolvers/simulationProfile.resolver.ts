@@ -177,6 +177,72 @@ export const simulationProfileResolvers = {
       return true;
     },
 
+    cleanupDefaultNodeSettings: async (
+      _: {},
+      { profileId }: { profileId: string },
+      ctx: Context
+    ) => {
+      requireAuth(ctx);
+      const profile = await SimulationProfile.findOne({
+        _id: profileId,
+        userId: ctx.user!._id,
+      });
+      if (!profile) throw new Error('Profile not found');
+
+      if (!profile.nodeSettings) return 0;
+
+      // Helper to check if payload has meaningful non-default values
+      const hasNonDefaultPayload = (payload: any) => {
+        if (!payload) return false;
+
+        const { quality, timestampMode, value, valueMode, customFields, ...rest } = payload;
+
+        // If there are custom fields, that's a customization
+        if (customFields && customFields.length > 0) return true;
+
+        // If there are any extra fields beyond defaults, that's a customization
+        if (Object.keys(rest).length > 0) return true;
+
+        // If quality is not 'good', that's a customization
+        if (quality && quality !== 'good') return true;
+
+        // If timestampMode is not 'auto', that's a customization
+        if (timestampMode && timestampMode !== 'auto') return true;
+
+        // If valueMode is not 'random', that's a customization
+        if (valueMode && valueMode !== 'random') return true;
+
+        // If value is set and not 0, that's a customization
+        if (value !== undefined && value !== null && value !== 0 && value !== '') return true;
+
+        return false;
+      };
+
+      let removedCount = 0;
+      const nodeSettingsObj = profile.nodeSettings instanceof Map
+        ? Object.fromEntries(profile.nodeSettings)
+        : profile.nodeSettings;
+
+      for (const [nodeId, settings] of Object.entries(nodeSettingsObj)) {
+        const typedSettings = settings as NodeSettingsInput;
+        const hasFrequency = typedSettings.frequency && typedSettings.frequency !== 0;
+        const hasFailRate = typedSettings.failRate && typedSettings.failRate !== 0;
+        const hasPayload = hasNonDefaultPayload(typedSettings.payload);
+
+        // Remove node if it has no actual customizations
+        if (!hasFrequency && !hasFailRate && !hasPayload) {
+          delete profile.nodeSettings[nodeId];
+          removedCount++;
+        }
+      }
+
+      if (removedCount > 0) {
+        await profile.save();
+      }
+
+      return removedCount;
+    },
+
     startSimulation: async (_: any, { profileId }: { profileId: string }) => {
       // Fetch profile, schema, and broker from DB
       const profile = await SimulationProfile.findById(profileId);

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Server, Book, Activity, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -8,6 +8,7 @@ import StatCard from '../../components/dashboard/StatCard';
 import SchemaCard from '../../components/schema/SchemaCard';
 import BrokerCard from '../../components/Brokers/BrokerCard';
 import SimulatorCard from '../../components/simulator/SimulatorCard';
+import ConfirmDialog from '../../components/global/ConfirmDialog';
 import { deleteBrokerAsync, fetchBrokersAsync } from '../../store/brokers';
 import {
   deleteSchemaAsync,
@@ -32,6 +33,10 @@ import { selectProfiles } from '../../store/simulationProfile/simulationProfileS
 export default function DashboardPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+
+  // Confirmation dialog state
+  const [showDeleteSchemaConfirm, setShowDeleteSchemaConfirm] = useState(false);
+  const [schemaToDelete, setSchemaToDelete] = useState<ISchema | null>(null);
 
   // Fetch brokers, schemas, and simulation profiles only on mount
   useEffect(() => {
@@ -111,6 +116,8 @@ export default function DashboardPage() {
         duration: 3000,
         position: 'bottom-right',
       });
+      setShowDeleteSchemaConfirm(false);
+      setSchemaToDelete(null);
     } catch (error) {
       console.error('Error deleting schema:', error);
       if (error instanceof Error && error.message.includes('Authentication')) {
@@ -120,6 +127,11 @@ export default function DashboardPage() {
         toast.error('Failed to delete schema');
       }
     }
+  };
+
+  const handleDeleteSchemaClick = (schema: ISchema) => {
+    setSchemaToDelete(schema);
+    setShowDeleteSchemaConfirm(true);
   };
 
   const handleDeleteSimulator = async (id: string) => {
@@ -281,7 +293,7 @@ export default function DashboardPage() {
                 <SchemaCard
                   key={schema.id}
                   schema={schema}
-                  onDelete={handleDeleteSchema}
+                  onDelete={(id) => handleDeleteSchemaClick(schemas.find((s) => s.id === id)!)}
                   onEdit={() => handleEditSchema(schema)}
                 />
               ))}
@@ -289,6 +301,22 @@ export default function DashboardPage() {
           )}
         </section>
       </div>
+
+      {/* Delete schema confirmation dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteSchemaConfirm}
+        onClose={() => {
+          setShowDeleteSchemaConfirm(false);
+          setSchemaToDelete(null);
+        }}
+        onConfirm={() => {
+          if (schemaToDelete) {
+            handleDeleteSchema(schemaToDelete.id);
+          }
+        }}
+        title="Delete Schema?"
+        message={`Delete schema "${schemaToDelete?.name}"? Any simulation profiles using this schema will have their schema reference cleared.`}
+      />
     </div>
   );
 }

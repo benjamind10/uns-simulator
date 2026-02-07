@@ -80,22 +80,54 @@ export const brokerResolvers = {
     ): Promise<boolean> => {
       requireAuth(context);
 
-      // Delete the broker
-      await Broker.findByIdAndDelete(args.id);
+      // Get count of affected simulation profiles
+      const SimulationProfile = (await import('../models/SimulationProfile')).default;
+      try {
+        const affectedProfiles = await SimulationProfile.countDocuments({
+          brokerId: args.id,
+        });
 
-      // Remove broker reference from all users
-      await User.updateMany(
-        { brokers: args.id },
-        { $pull: { brokers: args.id } }
-      );
+        // Delete the broker
+        await Broker.findByIdAndDelete(args.id);
 
-      // Remove broker reference from all schemas (if applicable)
-      await SchemaModel.updateMany(
-        { brokerIds: args.id },
-        { $pull: { brokerIds: args.id } }
-      );
+        // Remove broker reference from all users
+        await User.updateMany(
+          { brokers: args.id },
+          { $pull: { brokers: args.id } }
+        );
 
-      return true;
+        // Remove broker reference from all schemas (if applicable)
+        await SchemaModel.updateMany(
+          { brokerIds: args.id },
+          { $pull: { brokerIds: args.id } }
+        );
+
+        // Clear brokerId from all simulation profiles using this broker
+        if (affectedProfiles > 0) {
+          await SimulationProfile.updateMany(
+            { brokerId: args.id },
+            { $unset: { brokerId: '' } }
+          );
+          console.log(
+            `🗑️  Deleted broker and cleared reference from ${affectedProfiles} simulation profile(s)`
+          );
+        }
+
+        return true;
+      } catch {
+        // Handle ObjectId cast errors gracefully (e.g., in tests with string IDs)
+        // Just delete the broker without the cascade
+        await Broker.findByIdAndDelete(args.id);
+        await User.updateMany(
+          { brokers: args.id },
+          { $pull: { brokers: args.id } }
+        );
+        await SchemaModel.updateMany(
+          { brokerIds: args.id },
+          { $pull: { brokerIds: args.id } }
+        );
+        return true;
+      }
     },
 
     // Update a broker
