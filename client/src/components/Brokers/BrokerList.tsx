@@ -18,6 +18,32 @@ export default function BrokerList({
   onConnect,
   onDisconnect,
 }: BrokerListProps) {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return 'bg-green-500';
+      case 'connecting':
+        return 'bg-yellow-500';
+      case 'error':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return 'Connected';
+      case 'connecting':
+        return 'Connecting...';
+      case 'error':
+        return 'Error';
+      default:
+        return 'Disconnected';
+    }
+  };
+
   if (brokers.length === 0) {
     return (
       <p className="text-gray-500 dark:text-gray-400">
