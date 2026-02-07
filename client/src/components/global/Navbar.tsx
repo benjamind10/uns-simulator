@@ -1,181 +1,61 @@
-import { useState } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { Sun, Moon, Menu, X } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { Sun, Moon } from 'lucide-react';
 
 import { useDarkMode } from '../../hooks/useDarkMode';
-import { logoutAsync, selectIsAuthenticated } from '../../store/auth';
-import type { AppDispatch } from '../../store/store';
+import { selectIsAuthenticated } from '../../store/auth';
 import logo from '../../assets/logo.webp';
 
 export default function Navbar() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [darkMode, toggleDarkMode] = useDarkMode();
-  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-
-  // Get auth state from Redux
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  const handleLogout = async () => {
-    try {
-      await dispatch(logoutAsync()).unwrap();
-      navigate('/');
-      setMenuOpen(false);
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
-
-  const closeMenu = () => setMenuOpen(false);
-
   return (
-    <nav className="bg-white dark:bg-gray-900 shadow-md px-4 py-3 transition-colors">
-      <div className="flex justify-between items-center">
+    <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200/50 dark:border-gray-800/50 px-6 py-3 transition-colors">
+      <div className="max-w-6xl mx-auto flex justify-between items-center">
         <NavLink
           to="/"
-          className="text-xl font-bold text-blue-600 dark:text-white hover:underline"
+          className="flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white"
         >
-          <img src={logo} alt="Logo" className="h-8 w-8 inline-block mr-2" />
+          <img src={logo} alt="Logo" className="h-7 w-7" />
           UNS Simulator
         </NavLink>
 
-        <div className="flex items-center gap-4 md:hidden">
+        <div className="flex items-center gap-3">
           <button
             onClick={toggleDarkMode}
-            className="text-gray-700 dark:text-gray-200 hover:scale-110 transition"
+            className="p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             aria-label="Toggle Theme"
           >
-            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="text-gray-700 dark:text-gray-200"
-          >
-            {menuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
 
-        <ul className="hidden md:flex md:items-center md:space-x-6 text-gray-700 dark:text-gray-200">
           {isAuthenticated ? (
-            <>
-              <NavLink
-                to="/dashboard"
-                className={({ isActive }) =>
-                  isActive ? 'font-semibold text-blue-500' : ''
-                }
-              >
-                Dashboard
-              </NavLink>
-              <NavLink
-                to="/explorer"
-                className={({ isActive }) =>
-                  isActive ? 'font-semibold text-blue-500' : ''
-                }
-              >
-                Explorer
-              </NavLink>
-              <NavLink
-                to="/schema-builder"
-                className={({ isActive }) =>
-                  isActive ? 'font-semibold text-blue-500' : ''
-                }
-              >
-                Schema Builder
-              </NavLink>
-              <NavLink
-                to="/simulator"
-                className={({ isActive }) =>
-                  isActive ? 'font-semibold text-blue-500' : ''
-                }
-              >
-                Simulator
-              </NavLink>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <NavLink
-              to="/login"
-              onClick={closeMenu}
-              className="block w-full text-left bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            <button
+              onClick={() => navigate('/app')}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
             >
-              Login
-            </NavLink>
+              Go to App
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <NavLink
+                to="/login"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              >
+                Login
+              </NavLink>
+              <NavLink
+                to="/register"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Sign Up
+              </NavLink>
+            </div>
           )}
-          <button
-            onClick={toggleDarkMode}
-            className="text-gray-700 dark:text-gray-200 hover:scale-110 transition"
-            aria-label="Toggle Theme"
-          >
-            {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
-        </ul>
+        </div>
       </div>
-
-      {/* Mobile menu */}
-      {menuOpen && (
-        <div className="md:hidden mt-3 space-y-3 text-gray-700 dark:text-gray-200">
-          {isAuthenticated ? (
-            <>
-              <NavLink
-                to="/dashboard"
-                onClick={closeMenu}
-                className={({ isActive }) =>
-                  `block ${isActive ? 'font-semibold text-blue-500' : ''}`
-                }
-              >
-                Dashboard
-              </NavLink>
-              <NavLink
-                to="/explorer"
-                onClick={closeMenu}
-                className={({ isActive }) =>
-                  `block ${isActive ? 'font-semibold text-blue-500' : ''}`
-                }
-              >
-                Explorer
-              </NavLink>
-              <NavLink
-                to="/schema-builder"
-                onClick={closeMenu}
-                className={({ isActive }) =>
-                  `block ${isActive ? 'font-semibold text-blue-500' : ''}`
-                }
-              >
-                Schema Builder
-              </NavLink>
-              <NavLink
-                to="/simulator"
-                onClick={closeMenu}
-                className={({ isActive }) =>
-                  `block ${isActive ? 'font-semibold text-blue-500' : ''}`
-                }
-              >
-                Simulator
-              </NavLink>
-              <button
-                onClick={handleLogout}
-                className="block w-full text-left bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <NavLink
-              to="/login"
-              onClick={closeMenu}
-              className="block w-full text-left bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Login
-            </NavLink>
-          )}
-        </div>
-      )}
     </nav>
   );
 }

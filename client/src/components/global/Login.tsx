@@ -22,7 +22,7 @@ export default function Login({ className = '' }: LoginProps) {
     e.preventDefault();
     try {
       await dispatch(loginAsync({ email, password })).unwrap();
-      navigate('/dashboard');
+      navigate('/app');
     } catch (err) {
       console.error('Login error:', err);
     }
@@ -31,37 +31,55 @@ export default function Login({ className = '' }: LoginProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className={`bg-gray-100 dark:bg-gray-800 p-8 rounded-lg shadow-md w-full max-w-sm ${className}`}
+      className={`space-y-4 ${className}`}
     >
-      <h2 className="text-2xl font-bold mb-6 text-center text-gray-900 dark:text-white">
-        Login
-      </h2>
+      {error && (
+        <p className="text-red-600 dark:text-red-400 text-sm text-center">
+          {error}
+        </p>
+      )}
 
-      {error && <p className="text-red-500 mb-4 text-center">{error}</p>}
+      <div>
+        <label
+          htmlFor="login-email"
+          className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Email
+        </label>
+        <input
+          id="login-email"
+          type="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          required
+          disabled={loading}
+        />
+      </div>
 
-      <input
-        type="email"
-        placeholder="E-mail"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="w-full p-3 mb-4 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 rounded"
-        required
-        disabled={loading}
-      />
-
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="w-full p-3 mb-6 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-400 rounded"
-        required
-        disabled={loading}
-      />
+      <div>
+        <label
+          htmlFor="login-password"
+          className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300"
+        >
+          Password
+        </label>
+        <input
+          id="login-password"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full px-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+          required
+          disabled={loading}
+        />
+      </div>
 
       <button
         type="submit"
-        className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition disabled:opacity-50"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2.5 font-medium active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
         disabled={loading}
       >
         {loading ? 'Logging in...' : 'Log In'}

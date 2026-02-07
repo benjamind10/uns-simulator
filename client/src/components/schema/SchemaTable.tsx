@@ -59,7 +59,7 @@ export default function SchemaTable({ schemas, loading }: SchemaTableProps) {
                 <td className="px-4 py-2">
                   <button
                     className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs"
-                    onClick={() => navigate(`/schema-builder/${schema.id}`)}
+                    onClick={() => navigate(`/app/schemas/${schema.id}`)}
                   >
                     Edit
                   </button>
