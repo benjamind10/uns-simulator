@@ -35,7 +35,7 @@ const SimulationStatusPanel: React.FC = () => {
   const error = profileId ? simulationErrors[profileId] : null;
   const status = profileId ? simulationStatus[profileId] : undefined;
 
-  // Fetch status on mount and poll every 3s while simulation is active
+  // Fetch status on mount and poll every 10s while simulation is active
   useEffect(() => {
     if (!profileId) return;
 
@@ -51,7 +51,7 @@ const SimulationStatusPanel: React.FC = () => {
 
     const interval = setInterval(() => {
       dispatch(getSimulationStatusAsync(profileId));
-    }, 3000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [dispatch, profileId, currentState]);
