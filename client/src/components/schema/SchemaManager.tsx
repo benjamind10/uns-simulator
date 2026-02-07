@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { toast } from 'react-hot-toast';
-import { Plus, Trash2 } from 'lucide-react';
+import { Download, Plus, Trash2 } from 'lucide-react';
 
 import type { AppDispatch } from '../../store/store';
 import {
@@ -60,6 +60,43 @@ export default function SchemaManager({
     } catch {
       toast.error('Failed to delete schema');
     }
+  };
+
+  const handleExport = () => {
+    if (!selectedSchema) {
+      toast.error('Select a schema to export');
+      return;
+    }
+
+    const exportPayload = (selectedSchema.nodes ?? []).map((node) => ({
+      id: node.id,
+      name: node.name,
+      kind: node.kind,
+      parent: node.parent,
+      path: node.path,
+      order: node.order,
+      dataType: node.dataType,
+      unit: node.unit,
+      engineering: node.engineering,
+      objectData: node.objectData,
+    }));
+
+    const safeName = selectedSchema.name
+      .trim()
+      .replace(/[^a-z0-9-_]+/gi, '_');
+    const fileName = `${safeName || 'schema'}.uns.json`;
+
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
   };
 
   const selectedSchema = schemas.find((s) => s.id === selectedSchemaId);
@@ -141,12 +178,23 @@ export default function SchemaManager({
         )}
 
         {selectedSchemaId && (
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm rounded-lg transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          <>
+            <button
+              onClick={handleExport}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800/60 text-sm rounded-lg transition-colors"
+              title="Export schema as JSON"
+            >
+              <Download className="w-4 h-4" />
+              Export
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm rounded-lg transition-colors"
+              title="Delete schema"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </>
         )}
       </div>
 

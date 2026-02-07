@@ -210,7 +210,8 @@ export default function SimulationPage() {
 
     try {
       await dispatch(startSimulationAsync(profileId));
-      dispatch(getSimulationStatusAsync(profileId));
+      // Small delay so server has time to set startTime before we fetch
+      setTimeout(() => dispatch(getSimulationStatusAsync(profileId)), 500);
     } catch {
       toast.error('Could not start simulation. Server may be offline.');
     }
@@ -240,7 +241,7 @@ export default function SimulationPage() {
     if (!profileId) return;
     try {
       await dispatch(resumeSimulationAsync(profileId));
-      dispatch(getSimulationStatusAsync(profileId));
+      setTimeout(() => dispatch(getSimulationStatusAsync(profileId)), 500);
     } catch {
       toast.error('Could not resume simulation.');
     }

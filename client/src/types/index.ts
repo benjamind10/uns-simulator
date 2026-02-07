@@ -1,16 +1,15 @@
 import type { User } from 'lucide-react';
 
-import type { AppDispatch } from '../store/store';
+import type { AppDispatch, RootState } from '../store/store';
 
 import type { BrokerConnection, IBroker } from './broker';
 import type { MqttMessage } from './mqtt';
 import type { ISchema, ISchemaNode, SchemaInput } from './schema';
-import type { RootState } from './store';
+import type { SimulationProfileState, SimulationStatus } from './store';
 import type {
   ISimulationProfile,
   GlobalSettings,
   NodeSettings,
-  SimulationStatus,
   SimulationControlResponse,
   StartSimulationPayload,
   StopSimulationPayload,
@@ -33,6 +32,7 @@ export type {
   MqttMessage,
   User,
   RootState,
+  SimulationProfileState,
   AppDispatch,
   ISimulationProfile,
   GlobalSettings,

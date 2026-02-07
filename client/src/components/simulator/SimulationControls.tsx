@@ -23,6 +23,9 @@ const SimulationStatusPanel: React.FC = () => {
   const simulationErrors = useSelector(
     (state: RootState) => state.simulationProfile.simulationErrors
   );
+  const simulationStatus = useSelector(
+    (state: RootState) => state.simulationProfile.simulationStatus
+  );
   const schemas = useSelector(selectSchemas);
   const brokers = useSelector(selectBrokers);
 
@@ -30,12 +33,28 @@ const SimulationStatusPanel: React.FC = () => {
     ? simulationStates[profileId] || 'idle'
     : 'idle';
   const error = profileId ? simulationErrors[profileId] : null;
+  const status = profileId ? simulationStatus[profileId] : undefined;
 
+  // Fetch status on mount and poll every 3s while simulation is active
   useEffect(() => {
-    if (profileId) {
+    if (!profileId) return;
+
+    dispatch(getSimulationStatusAsync(profileId));
+
+    const isActive =
+      currentState === 'running' ||
+      currentState === 'starting' ||
+      currentState === 'paused' ||
+      currentState === 'stopping';
+
+    if (!isActive) return;
+
+    const interval = setInterval(() => {
       dispatch(getSimulationStatusAsync(profileId));
-    }
-  }, [dispatch, profileId]);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [dispatch, profileId, currentState]);
 
   if (!profileId || !selectedProfile) {
     return (
@@ -71,6 +90,45 @@ const SimulationStatusPanel: React.FC = () => {
 
   const badgeClass =
     stateStyles[currentState] ?? stateStyles.idle;
+
+  const parseDate = (value?: string | number | Date): Date | null => {
+    if (!value) return null;
+    // Handle numeric strings (timestamps serialized as strings by GraphQL)
+    const parsed =
+      typeof value === 'string' && /^\d+$/.test(value)
+        ? new Date(Number(value))
+        : new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  const formatDateTime = (value?: string | number | Date) => {
+    const date = parseDate(value);
+    return date ? date.toLocaleString() : '—';
+  };
+
+  const formatDuration = (start?: string | number | Date) => {
+    const date = parseDate(start);
+    if (!date) return '—';
+    const startTime = date.getTime();
+    const diffMs = Math.max(0, Date.now() - startTime);
+    const seconds = Math.floor(diffMs / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const remainingSeconds = seconds % 60;
+    const remainingMinutes = minutes % 60;
+    if (hours > 0) return `${hours}h ${remainingMinutes}m ${remainingSeconds}s`;
+    if (minutes > 0) return `${minutes}m ${remainingSeconds}s`;
+    return `${remainingSeconds}s`;
+  };
+
+  const nodesTotal = schema?.nodes?.length ?? 0;
+  const nodeOverrides = selectedProfile.nodeSettings?.length ?? 0;
+  const mqttConnectedLabel =
+    status?.mqttConnected === true
+      ? 'Connected'
+      : status?.mqttConnected === false
+        ? 'Disconnected'
+        : 'Unknown';
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -118,13 +176,29 @@ const SimulationStatusPanel: React.FC = () => {
               Simulation Status
             </h4>
           </div>
-          <div className="px-6 py-4">
-            <div className="flex items-center gap-3 mb-4">
+          <div className="px-6 py-4 space-y-4">
+            <div className="flex items-center gap-3">
               <span
                 className={`inline-flex px-4 py-2 rounded-full text-xs font-semibold ${badgeClass}`}
               >
                 {currentState.toUpperCase()}
               </span>
+              {status?.error && (
+                <span className="text-xs text-red-600 dark:text-red-400">
+                  {status.error}
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <MetricItem label="MQTT" value={mqttConnectedLabel} />
+              <MetricItem label="Nodes Active" value={status?.nodeCount ?? nodesTotal} />
+              <MetricItem label="Overrides" value={nodeOverrides} />
+              <MetricItem label="Reconnects" value={status?.reconnectAttempts ?? 0} />
+              <MetricItem label="Started" value={formatDateTime(status?.startTime)} />
+              <MetricItem label="Uptime" value={formatDuration(status?.startTime)} />
+              <MetricItem label="Last Activity" value={formatDateTime(status?.lastActivity)} />
+              <MetricItem label="Time Scale" value={`${selectedProfile.globalSettings.timeScale ?? 1}x`} />
             </div>
 
             {error && (
@@ -290,6 +364,25 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
         {value}
       </span>
+    </div>
+  );
+}
+
+function MetricItem({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-3 py-2">
+      <p className="text-[11px] uppercase tracking-wide text-gray-400">
+        {label}
+      </p>
+      <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+        {value}
+      </p>
     </div>
   );
 }

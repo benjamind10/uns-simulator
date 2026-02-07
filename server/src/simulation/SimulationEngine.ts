@@ -33,6 +33,7 @@ export class SimulationEngine extends EventEmitter {
   private isRunning = false;
   private isPaused = false;
   private startTime?: Date;
+  private lastActivity?: Date;
   private mqttClient?: mqtt.MqttClient;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = MQTT_CONFIG.MAX_RECONNECT_ATTEMPTS;
@@ -304,6 +305,7 @@ export class SimulationEngine extends EventEmitter {
 
       this.isRunning = true;
       this.startTime = new Date();
+      this.lastActivity = new Date(); // Initialize lastActivity
 
       // Update status to running
       await this.updateProfileStatus({
@@ -311,6 +313,7 @@ export class SimulationEngine extends EventEmitter {
         isRunning: true,
         isPaused: false,
         startTime: this.startTime,
+        lastActivity: this.lastActivity,
         nodeCount: this.nodes.size,
         mqttConnected: this.mqttClient?.connected || false,
         reconnectAttempts: 0,
@@ -413,6 +416,9 @@ export class SimulationEngine extends EventEmitter {
 
     try {
       await this.publishToBroker(topic, payload);
+
+      // Update last activity timestamp
+      this.lastActivity = new Date();
 
       mqttMessagesPublishedTotal.inc();
       this.emit('nodePublished', {
@@ -601,10 +607,21 @@ export class SimulationEngine extends EventEmitter {
   }
 
   getStatus() {
+    let state: 'idle' | 'starting' | 'running' | 'paused' | 'stopping' | 'stopped' | 'error' = 'idle';
+    if (this.isRunning && this.isPaused) {
+      state = 'paused';
+    } else if (this.isRunning) {
+      state = 'running';
+    } else if (this.startTime) {
+      state = 'stopped';
+    }
+
     return {
+      state,
       isRunning: this.isRunning,
       isPaused: this.isPaused,
       startTime: this.startTime,
+      lastActivity: this.lastActivity,
       nodeCount: this.nodes.size,
       profile: this.profile.name,
       mqttConnected: this.mqttClient?.connected || false,
