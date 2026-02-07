@@ -81,58 +81,43 @@ export const brokerResolvers = {
     ): Promise<boolean> => {
       requireAuth(context);
 
-      // Start a MongoDB session for transaction
-      const session = await mongoose.startSession();
-
       try {
-        // Start transaction
-        await session.startTransaction();
-
         // Get count of affected simulation profiles
         const SimulationProfile = (await import('../models/SimulationProfile')).default;
         const affectedProfiles = await SimulationProfile.countDocuments({
           brokerId: args.id,
-        }).session(session);
+        });
 
         // Delete the broker
-        await Broker.findByIdAndDelete(args.id).session(session);
+        await Broker.findByIdAndDelete(args.id);
 
         // Remove broker reference from all users
         await User.updateMany(
           { brokers: args.id },
           { $pull: { brokers: args.id } }
-        ).session(session);
+        );
 
         // Remove broker reference from all schemas (if applicable)
         await SchemaModel.updateMany(
           { brokerIds: args.id },
           { $pull: { brokerIds: args.id } }
-        ).session(session);
+        );
 
         // Clear brokerId from all simulation profiles using this broker
         if (affectedProfiles > 0) {
           await SimulationProfile.updateMany(
             { brokerId: args.id },
             { $unset: { brokerId: '' } }
-          ).session(session);
+          );
           console.log(
             `🗑️  Deleted broker and cleared reference from ${affectedProfiles} simulation profile(s)`
           );
         }
 
-        // Commit the transaction
-        await session.commitTransaction();
         return true;
       } catch (error) {
-        // Abort transaction on any error
-        await session.abortTransaction();
-        console.error('❌ Transaction aborted due to error:', error);
-
-        // Re-throw the error to propagate it to the client
+        console.error('❌ Error deleting broker:', error);
         throw error;
-      } finally {
-        // Always end the session
-        await session.endSession();
       }
     },
 
