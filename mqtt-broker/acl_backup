@@ -1,0 +1,31 @@
+# ─────────────────────────────────────────────────────────────
+# UNS Simulator - Mosquitto ACL Configuration
+# ─────────────────────────────────────────────────────────────
+#
+# Three user roles:
+#   uns-backend  — Backend system service (full access)
+#   uns-client   — External tools, MCP agents (read system state, write commands)
+#   uns-sim      — Simulation engines, MQTT Explorer (full access to data topics)
+#
+# Anonymous users have no access when acl_file is set and
+# no matching rules exist for unauthenticated connections.
+# ─────────────────────────────────────────────────────────────
+
+# Backend system service: unrestricted access to all topics
+user uns-backend
+topic readwrite #
+
+# External / MCP clients: read system state, write to command topics
+user uns-client
+topic read uns-simulator/_sys/status/#
+topic read uns-simulator/_sys/data/#
+topic read uns-simulator/_sys/events/#
+topic read uns-simulator/_sys/cmd-response/#
+topic write uns-simulator/_sys/cmd/#
+
+# Simulation engines + MQTT Explorer: full access to all topics
+# This replaces anonymous access for simulation data while
+# maintaining the same level of access for existing functionality
+user uns-sim
+topic readwrite #
+topic read $SYS/#

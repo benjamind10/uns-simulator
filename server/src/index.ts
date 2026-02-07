@@ -20,6 +20,7 @@ import { simulationProfileResolvers } from './graphql/resolvers/simulationProfil
 import User from './graphql/models/User';
 import SimulationProfile from './graphql/models/SimulationProfile';
 import simulationManager from './simulation/SimulationManager';
+import mqttBackbone from './mqtt/MqttBackboneService';
 import {
   metricsRegistry,
   graphqlRequestsTotal,
@@ -244,6 +245,19 @@ const startServer = async () => {
     // Clean up any simulations that were running when server last stopped
     await cleanupOrphanedSimulations();
 
+    // Connect the MQTT backbone service
+    try {
+      await mqttBackbone.connect();
+      mqttBackbone.publishSystemEvent('started', {
+        environment: process.env.NODE_ENV || 'development',
+      });
+    } catch (err) {
+      console.warn(
+        '⚠️ MQTT Backbone failed to connect (non-fatal):',
+        (err as Error).message
+      );
+    }
+
     await server.start();
     server.applyMiddleware({
       app,
@@ -270,6 +284,10 @@ const gracefulShutdown = async (signal: string) => {
     // Stop all running simulations
     console.log('🛑 Stopping all running simulations...');
     await simulationManager.stopAllSimulations();
+
+    // Disconnect MQTT backbone
+    mqttBackbone.publishSystemEvent('shutdown', { signal });
+    await mqttBackbone.disconnect();
 
     // Close database connection
     await mongoose.connection.close();

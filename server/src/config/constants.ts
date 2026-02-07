@@ -37,3 +37,13 @@ export const RATE_LIMIT_CONFIG = {
   // Default max requests per window
   MAX_REQUESTS: 100,
 } as const;
+
+export const MQTT_BACKBONE_CONFIG = {
+  CLIENT_ID: 'uns-backend-system',
+  HEARTBEAT_INTERVAL: 30000, // 30 seconds
+  CONNECT_TIMEOUT: 10000, // 10 seconds
+  RECONNECT_PERIOD: 5000, // 5 seconds (auto-reconnect, backbone is critical)
+  KEEPALIVE: 30,
+  QOS_STATUS: 1 as const, // At-least-once for status updates
+  QOS_EVENTS: 0 as const, // At-most-once for fire-and-forget events
+} as const;

@@ -28,6 +28,8 @@ services:
       - '9001:9001' # WebSocket port
     volumes:
       - ./mqtt-broker/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mqtt-broker/acl:/mosquitto/config/acl
+      - ./mqtt-broker/passwd:/mosquitto/config/passwd
       - mqtt-data:/mosquitto/data
       - mqtt-logs:/mosquitto/log
     networks:
@@ -35,16 +37,8 @@ services:
     healthcheck:
       test:
         [
-          'CMD',
-          'mosquitto_sub',
-          '-t',
-          '$$SYS/#',
-          '-C',
-          '1',
-          '-i',
-          'healthcheck',
-          '-W',
-          '3',
+          'CMD-SHELL',
+          'mosquitto_pub -t "$$SYS/health" -m "check" -i healthcheck -u uns-sim -P uns-sim-dev || exit 1'
         ]
       interval: 10s
       timeout: 5s
@@ -69,6 +63,8 @@ services:
       - ENABLE_RATE_LIMIT=false
       - MQTT_HOST=mqtt
       - MQTT_PORT=1883
+      - MQTT_BACKBONE_USERNAME=${MQTT_BACKBONE_USERNAME:-uns-backend}
+      - MQTT_BACKBONE_PASSWORD=${MQTT_BACKBONE_PASSWORD:-uns-backend-dev}
     depends_on:
       mongo:
         condition: service_healthy
