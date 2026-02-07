@@ -1,5 +1,5 @@
 import { useState, useCallback, Fragment } from 'react';
-import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Home,
@@ -20,7 +20,7 @@ import { Menu, MenuButton, MenuItems, MenuItem } from '@headlessui/react';
 import clsx from 'clsx';
 
 import { useDarkMode } from '../hooks/useDarkMode';
-import { logoutAsync, selectUser } from '../store/auth';
+import { logoutAsync, selectUser, selectIsAuthenticated } from '../store/auth';
 import type { AppDispatch } from '../store/store';
 import Toast from '../components/global/Toast';
 import { Avatar } from '../components/ui/Avatar';
@@ -72,6 +72,11 @@ export default function AppShell() {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector(selectUser);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
   const toggleSidebar = useCallback(() => {
     setCollapsed((prev) => {
