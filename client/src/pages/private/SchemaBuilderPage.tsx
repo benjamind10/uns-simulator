@@ -10,16 +10,16 @@ export default function SchemaBuilderPage() {
   // Handler for schema selection
   const handleSchemaSelection = (id: string | null) => {
     if (id) {
-      navigate(`/schema-builder/${id}`);
+      navigate(`/app/schemas/${id}`);
     } else {
-      navigate(`/schema-builder`);
+      navigate(`/app/schemas`);
     }
   };
 
   return (
-    <div className="flex flex-col gap-2 h-full min-h-0">
+    <div className="flex flex-col gap-2 h-full min-h-0 px-6 py-4">
       {/* Compact toolbar header */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 px-4 py-3 flex-shrink-0">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 px-6 py-4 flex-shrink-0">
         <SchemaManager
           selectedSchemaId={schemaId || null}
           setSelectedSchemaId={handleSchemaSelection}
@@ -27,7 +27,7 @@ export default function SchemaBuilderPage() {
       </div>
 
       {/* Main content area */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 flex-1 min-h-0 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex-1 min-h-0 overflow-hidden">
         {schemaId ? (
           <SchemaNodeEditor schemaId={schemaId} />
         ) : (

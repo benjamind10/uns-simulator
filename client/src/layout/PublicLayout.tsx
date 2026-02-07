@@ -1,26 +1,17 @@
 import { Outlet } from 'react-router-dom';
 
-import Navbar from '../components/global/Navbar'; // reuse your existing top nav
+import Navbar from '../components/global/Navbar';
 
-/**
- * PublicLayout
- * ─ Renders Navbar at the top
- * ─ Sets a simple page wrapper (optional gray-50 background)
- * ─ Anything inside <Outlet /> is the public page body
- */
 export default function PublicLayout() {
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors">
-      {/* Public top-nav (logo, links, maybe login) */}
+    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-950 transition-colors">
       <Navbar />
 
-      {/* Main page content */}
-      <main className="flex-1 px-4 py-8">
+      <main className="flex-1">
         <Outlet />
       </main>
 
-      {/* (Optional) public footer */}
-      <footer className="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+      <footer className="py-6 text-center text-xs text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-800/50">
         © {new Date().getFullYear()} UNS Simulator by Shiva
       </footer>
     </div>

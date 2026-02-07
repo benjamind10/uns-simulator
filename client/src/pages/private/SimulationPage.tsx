@@ -114,16 +114,16 @@ export default function SimulationPage() {
   // Redirect if profileId not in profiles
   useEffect(() => {
     if (profileId && profiles.length > 0 && !selectedProfile) {
-      navigate('/simulator');
+      navigate('/app/simulator');
     }
   }, [profileId, profiles, selectedProfile, navigate]);
 
   const handleSelectProfile = useCallback(
     (id: string) => {
       if (id) {
-        navigate(`/simulator/${id}`);
+        navigate(`/app/simulator/${id}`);
       } else {
-        navigate('/simulator');
+        navigate('/app/simulator');
       }
     },
     [navigate]
@@ -144,7 +144,7 @@ export default function SimulationPage() {
       toast.success('Profile created!');
       setForm({ name: '', description: '', schemaId: '', brokerId: '' });
       setShowCreate(false);
-      navigate(`/simulator/${result.id}`);
+      navigate(`/app/simulator/${result.id}`);
     } catch {
       toast.error('Failed to create profile');
     }
@@ -155,7 +155,7 @@ export default function SimulationPage() {
     try {
       await dispatch(deleteSimulationProfileAsync(profileId));
       toast.success('Profile deleted!');
-      navigate('/simulator');
+      navigate('/app/simulator');
       setShowDeleteConfirm(false);
     } catch {
       toast.error('Failed to delete profile');
@@ -283,7 +283,7 @@ export default function SimulationPage() {
   return (
     <div className="flex flex-col gap-2 h-full min-h-0 px-6 py-4">
       {/* Compact toolbar header */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 px-6 py-4 flex-shrink-0">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 px-6 py-4 flex-shrink-0">
         <div className="flex items-center gap-4 flex-wrap">
           {/* Profile selector */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -504,7 +504,7 @@ export default function SimulationPage() {
 
       {/* Main content area */}
       {selectedProfile && (!selectedProfile.brokerId || !selectedProfile.schemaId) && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 flex-shrink-0">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl px-4 py-3 flex-shrink-0">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-3 flex-1">
               <span className="text-amber-600 dark:text-amber-400 text-lg mt-0.5">⚠️</span>
@@ -527,7 +527,7 @@ export default function SimulationPage() {
             </div>
             <button
               onClick={handleOpenEditOrphaned}
-              className="px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded transition-colors whitespace-nowrap"
+              className="px-3 py-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-900/40 hover:bg-amber-200 dark:hover:bg-amber-900/60 rounded-lg transition-colors whitespace-nowrap"
             >
               Fix
             </button>
@@ -535,7 +535,7 @@ export default function SimulationPage() {
         </div>
       )}
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow border border-gray-200 dark:border-gray-800 flex-1 min-h-0 overflow-hidden flex">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 flex-1 min-h-0 overflow-hidden flex">
         {selectedProfile ? (
           <div className="flex h-full min-h-0 w-full">
             {/* Left: Settings Panel */}
@@ -570,7 +570,7 @@ export default function SimulationPage() {
       {/* Edit orphaned references dialog */}
       {showEditOrphaned && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm max-w-md w-full p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Re-link Broker & Schema
             </h2>
