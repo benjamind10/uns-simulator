@@ -1,5 +1,5 @@
-import { useState, useCallback, Fragment } from 'react';
-import { Outlet, NavLink, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useCallback, Fragment, useEffect } from 'react';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   Home,
@@ -74,9 +74,13 @@ export default function AppShell() {
   const user = useSelector(selectUser);
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
+  // Only redirect if we're accessing an app route but not authenticated
+  // Don't redirect during logout since handleLogout already navigates
+  useEffect(() => {
+    if (!isAuthenticated && location.pathname.startsWith('/app')) {
+      navigate('/login', { state: { from: location }, replace: true });
+    }
+  }, [isAuthenticated, location.pathname, navigate, location]);
 
   const toggleSidebar = useCallback(() => {
     setCollapsed((prev) => {
