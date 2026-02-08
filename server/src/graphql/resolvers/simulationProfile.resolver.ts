@@ -1,6 +1,8 @@
 import SimulationProfile, {
   ISimulationProfile,
 } from '../../graphql/models/SimulationProfile';
+import mqttBackbone from '../../mqtt/MqttBackboneService';
+import { TOPICS } from '../../mqtt/topics';
 import simulationManager from '../../simulation/SimulationManager';
 import Broker from '../models/Broker';
 import SchemaModel from '../models/Schema';
@@ -277,6 +279,12 @@ export const simulationProfileResolvers = {
       // Start simulation via SimulationManager
       await simulationManager.startSimulation(profile, schema, broker);
 
+      mqttBackbone.publishCommand(
+        TOPICS.CMD_SIMULATION_START,
+        profileId,
+        ctx.user!._id
+      );
+
       return true;
     },
 
@@ -293,6 +301,13 @@ export const simulationProfileResolvers = {
       });
       if (!profile) throw new Error('Profile not found');
       await simulationManager.stopSimulation(profileId);
+
+      mqttBackbone.publishCommand(
+        TOPICS.CMD_SIMULATION_STOP,
+        profileId,
+        ctx.user!._id
+      );
+
       return true;
     },
 
@@ -309,6 +324,13 @@ export const simulationProfileResolvers = {
       });
       if (!profile) throw new Error('Profile not found');
       await simulationManager.pauseSimulation(profileId);
+
+      mqttBackbone.publishCommand(
+        TOPICS.CMD_SIMULATION_PAUSE,
+        profileId,
+        ctx.user!._id
+      );
+
       return true;
     },
 
@@ -325,6 +347,13 @@ export const simulationProfileResolvers = {
       });
       if (!profile) throw new Error('Profile not found');
       await simulationManager.resumeSimulation(profileId);
+
+      mqttBackbone.publishCommand(
+        TOPICS.CMD_SIMULATION_RESUME,
+        profileId,
+        ctx.user!._id
+      );
+
       return true;
     },
 
@@ -419,7 +448,20 @@ export const simulationProfileResolvers = {
         const customFieldsObj: Record<string, any> = {};
         if (payloadConfig.customFields?.length) {
           for (const field of payloadConfig.customFields) {
-            customFieldsObj[field.key] = field.value;
+            // Parse JSON strings to proper objects
+            let value = field.value;
+            if (typeof value === 'string') {
+              try {
+                // Try to parse as JSON if it looks like JSON
+                if (value.startsWith('{') || value.startsWith('[') || value === 'true' || value === 'false' || value === 'null' || !isNaN(Number(value))) {
+                  value = JSON.parse(value);
+                }
+              } catch {
+                // If parsing fails, keep as string
+                value = field.value;
+              }
+            }
+            customFieldsObj[field.key] = value;
           }
         }
 

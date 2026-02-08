@@ -71,3 +71,5 @@ coverage-final.json
 # Ignore frontend build artifacts
 client/dist/
 server/dist/
+
+mqtt-broker/passwd

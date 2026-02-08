@@ -390,7 +390,20 @@ export class SimulationEngine extends EventEmitter {
     const customFieldsObj: Record<string, any> = {};
     if (payloadConfig.customFields?.length) {
       for (const field of payloadConfig.customFields) {
-        customFieldsObj[field.key] = field.value;
+        // Parse JSON strings to proper objects
+        let value = field.value;
+        if (typeof value === 'string') {
+          try {
+            // Try to parse as JSON if it looks like JSON
+            if (value.startsWith('{') || value.startsWith('[') || value === 'true' || value === 'false' || value === 'null' || !isNaN(Number(value))) {
+              value = JSON.parse(value);
+            }
+          } catch {
+            // If parsing fails, keep as string
+            value = field.value;
+          }
+        }
+        customFieldsObj[field.key] = value;
       }
     }
 

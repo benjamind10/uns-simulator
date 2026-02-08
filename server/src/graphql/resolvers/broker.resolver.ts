@@ -154,8 +154,7 @@ export const brokerResolvers = {
   },
 
   Broker: {
-    // Never return passwords to clients for security
-    password: () => null,
+    id: (parent: any) => parent._id || parent.id,
   },
 };
 

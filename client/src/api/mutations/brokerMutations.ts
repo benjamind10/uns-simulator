@@ -9,6 +9,7 @@ export const CREATE_BROKER = gql`
       port
       clientId
       username
+      password
       createdAt
       users
     }
@@ -30,6 +31,7 @@ export const UPDATE_BROKER = gql`
       port
       clientId
       username
+      password
       createdAt
       users
     }

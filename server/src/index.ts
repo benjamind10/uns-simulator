@@ -20,6 +20,7 @@ import { simulationProfileResolvers } from './graphql/resolvers/simulationProfil
 import User from './graphql/models/User';
 import SimulationProfile from './graphql/models/SimulationProfile';
 import simulationManager from './simulation/SimulationManager';
+import mqttBackbone from './mqtt/MqttBackboneService';
 import {
   metricsRegistry,
   graphqlRequestsTotal,
@@ -75,22 +76,27 @@ const getContext = async ({ req }: { req: express.Request }) => {
 };
 
 // Add allowed origins based on environment
+const frontendUrl = process.env.FRONTEND_PUBLIC_URL || 'http://localhost:9071';
 const allowedOrigins = [
   'http://localhost:5173', // Vite dev server
   'http://localhost:3000', // Production/Nginx
+  'http://localhost:9071', // Frontend on localhost
+  frontendUrl, // From FRONTEND_PUBLIC_URL env var
   'https://studio.apollographql.com',
-  process.env.CLIENT_URL, // From env
+  process.env.CLIENT_URL, // Legacy CLIENT_URL env var
 ].filter(Boolean);
 
 // Create Express app
 const app = express();
 
-// Security middleware
+// Security middleware - relaxed in development for easier debugging
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(
   helmet({
-    contentSecurityPolicy:
-      process.env.NODE_ENV === 'production' ? undefined : false,
-    crossOriginEmbedderPolicy: process.env.NODE_ENV === 'production',
+    contentSecurityPolicy: isProduction ? undefined : false,
+    crossOriginEmbedderPolicy: isProduction,
+    crossOriginOpenerPolicy: isProduction ? { policy: 'same-origin' } : false,
+    crossOriginResourcePolicy: isProduction ? { policy: 'cross-origin' } : false,
   })
 );
 
@@ -244,6 +250,19 @@ const startServer = async () => {
     // Clean up any simulations that were running when server last stopped
     await cleanupOrphanedSimulations();
 
+    // Connect the MQTT backbone service
+    try {
+      await mqttBackbone.connect();
+      mqttBackbone.publishSystemEvent('started', {
+        environment: process.env.NODE_ENV || 'development',
+      });
+    } catch (err) {
+      console.warn(
+        '⚠️ MQTT Backbone failed to connect (non-fatal):',
+        (err as Error).message
+      );
+    }
+
     await server.start();
     server.applyMiddleware({
       app,
@@ -270,6 +289,10 @@ const gracefulShutdown = async (signal: string) => {
     // Stop all running simulations
     console.log('🛑 Stopping all running simulations...');
     await simulationManager.stopAllSimulations();
+
+    // Disconnect MQTT backbone
+    mqttBackbone.publishSystemEvent('shutdown', { signal });
+    await mqttBackbone.disconnect();
 
     // Close database connection
     await mongoose.connection.close();

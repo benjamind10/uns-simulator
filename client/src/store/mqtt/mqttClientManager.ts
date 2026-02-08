@@ -5,14 +5,18 @@ import type { IBroker } from '../../types';
 
 const clientMap = new Map<string, MqttClient>();
 
-// Map Docker service names to localhost for browser connections
+// Map Docker service names to browser-accessible URLs
 // Browser runs on host machine, not inside Docker network
 function getBrowserAccessibleUrl(brokerUrl: string): string {
-  // Map common Docker service names to localhost
+  // Get the MQTT server URL from environment or use window.location.hostname
+  const mqttServerUrl = import.meta.env.VITE_MQTT_SERVER_URL || window.location.hostname;
+  
+  // Map common Docker service names to the configured server URL
   const dockerServiceMappings: Record<string, string> = {
-    'uns-mqtt': 'localhost',
-    'mqtt': 'localhost',
-    'mosquitto': 'localhost',
+    'uns-mqtt': mqttServerUrl,
+    'mqtt': mqttServerUrl,
+    'mosquitto': mqttServerUrl,
+    'localhost': mqttServerUrl,
   };
 
   return dockerServiceMappings[brokerUrl] || brokerUrl;
@@ -20,10 +24,11 @@ function getBrowserAccessibleUrl(brokerUrl: string): string {
 
 // Map MQTT port to WebSocket port for browser connections
 // Standard MQTT port 1883 -> WebSocket port 9001
+// Docker-mapped port 1884 -> WebSocket port 9001
 // All other ports are assumed to be already configured for WebSocket
 function getWebSocketPort(mqttPort: number): number {
-  // Standard MQTT port needs WebSocket translation
-  if (mqttPort === 1883) return 9001;
+  // Standard MQTT port or Docker-mapped port needs WebSocket translation
+  if (mqttPort === 1883 || mqttPort === 1884) return 9001;
   
   // Custom ports (9001, 8080, etc.) are used as-is
   // User should configure their broker with WebSocket protocol on these ports
@@ -46,8 +51,8 @@ export function connectBroker(
   const url = `ws://${browserUrl}:${wsPort}`;
   const client = mqtt.connect(url, {
     clientId: broker.clientId,
-    username: broker.username,
-    password: broker.password,
+    ...(broker.username ? { username: broker.username } : {}),
+    ...(broker.password ? { password: broker.password } : {}),
     connectTimeout: 10000,
     reconnectPeriod: 5000,
   });
