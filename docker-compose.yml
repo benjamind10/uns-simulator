@@ -52,17 +52,18 @@ services:
     container_name: uns-backend
     restart: unless-stopped
     ports:
-      - '4000:4000'
+      - '${BACKEND_PORT:-4000}:4000'
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=${NODE_ENV:-production}
       - PORT=4000
-      - MONGO_URI=mongodb://mongo:27017/unsdb
-      - DB_NAME=unsdb
+      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/unsdb}
+      - DB_NAME=${DB_NAME:-unsdb}
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
-      - CLIENT_URL=http://localhost:3000
-      - ENABLE_RATE_LIMIT=false
-      - MQTT_HOST=mqtt
-      - MQTT_PORT=1883
+      - FRONTEND_PUBLIC_URL=${FRONTEND_PUBLIC_URL:-http://localhost:9071}
+      - CLIENT_URL=${CLIENT_URL:-http://localhost:3000}
+      - ENABLE_RATE_LIMIT=${ENABLE_RATE_LIMIT:-false}
+      - MQTT_HOST=${MQTT_HOST:-mqtt}
+      - MQTT_PORT=${MQTT_PORT:-1883}
       - MQTT_BACKBONE_USERNAME=${MQTT_BACKBONE_USERNAME:-uns-backend}
       - MQTT_BACKBONE_PASSWORD=${MQTT_BACKBONE_PASSWORD:-uns-backend-dev}
     depends_on:
@@ -87,17 +88,17 @@ services:
       retries: 3
       start_period: 40s
 
-  # Frontend Client
   frontend:
     build:
       context: ./client
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=http://10.159.130.81:9071/graphql
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:9071/graphql}
+        - VITE_MQTT_SERVER_URL=${VITE_MQTT_SERVER_URL:-localhost}
     container_name: uns-frontend
     restart: unless-stopped
     ports:
-      - '9071:80'
+      - '${FRONTEND_PORT:-9071}:80'
     depends_on:
       backend:
         condition: service_healthy

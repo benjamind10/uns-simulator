@@ -178,6 +178,13 @@ cp .env.example .env
 # On Linux/Mac: nano .env
 # On Windows: notepad .env
 
+# For localhost access (default values):
+# Just use the defaults from .env.example
+
+# For network access (e.g., from other machines):
+# Update FRONTEND_PUBLIC_URL, VITE_API_URL, and VITE_MQTT_SERVER_URL
+# to match your Docker host IP or domain
+
 # Start all services (MongoDB, MQTT broker, backend, frontend)
 docker-compose up -d
 
@@ -188,8 +195,8 @@ docker-compose ps
 docker-compose logs -f
 
 # Access the application
-# Frontend: http://localhost:3000
-# Backend: http://localhost:4000/graphql
+# Frontend: http://localhost:9071
+# Backend: http://localhost:4000/graphql (via nginx reverse proxy)
 # Backend Health: http://localhost:4000/health
 ```
 
@@ -198,9 +205,11 @@ docker-compose logs -f
 - MongoDB database (port 27017)
 - Eclipse Mosquitto MQTT broker (TCP: 1883, WebSocket: 9001)
 - Node.js backend API (port 4000)
-- React frontend (port 3000)
+- React frontend (port 9071 via Nginx)
 
-**📖 For complete Docker documentation, troubleshooting, and production deployment, see [DOCKER.md](DOCKER.md)**
+**📖 For complete Docker documentation, troubleshooting, and production deployment, see:**
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Full deployment guide with environment variable reference
+- **[DOCKER.md](DOCKER.md)** - Docker-specific documentation and troubleshooting
 
 **Common Docker Commands:**
 

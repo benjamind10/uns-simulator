@@ -76,25 +76,27 @@ const getContext = async ({ req }: { req: express.Request }) => {
 };
 
 // Add allowed origins based on environment
+const frontendUrl = process.env.FRONTEND_PUBLIC_URL || 'http://localhost:9071';
 const allowedOrigins = [
   'http://localhost:5173', // Vite dev server
   'http://localhost:3000', // Production/Nginx
   'http://localhost:9071', // Frontend on localhost
-  'http://10.159.130.81:9071', // Frontend on Docker host
+  frontendUrl, // From FRONTEND_PUBLIC_URL env var
   'https://studio.apollographql.com',
-  process.env.CLIENT_URL, // From env
+  process.env.CLIENT_URL, // Legacy CLIENT_URL env var
 ].filter(Boolean);
 
 // Create Express app
 const app = express();
 
-// Security middleware
+// Security middleware - relaxed in development for easier debugging
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(
   helmet({
-    contentSecurityPolicy: false,
-    crossOriginEmbedderPolicy: false,
-    crossOriginOpenerPolicy: false,
-    crossOriginResourcePolicy: false,
+    contentSecurityPolicy: isProduction ? undefined : false,
+    crossOriginEmbedderPolicy: isProduction,
+    crossOriginOpenerPolicy: isProduction ? { policy: 'same-origin' } : false,
+    crossOriginResourcePolicy: isProduction ? { policy: 'cross-origin' } : false,
   })
 );
 

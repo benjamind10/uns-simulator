@@ -8,12 +8,15 @@ const clientMap = new Map<string, MqttClient>();
 // Map Docker service names to browser-accessible URLs
 // Browser runs on host machine, not inside Docker network
 function getBrowserAccessibleUrl(brokerUrl: string): string {
-  // Map common Docker service names to the actual server IP
+  // Get the MQTT server URL from environment or use window.location.hostname
+  const mqttServerUrl = import.meta.env.VITE_MQTT_SERVER_URL || window.location.hostname;
+  
+  // Map common Docker service names to the configured server URL
   const dockerServiceMappings: Record<string, string> = {
-    'uns-mqtt': '10.159.130.81',
-    'mqtt': '10.159.130.81',
-    'mosquitto': '10.159.130.81',
-    'localhost': '10.159.130.81',
+    'uns-mqtt': mqttServerUrl,
+    'mqtt': mqttServerUrl,
+    'mosquitto': mqttServerUrl,
+    'localhost': mqttServerUrl,
   };
 
   return dockerServiceMappings[brokerUrl] || brokerUrl;
