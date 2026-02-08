@@ -29,7 +29,6 @@ const BrokerSchema: Schema = new Schema<IBroker>(
 
 BrokerSchema.set('toJSON', {
   transform: function (_doc, ret) {
-    delete ret.password;
     return ret;
   },
 });

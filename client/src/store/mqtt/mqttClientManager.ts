@@ -46,8 +46,8 @@ export function connectBroker(
   const url = `ws://${browserUrl}:${wsPort}`;
   const client = mqtt.connect(url, {
     clientId: broker.clientId,
-    username: broker.username,
-    password: broker.password,
+    ...(broker.username ? { username: broker.username } : {}),
+    ...(broker.password ? { password: broker.password } : {}),
     connectTimeout: 10000,
     reconnectPeriod: 5000,
   });
