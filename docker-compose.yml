@@ -93,7 +93,7 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:9071/graphql}
+        - VITE_API_URL=${VITE_API_URL:-/graphql}
         - VITE_MQTT_SERVER_URL=${VITE_MQTT_SERVER_URL:-localhost}
     container_name: uns-frontend
     restart: unless-stopped

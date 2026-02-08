@@ -10,16 +10,19 @@ import {
 } from './mutations/schema.mutations';
 import { GET_SCHEMAS, GET_SCHEMA, GET_NODES } from './queries/schema.queries';
 
-const endpoint = import.meta.env.VITE_API_URL;
+const apiPath = import.meta.env.VITE_API_URL || '/graphql';
 
-if (!endpoint) {
-  throw new Error('VITE_API_URL is not defined in environment variables');
-}
+// Construct full URL: if relative path, use window.location.origin
+const getFullUrl = () => {
+  return apiPath.startsWith('http') 
+    ? apiPath 
+    : `${window.location.origin}${apiPath}`;
+};
 
 const getClient = () => {
   const token = sessionStorage.getItem('authToken');
   if (!token) throw new Error('No authentication token found');
-  return new GraphQLClient(endpoint, {
+  return new GraphQLClient(getFullUrl(), {
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',

@@ -7,11 +7,12 @@ import {
   CREATE_USER_MUTATION,
 } from './mutations/auth.mutations';
 
-const endpoint = import.meta.env.VITE_API_URL;
+const apiPath = import.meta.env.VITE_API_URL || '/graphql';
 
-if (!endpoint) {
-  throw new Error('VITE_API_URL is not defined in environment variables');
-}
+// Construct full URL: if relative path, use window.location.origin
+const endpoint = apiPath.startsWith('http') 
+  ? apiPath 
+  : `${window.location.origin}${apiPath}`;
 
 const client = new GraphQLClient(endpoint, {
   headers: {

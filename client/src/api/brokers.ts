@@ -17,11 +17,14 @@ import {
 } from './mutations/brokerMutations';
 import { GET_BROKERS } from './queries/broker.queries';
 
-const endpoint = import.meta.env.VITE_API_URL;
+const apiPath = import.meta.env.VITE_API_URL || '/graphql';
 
-if (!endpoint) {
-  throw new Error('VITE_API_URL is not defined in environment variables');
-}
+// Construct full URL: if relative path, use window.location.origin
+const getFullUrl = () => {
+  return apiPath.startsWith('http') 
+    ? apiPath 
+    : `${window.location.origin}${apiPath}`;
+};
 
 // Initialize a client with token from session storage
 const getClient = () => {
@@ -31,7 +34,7 @@ const getClient = () => {
     throw new Error('No authentication token found');
   }
 
-  return new GraphQLClient(endpoint, {
+  return new GraphQLClient(getFullUrl(), {
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
