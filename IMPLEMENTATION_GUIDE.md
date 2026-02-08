@@ -6,7 +6,7 @@
 
 ## Overview
 
-Convert UNS Simulator from hardcoded IP configuration (e.g., `YOUR_IP_HERE`) to environment-driven configuration using `.env` file.
+Convert UNS Simulator from hardcoded IP configuration to environment-driven configuration using `.env` file.
 
 **Result**: Single codebase that works on localhost, any IP, any domain, any OS (Linux/Mac/Windows).
 
@@ -425,7 +425,7 @@ cat .env | grep MONGO_URI
 
 ## Complete Workflow Example
 
-### Scenario: Deploy to YOUR_IP_HERE (Your Current IP)
+### Scenario: Deploy to Network IP (e.g., 192.168.1.100)
 
 ```bash
 # 1. Clone/navigate to project
@@ -437,9 +437,9 @@ cp .env.example .env
 # 3. Edit .env (Linux/macOS)
 nano .env
 # Change:
-#   FRONTEND_PUBLIC_URL=http://YOUR_IP_HERE:9071
-#   VITE_API_URL=http://YOUR_IP_HERE:9071/graphql
-#   VITE_MQTT_SERVER_URL=YOUR_IP_HERE
+#   FRONTEND_PUBLIC_URL=http://192.168.1.100:9071
+#   VITE_API_URL=http://192.168.1.100:9071/graphql
+#   VITE_MQTT_SERVER_URL=192.168.1.100
 
 # OR Edit .env (Windows PowerShell)
 notepad .env
@@ -457,7 +457,7 @@ docker-compose ps
 curl http://localhost:4000/health
 
 # 7. Access
-# Open browser: http://YOUR_IP_HERE:9071
+# Open browser: http://192.168.1.100:9071
 # Login: test@example.com / password123
 ```
 
@@ -466,7 +466,7 @@ curl http://localhost:4000/health
 ## What Changed vs Old Setup
 
 ### Old Way
-❌ IP `YOUR_IP_HERE` hardcoded in 3 files  
+❌ IP addresses hardcoded in multiple files  
 ❌ Different code needed for different environments  
 ❌ Can't run on localhost or other IPs without code changes  
 
