@@ -5,14 +5,15 @@ import type { IBroker } from '../../types';
 
 const clientMap = new Map<string, MqttClient>();
 
-// Map Docker service names to localhost for browser connections
+// Map Docker service names to browser-accessible URLs
 // Browser runs on host machine, not inside Docker network
 function getBrowserAccessibleUrl(brokerUrl: string): string {
-  // Map common Docker service names to localhost
+  // Map common Docker service names to the actual server IP
   const dockerServiceMappings: Record<string, string> = {
-    'uns-mqtt': 'localhost',
-    'mqtt': 'localhost',
-    'mosquitto': 'localhost',
+    'uns-mqtt': '10.159.130.81',
+    'mqtt': '10.159.130.81',
+    'mosquitto': '10.159.130.81',
+    'localhost': '10.159.130.81',
   };
 
   return dockerServiceMappings[brokerUrl] || brokerUrl;
@@ -20,10 +21,11 @@ function getBrowserAccessibleUrl(brokerUrl: string): string {
 
 // Map MQTT port to WebSocket port for browser connections
 // Standard MQTT port 1883 -> WebSocket port 9001
+// Docker-mapped port 1884 -> WebSocket port 9001
 // All other ports are assumed to be already configured for WebSocket
 function getWebSocketPort(mqttPort: number): number {
-  // Standard MQTT port needs WebSocket translation
-  if (mqttPort === 1883) return 9001;
+  // Standard MQTT port or Docker-mapped port needs WebSocket translation
+  if (mqttPort === 1883 || mqttPort === 1884) return 9001;
   
   // Custom ports (9001, 8080, etc.) are used as-is
   // User should configure their broker with WebSocket protocol on these ports

@@ -79,6 +79,8 @@ const getContext = async ({ req }: { req: express.Request }) => {
 const allowedOrigins = [
   'http://localhost:5173', // Vite dev server
   'http://localhost:3000', // Production/Nginx
+  'http://localhost:9071', // Frontend on localhost
+  'http://10.159.130.81:9071', // Frontend on Docker host
   'https://studio.apollographql.com',
   process.env.CLIENT_URL, // From env
 ].filter(Boolean);
@@ -89,9 +91,10 @@ const app = express();
 // Security middleware
 app.use(
   helmet({
-    contentSecurityPolicy:
-      process.env.NODE_ENV === 'production' ? undefined : false,
-    crossOriginEmbedderPolicy: process.env.NODE_ENV === 'production',
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+    crossOriginResourcePolicy: false,
   })
 );
 
