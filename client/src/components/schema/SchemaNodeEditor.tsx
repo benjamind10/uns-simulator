@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   DndContext,
   DragOverlay,
-  closestCenter,
+  pointerWithin,
   PointerSensor,
   useSensor,
   useSensors,
@@ -12,10 +12,6 @@ import {
   type DragEndEvent,
   type DragOverEvent,
 } from '@dnd-kit/core';
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
 import {
   ChevronRight,
   Save,
@@ -95,7 +91,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  // Merge saved + temp nodes
+  // Merge saved + temp nodes (temp overrides saved when same ID exists)
   const savedNodes: ISchemaNode[] =
     schema?.nodes?.map((n) => ({
       ...n,
@@ -103,9 +99,12 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       isTemporary: false,
     })) ?? [];
 
-  const allNodes = [...savedNodes, ...tempNodes];
+  const tempIds = new Set(tempNodes.map((n) => n.id));
+  const allNodes = [
+    ...savedNodes.filter((n) => !tempIds.has(n.id)),
+    ...tempNodes,
+  ];
   const tree = buildTree(allNodes, null);
-  const allNodeIds = allNodes.map((n) => n.id);
 
   // Build parent breadcrumb path
   const parentBreadcrumb = useMemo(() => {
@@ -188,19 +187,21 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     const applyUpdatedNodes = (updated: ISchemaNode[]) => {
       const newTempNodes: ISchemaNode[] = [];
       for (const node of updated) {
-        const wasSaved = savedNodes.some((s) => s.id === node.id);
-        const original = allNodes.find((n) => n.id === node.id);
-        const changed =
-          !original ||
-          original.parent !== node.parent ||
-          original.path !== node.path ||
-          original.name !== node.name ||
-          original.dataType !== node.dataType ||
-          original.unit !== node.unit;
-
-        if (wasSaved && changed) {
-          newTempNodes.push({ ...node, isTemporary: true });
-        } else if (!wasSaved) {
+        // Compare against the ORIGINAL saved version from the schema
+        const savedVersion = savedNodes.find((s) => s.id === node.id);
+        if (savedVersion) {
+          // It's a saved node — only add to temp if something changed from saved
+          const changed =
+            savedVersion.parent !== node.parent ||
+            savedVersion.path !== node.path ||
+            savedVersion.name !== node.name ||
+            savedVersion.dataType !== node.dataType ||
+            savedVersion.unit !== node.unit;
+          if (changed) {
+            newTempNodes.push({ ...node, isTemporary: true });
+          }
+        } else {
+          // It's a purely new temp node — always keep it
           newTempNodes.push({ ...node, isTemporary: true });
         }
       }
@@ -342,18 +343,18 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
 
     const newTempNodes: ISchemaNode[] = [];
     for (const item of updated) {
-      const wasSaved = savedNodes.some((s) => s.id === item.id);
-      const original = allNodes.find((n) => n.id === item.id);
-      const changed =
-        !original ||
-        original.parent !== item.parent ||
-        original.path !== item.path ||
-        original.name !== item.name ||
-        original.dataType !== item.dataType ||
-        original.unit !== item.unit;
-      if (wasSaved && changed) {
-        newTempNodes.push({ ...item, isTemporary: true });
-      } else if (!wasSaved) {
+      const savedVersion = savedNodes.find((s) => s.id === item.id);
+      if (savedVersion) {
+        const changed =
+          savedVersion.parent !== item.parent ||
+          savedVersion.path !== item.path ||
+          savedVersion.name !== item.name ||
+          savedVersion.dataType !== item.dataType ||
+          savedVersion.unit !== item.unit;
+        if (changed) {
+          newTempNodes.push({ ...item, isTemporary: true });
+        }
+      } else {
         newTempNodes.push({ ...item, isTemporary: true });
       }
     }
@@ -442,7 +443,12 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
         })
       );
 
-      const allNodesToSave = [...existingNodesToKeep, ...newNodesToSave];
+      // Temp nodes override saved nodes with same ID (edits/moves)
+      const tempIdSet = new Set(newNodesToSave.map((n) => n.id));
+      const allNodesToSave = [
+        ...existingNodesToKeep.filter((n) => !tempIdSet.has(n.id)),
+        ...newNodesToSave,
+      ];
 
       await dispatch(
         saveNodesToSchemaAsync({ schemaId, nodes: allNodesToSave })
@@ -469,20 +475,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       setDragOverId(null);
       return;
     }
-
-    const findGroupAncestorId = (nodeId: string): string | null => {
-      let current = allNodes.find((n) => n.id === nodeId) ?? null;
-      while (current) {
-        if (current.kind === 'group') return current.id;
-        const parentId = current.parent;
-        if (!parentId) return null;
-        current = allNodes.find((n) => n.id === parentId) ?? null;
-      }
-      return null;
-    };
-
-    const groupTargetId = findGroupAncestorId(overId);
-    setDragOverId(groupTargetId);
+    // useDroppable is disabled on non-groups, so over is always a group
+    setDragOverId(overId);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -493,21 +487,14 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     if (!over || active.id === over.id) return;
 
     const draggedId = active.id as string;
-    const overId = over.id as string;
+    const targetId = over.id as string;
+    const draggedNode = allNodes.find((n) => n.id === draggedId);
+    const targetNode = allNodes.find((n) => n.id === targetId);
 
-    const findGroupAncestorId = (nodeId: string): string | null => {
-      let current = allNodes.find((n) => n.id === nodeId) ?? null;
-      while (current) {
-        if (current.kind === 'group') return current.id;
-        const parentId = current.parent;
-        if (!parentId) return null;
-        current = allNodes.find((n) => n.id === parentId) ?? null;
-      }
-      return null;
-    };
-
-    const targetId = findGroupAncestorId(overId);
-    if (!targetId || targetId === draggedId) return;
+    // Only allow dropping into groups
+    if (!targetNode || targetNode.kind !== 'group') return;
+    // No-op if already in that group
+    if (draggedNode?.parent === targetId) return;
 
     // Don't allow dropping a node onto its own descendant
     const isDescendant = (parentId: string, childId: string): boolean => {
@@ -523,19 +510,18 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
 
     const newTempNodes: ISchemaNode[] = [];
     for (const node of updated) {
-      const wasSaved = savedNodes.some((s) => s.id === node.id);
-      const original = allNodes.find((n) => n.id === node.id);
-      const changed =
-        !original ||
-        original.parent !== node.parent ||
-        original.path !== node.path ||
-        original.name !== node.name ||
-        original.dataType !== node.dataType ||
-        original.unit !== node.unit;
-
-      if (wasSaved && changed) {
-        newTempNodes.push({ ...node, isTemporary: true });
-      } else if (!wasSaved) {
+      const savedVersion = savedNodes.find((s) => s.id === node.id);
+      if (savedVersion) {
+        const changed =
+          savedVersion.parent !== node.parent ||
+          savedVersion.path !== node.path ||
+          savedVersion.name !== node.name ||
+          savedVersion.dataType !== node.dataType ||
+          savedVersion.unit !== node.unit;
+        if (changed) {
+          newTempNodes.push({ ...node, isTemporary: true });
+        }
+      } else {
         newTempNodes.push({ ...node, isTemporary: true });
       }
     }
@@ -620,15 +606,11 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
           {tree.length > 0 ? (
             <DndContext
               sensors={sensors}
-              collisionDetection={closestCenter}
+              collisionDetection={pointerWithin}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext
-                items={allNodeIds}
-                strategy={verticalListSortingStrategy}
-              >
                 {tree.map((n) => (
                   <TreeNode
                     key={n.id}
@@ -642,7 +624,6 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                     dragOverId={dragOverId}
                   />
                 ))}
-              </SortableContext>
               <DragOverlay>
                 {activeId ? (
                   <div className="px-3 py-1.5 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-blue-300 text-sm font-medium">

@@ -10,8 +10,7 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 
 import type { ISchemaNode } from '../../types';
 
@@ -52,23 +51,31 @@ export default function TreeNode({
   const hasChildren = node.children.length > 0;
   const isDragOver = dragOverId === node.id;
 
+  // Draggable — every node can be dragged
   const {
     attributes,
     listeners,
-    setNodeRef,
-    transform,
-    transition,
+    setNodeRef: setDragRef,
     isDragging,
-  } = useSortable({
+  } = useDraggable({
     id: node.id,
     data: { node },
   });
 
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
+  // Droppable — only groups accept drops
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: node.id,
+    data: { node },
+    disabled: !isGroup,
+  });
+
+  // Combine refs: outer div is both drag source and drop target
+  const setNodeRef = (el: HTMLElement | null) => {
+    setDragRef(el);
+    setDropRef(el);
   };
+
+  const showDropHighlight = isGroup && (isDragOver || isOver);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -102,14 +109,14 @@ export default function TreeNode({
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={{ opacity: isDragging ? 0.35 : 1 }}>
       {/* Node row */}
       <div
         className={`
           group flex items-center gap-1.5 py-1.5 sm:py-1 px-2 rounded-md cursor-pointer min-h-[40px] sm:min-h-0
           transition-colors duration-100
           ${isSelected ? 'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-400/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}
-          ${isDragOver && isGroup ? 'ring-2 ring-blue-400 bg-blue-50/50 dark:bg-blue-900/20' : ''}
+          ${showDropHighlight ? 'ring-2 ring-blue-400 bg-blue-50/50 dark:bg-blue-900/20' : ''}
         `}
         style={{ paddingLeft: `${Math.min(depth * 20 + 8, 120)}px` }}
         onClick={() => onSelect(node)}
