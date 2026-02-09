@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronRight, ChevronDown, Send, X } from 'lucide-react';
+import { ChevronRight, ChevronDown, Send, X, RotateCcw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 import { testPublishNode } from '../../api/simulationProfile';
@@ -9,6 +9,7 @@ import NodePayloadEditor from './NodePayloadEditor';
 
 interface NodeSettingsTabProps {
   onSave: (settings: Record<string, NodeSettings>) => void;
+  onClearOverride?: (nodeId: string) => Promise<void>;
   nodeIds: string[];
   fetchNodesByIds?: (ids: string[]) => Promise<ISchemaNode[]>;
   nodeSettings?: Record<string, NodeSettings>;
@@ -30,6 +31,7 @@ const createDefaultSettings = (nodeId: string): NodeSettings => ({
 
 export default function SimulatorNodeSettings({
   onSave,
+  onClearOverride,
   nodeIds,
   fetchNodesByIds,
   nodeSettings = {},
@@ -136,6 +138,25 @@ export default function SimulatorNodeSettings({
     setExpandedPayloads(new Set());
   };
 
+  const handleClearOverride = async (nodeId: string) => {
+    if (!onClearOverride) return;
+    try {
+      await onClearOverride(nodeId);
+      setSettings((prev) => ({
+        ...prev,
+        [nodeId]: createDefaultSettings(nodeId),
+      }));
+      setExpandedPayloads((prev) => {
+        const next = new Set(prev);
+        next.delete(nodeId);
+        return next;
+      });
+      toast.success('Node override cleared');
+    } catch {
+      toast.error('Failed to clear node override');
+    }
+  };
+
   const handleTestPublish = async (nodeId: string) => {
     if (!profileId) {
       toast.error('Profile ID is required to test publish');
@@ -238,18 +259,31 @@ export default function SimulatorNodeSettings({
                   </span>
                 )}
               </div>
-              {profileId && (
-                <button
-                  type="button"
-                  onClick={() => handleTestPublish(node.id)}
-                  disabled={testingNodes.has(node.id)}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  title="Send test message"
-                >
-                  <Send className="w-3 h-3" />
-                  {testingNodes.has(node.id) ? 'Testing...' : 'Test'}
-                </button>
-              )}
+              <div className="flex items-center gap-1">
+                {nodeSettings[node.id] && onClearOverride && (
+                  <button
+                    type="button"
+                    onClick={() => handleClearOverride(node.id)}
+                    className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                    title="Clear override for this node"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Clear
+                  </button>
+                )}
+                {profileId && (
+                  <button
+                    type="button"
+                    onClick={() => handleTestPublish(node.id)}
+                    disabled={testingNodes.has(node.id)}
+                    className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Send test message"
+                  >
+                    <Send className="w-3 h-3" />
+                    {testingNodes.has(node.id) ? 'Testing...' : 'Test'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           {/* Settings */}
@@ -309,13 +343,22 @@ export default function SimulatorNodeSettings({
 
             {/* Payload Editor */}
             {expandedPayloads.has(node.id) && (
-              <NodePayloadEditor
-                dataType={node.dataType}
-                payload={settings[node.id]?.payload || {}}
-                onChange={(newPayload) =>
-                  handlePayloadChange(node.id, newPayload)
-                }
-              />
+              <>
+                <NodePayloadEditor
+                  dataType={node.dataType}
+                  payload={settings[node.id]?.payload || {}}
+                  onChange={(newPayload) =>
+                    handlePayloadChange(node.id, newPayload)
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() => onSave(settings)}
+                  className="w-full px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  Save Node Settings
+                </button>
+              </>
             )}
           </div>
         </div>

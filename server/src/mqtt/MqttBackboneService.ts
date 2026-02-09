@@ -169,6 +169,21 @@ class MqttBackboneService extends EventEmitter {
     );
   }
 
+  // ── Log Publishing (non-retained) ────────────────────────────
+
+  publishSimulationLog(
+    profileId: string,
+    log: Record<string, unknown>
+  ): void {
+    const topic = TOPICS.LOGS_SIMULATION(profileId);
+    console.log(`📤 Publishing simulation log to ${topic}:`, {
+      connected: this.connected,
+      clientExists: !!this.client,
+      logMessage: (log.message as string)?.substring(0, 50),
+    });
+    this.publishEvent(topic, log);
+  }
+
   // ── Event Publishing (non-retained) ───────────────────────────
 
   publishSimulationEvent(
@@ -256,7 +271,10 @@ class MqttBackboneService extends EventEmitter {
     topic: string,
     payload: Record<string, unknown>
   ): void {
-    if (!this.client || !this.connected) return;
+    if (!this.client || !this.connected) {
+      console.warn(`⚠️ Cannot publish to ${topic}: client=${!!this.client}, connected=${this.connected}`);
+      return;
+    }
 
     this.client.publish(
       topic,
@@ -265,6 +283,8 @@ class MqttBackboneService extends EventEmitter {
       (err) => {
         if (err) {
           console.error(`❌ Backbone event error on ${topic}:`, err.message);
+        } else {
+          console.log(`✅ Published to ${topic}`);
         }
       }
     );

@@ -114,6 +114,19 @@ export const GET_SIMULATION_PROFILE = gql`
   }
 `;
 
+// Get simulation logs (for polling fallback)
+export const GET_SIMULATION_LOGS = gql`
+  query GetSimulationLogs($profileId: ID!, $since: Float, $limit: Int) {
+    simulationLogs(profileId: $profileId, since: $since, limit: $limit) {
+      timestamp
+      level
+      message
+      topic
+      nodeId
+    }
+  }
+`;
+
 // Get simulation status only (for polling/syncing)
 export const GET_SIMULATION_STATUS = gql`
   query GetSimulationStatus($profileId: ID!) {

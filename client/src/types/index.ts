@@ -5,7 +5,11 @@ import type { AppDispatch, RootState } from '../store/store';
 import type { BrokerConnection, IBroker } from './broker';
 import type { MqttMessage } from './mqtt';
 import type { ISchema, ISchemaNode, SchemaInput } from './schema';
-import type { SimulationProfileState, SimulationStatus } from './store';
+import type {
+  SimulationProfileState,
+  SimulationStatus,
+  SimulationLogEntry,
+} from './store';
 import type {
   ISimulationProfile,
   GlobalSettings,
@@ -51,4 +55,5 @@ export type {
   SimulationInstance,
   SchemaInput,
   RegisterData,
+  SimulationLogEntry,
 };

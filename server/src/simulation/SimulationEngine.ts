@@ -25,6 +25,16 @@ export interface SimulationNode {
   intervalId?: NodeJS.Timeout;
 }
 
+export interface SimulationLogEntry {
+  timestamp: number;
+  level: 'info' | 'warn' | 'error';
+  message: string;
+  topic?: string;
+  nodeId?: string;
+}
+
+const MAX_LOG_BUFFER_SIZE = 200;
+
 export class SimulationEngine extends EventEmitter {
   private profile: ISimulationProfile;
   private schema: ISchema;
@@ -39,6 +49,8 @@ export class SimulationEngine extends EventEmitter {
   private maxReconnectAttempts = MQTT_CONFIG.MAX_RECONNECT_ATTEMPTS;
   private reconnectTimeout?: NodeJS.Timeout;
   private simulationLengthTimeout?: NodeJS.Timeout;
+  private statusHeartbeatInterval?: NodeJS.Timeout;
+  private logBuffer: SimulationLogEntry[] = [];
 
   constructor(profile: ISimulationProfile, schema: ISchema, broker: IBroker) {
     super();
@@ -46,6 +58,31 @@ export class SimulationEngine extends EventEmitter {
     this.schema = schema;
     this.broker = broker;
     this.initializeNodes();
+  }
+
+  private addLog(
+    level: SimulationLogEntry['level'],
+    message: string,
+    extra?: { topic?: string; nodeId?: string }
+  ): void {
+    const entry: SimulationLogEntry = {
+      timestamp: Date.now(),
+      level,
+      message,
+      ...extra,
+    };
+    this.logBuffer.push(entry);
+    if (this.logBuffer.length > MAX_LOG_BUFFER_SIZE) {
+      this.logBuffer.shift();
+    }
+    this.emit('log', entry);
+  }
+
+  getLogs(since?: number): SimulationLogEntry[] {
+    if (since) {
+      return this.logBuffer.filter((e) => e.timestamp > since);
+    }
+    return [...this.logBuffer];
   }
 
   private initializeNodes() {
@@ -164,6 +201,7 @@ export class SimulationEngine extends EventEmitter {
         }
 
         console.log(`🔌 Connecting to ${this.broker.name} (${url})`);
+        this.addLog('info', `Connecting to broker ${this.broker.name} (${url})`);
 
         this.mqttClient = mqtt.connect(url, options);
 
@@ -175,6 +213,7 @@ export class SimulationEngine extends EventEmitter {
           settled = true;
           clearTimeout(connectionTimeout);
           console.log(`✅ Connected to MQTT broker: ${this.broker.name}`);
+          this.addLog('info', `Connected to MQTT broker: ${this.broker.name}`);
           this.reconnectAttempts = 0;
           resolve();
         });
@@ -184,6 +223,7 @@ export class SimulationEngine extends EventEmitter {
           settled = true;
           clearTimeout(connectionTimeout);
           console.error(`❌ MQTT connection error: ${error.message}`);
+          this.addLog('error', `MQTT connection error: ${error.message}`);
           if (this.mqttClient) {
             this.mqttClient.end(true);
             this.mqttClient = undefined;
@@ -198,6 +238,7 @@ export class SimulationEngine extends EventEmitter {
             this.reconnectAttempts < this.maxReconnectAttempts
           ) {
             console.log(`⚠️ MQTT disconnected, attempting reconnection...`);
+            this.addLog('warn', 'MQTT disconnected, attempting reconnection...');
             this.handleDisconnection();
           }
         });
@@ -206,6 +247,7 @@ export class SimulationEngine extends EventEmitter {
           if (settled) return; // Prevent double settlement
           settled = true;
           console.error(`❌ Connection timeout to ${this.broker.name}`);
+          this.addLog('error', `Connection timeout to ${this.broker.name}`);
           if (this.mqttClient) {
             this.mqttClient.end(true);
             this.mqttClient = undefined;
@@ -248,6 +290,10 @@ export class SimulationEngine extends EventEmitter {
     console.log(
       `🔄 Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`
     );
+    this.addLog(
+      'warn',
+      `Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`
+    );
 
     // Update MQTT connection status
     this.updateProfileStatus({
@@ -263,6 +309,7 @@ export class SimulationEngine extends EventEmitter {
       try {
         await this.connectToBroker();
         console.log(`✅ Reconnected to ${this.broker.name}`);
+        this.addLog('info', `Reconnected to ${this.broker.name}`);
 
         // Update successful reconnection
         await this.updateProfileStatus({
@@ -275,11 +322,13 @@ export class SimulationEngine extends EventEmitter {
         }
       } catch (error) {
         console.error(`❌ Reconnection failed: ${error}`);
+        this.addLog('error', `Reconnection failed: ${error}`);
 
         if (this.reconnectAttempts >= this.maxReconnectAttempts) {
           console.error(
             `❌ Max reconnect attempts reached. Stopping simulation.`
           );
+          this.addLog('error', 'Max reconnect attempts reached. Stopping simulation.');
           await this.updateProfileStatus({
             state: 'error',
             error: 'Max reconnection attempts reached',
@@ -345,7 +394,18 @@ export class SimulationEngine extends EventEmitter {
       console.log(
         `🚀 Simulation started: ${this.profile.name} (${this.nodes.size} nodes)`
       );
+      this.addLog(
+        'info',
+        `Simulation started: ${this.profile.name} (${this.nodes.size} nodes)`
+      );
       this.emit('started', { profileId: this.profile.id });
+
+      // Periodic status heartbeat for real-time UI updates (uptime, lastActivity, etc.)
+      this.statusHeartbeatInterval = setInterval(() => {
+        if (this.isRunning) {
+          this.emit('statusUpdate', { profileId: this.profile.id });
+        }
+      }, 5000);
     } catch (error) {
       this.isRunning = false;
       await this.updateProfileStatus({
@@ -357,6 +417,7 @@ export class SimulationEngine extends EventEmitter {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       console.error(`❌ Failed to start simulation: ${errorMessage}`);
+      this.addLog('error', `Failed to start simulation: ${errorMessage}`);
       this.emit('startError', {
         profileId: this.profile.id,
         error: `Failed to start simulation: ${errorMessage}`,
@@ -376,6 +437,9 @@ export class SimulationEngine extends EventEmitter {
 
   private async publishNodeData(node: SimulationNode) {
     if (Math.random() < node.failRate) {
+      this.addLog('warn', `Simulated failure on ${node.path}`, {
+        nodeId: node.id,
+      });
       this.emit('nodeFailure', {
         nodeId: node.id,
         timestamp: Date.now(),
@@ -434,6 +498,10 @@ export class SimulationEngine extends EventEmitter {
       this.lastActivity = new Date();
 
       mqttMessagesPublishedTotal.inc();
+      this.addLog('info', `Published to ${topic}`, {
+        topic,
+        nodeId: node.id,
+      });
       this.emit('nodePublished', {
         nodeId: node.id,
         topic,
@@ -451,6 +519,9 @@ export class SimulationEngine extends EventEmitter {
     } catch (error) {
       mqttPublishErrorsTotal.inc();
       console.error(`🚨 Publish error for ${node.path}: ${error}`);
+      this.addLog('error', `Publish error for ${node.path}: ${error}`, {
+        nodeId: node.id,
+      });
       this.emit('publishError', {
         nodeId: node.id,
         error:
@@ -562,6 +633,11 @@ export class SimulationEngine extends EventEmitter {
       }
     });
 
+    if (this.statusHeartbeatInterval) {
+      clearInterval(this.statusHeartbeatInterval);
+      this.statusHeartbeatInterval = undefined;
+    }
+
     if (this.mqttClient) {
       this.mqttClient.end(true);
       this.mqttClient = undefined;
@@ -577,6 +653,7 @@ export class SimulationEngine extends EventEmitter {
 
     simulationStopsTotal.inc();
     console.log(`🛑 Simulation stopped: ${this.profile.name}`);
+    this.addLog('info', `Simulation stopped: ${this.profile.name}`);
     this.emit('stopped', { profileId: this.profile.id });
   }
 
@@ -598,6 +675,7 @@ export class SimulationEngine extends EventEmitter {
     });
 
     console.log(`⏸️ Simulation paused: ${this.profile.name}`);
+    this.addLog('info', `Simulation paused: ${this.profile.name}`);
     this.emit('paused', { profileId: this.profile.id });
   }
 
@@ -616,6 +694,7 @@ export class SimulationEngine extends EventEmitter {
     });
 
     console.log(`▶️ Simulation resumed: ${this.profile.name}`);
+    this.addLog('info', `Simulation resumed: ${this.profile.name}`);
     this.emit('resumed', { profileId: this.profile.id });
   }
 

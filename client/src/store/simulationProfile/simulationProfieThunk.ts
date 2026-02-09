@@ -17,7 +17,9 @@ import {
   stopSimulation,
   pauseSimulation,
   resumeSimulation,
-  getSimulationStatus, // Add this import
+  getSimulationStatus,
+  getSimulationLogs,
+  type SimulationLogEntry,
   type CreateSimulationProfileInput,
   type UpdateSimulationProfileInput,
   type NodeSettingsInput,
@@ -154,6 +156,18 @@ export const resumeSimulationAsync = createAsyncThunk<boolean, string>(
         extractErrorMessage(error, 'Failed to resume simulation')
       );
     }
+  }
+);
+
+// Get simulation logs (polling fallback)
+export const fetchSimulationLogsAsync = createAsyncThunk<
+  { profileId: string; logs: SimulationLogEntry[] },
+  { profileId: string; since?: number }
+>(
+  SIMULATION_PROFILE_ACTIONS.GET_SIMULATION_STATUS + '/logs',
+  async ({ profileId, since }) => {
+    const logs = await getSimulationLogs(profileId, since, 200);
+    return { profileId, logs };
   }
 );
 

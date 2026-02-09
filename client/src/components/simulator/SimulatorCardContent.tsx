@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { Settings, Sliders, Trash2 } from 'lucide-react';
+import { Settings, Sliders } from 'lucide-react';
 
-import { cleanupDefaultNodeSettings } from '../../api/simulationProfile';
 import {
+  deleteNodeSettingsAsync,
   fetchSimulationProfilesAsync,
   updateSimulationProfileAsync,
   upsertNodeSettingsAsync,
@@ -84,27 +84,21 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
     // Helper to check if payload has meaningful non-default values
     const hasNonDefaultPayload = (payload: any) => {
       if (!payload) return false;
-      
-      const { quality, timestampMode, value, valueMode, customFields, ...rest } = payload;
-      
-      // If there are custom fields, that's a customization
-      if (customFields && customFields.length > 0) return true;
-      
-      // If there are any extra fields beyond defaults, that's a customization
-      if (Object.keys(rest).length > 0) return true;
-      
-      // If quality is not 'good', that's a customization
-      if (quality && quality !== 'good') return true;
-      
-      // If timestampMode is not 'auto', that's a customization
-      if (timestampMode && timestampMode !== 'auto') return true;
-      
-      // If valueMode is not 'random', that's a customization
-      if (valueMode && valueMode !== 'random') return true;
-      
-      // If value is set and not 0, that's a customization
-      if (value !== undefined && value !== null && value !== 0 && value !== '') return true;
-      
+      if (payload.customFields && payload.customFields.length > 0) return true;
+      if (payload.quality && payload.quality !== 'good') return true;
+      if (payload.timestampMode && payload.timestampMode !== 'auto') return true;
+      if (payload.valueMode && payload.valueMode !== 'random') return true;
+      if (
+        payload.value !== undefined &&
+        payload.value !== null &&
+        payload.value !== 0 &&
+        payload.value !== ''
+      )
+        return true;
+      if (payload.minValue != null || payload.maxValue != null) return true;
+      if (payload.step != null) return true;
+      if (payload.precision != null) return true;
+      if (payload.fixedTimestamp != null) return true;
       return false;
     };
 
@@ -140,8 +134,17 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
     if (!selectedProfile) return;
     try {
       const sanitizedSettings = sanitizeNodeSettings(settings);
-      await Promise.all(
-        Object.entries(sanitizedSettings).map(([nodeId, nodeSetting]) => {
+
+      // Delete nodes that were previously saved but now have default-only values
+      const previouslyStoredIds = new Set(
+        selectedProfile.nodeSettings?.map((ns) => ns.nodeId) ?? []
+      );
+      const nodesToDelete = [...previouslyStoredIds].filter(
+        (id) => !sanitizedSettings[id]
+      );
+
+      await Promise.all([
+        ...Object.entries(sanitizedSettings).map(([nodeId, nodeSetting]) => {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { nodeId: _omit, ...settingsWithoutNodeId } = nodeSetting;
           return dispatch(
@@ -151,8 +154,16 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
               settings: settingsWithoutNodeId,
             })
           );
-        })
-      );
+        }),
+        ...nodesToDelete.map((nodeId) =>
+          dispatch(
+            deleteNodeSettingsAsync({
+              profileId: selectedProfile.id,
+              nodeId,
+            })
+          )
+        ),
+      ]);
       await dispatch(fetchSimulationProfilesAsync());
       toast.success('Node settings saved!');
     } catch {
@@ -160,15 +171,12 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
     }
   };
 
-  const handleCleanupDefaults = async () => {
+  const handleClearOverride = async (nodeId: string) => {
     if (!selectedProfile) return;
-    try {
-      const removedCount = await cleanupDefaultNodeSettings(selectedProfile.id);
-      await dispatch(fetchSimulationProfilesAsync());
-      toast.success(`Removed ${removedCount} node(s) with default-only settings`);
-    } catch {
-      toast.error('Failed to cleanup node settings');
-    }
+    await dispatch(
+      deleteNodeSettingsAsync({ profileId: selectedProfile.id, nodeId })
+    ).unwrap();
+    await dispatch(fetchSimulationProfilesAsync());
   };
 
   const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
@@ -207,18 +215,6 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
             ))}
           </div>
 
-          {activeTab === 'node_settings' && selectedProfile && selectedProfile.nodeSettings && selectedProfile.nodeSettings.length > 0 && (
-            <button
-              type="button"
-              onClick={handleCleanupDefaults}
-              className="inline-flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex-shrink-0"
-              title="Remove nodes with default-only settings"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Cleanup Defaults</span>
-              <span className="sm:hidden">Cleanup</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -240,6 +236,7 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
           <SimulatorNodeSettings
             nodeIds={nodeIds}
             onSave={handleSaveNodeSettings}
+            onClearOverride={handleClearOverride}
             fetchNodesByIds={fetchNodesByIds}
             nodeSettings={
               selectedProfile?.nodeSettings

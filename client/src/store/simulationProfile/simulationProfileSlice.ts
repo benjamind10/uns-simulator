@@ -7,6 +7,7 @@ import type {
   SimulationState,
   SimulationProfileState,
   SimulationStatus,
+  SimulationLogEntry,
 } from '../../types';
 
 import {
@@ -20,6 +21,7 @@ import {
   pauseSimulationAsync,
   resumeSimulationAsync,
   getSimulationStatusAsync,
+  fetchSimulationLogsAsync,
 } from './simulationProfieThunk';
 
 const initialState: SimulationProfileState = {
@@ -30,7 +32,8 @@ const initialState: SimulationProfileState = {
   simulationStates: {},
   simulationLoading: {},
   simulationErrors: {},
-  simulationStatus: {}, // <-- Add this
+  simulationStatus: {},
+  simulationLogs: {},
 };
 
 const simulationProfileSlice = createSlice({
@@ -83,6 +86,7 @@ const simulationProfileSlice = createSlice({
       delete state.simulationLoading[action.payload];
       delete state.simulationErrors[action.payload];
       delete state.simulationStatus[action.payload];
+      delete state.simulationLogs[action.payload];
       if (state.selectedProfileId === action.payload) {
         state.selectedProfileId = null;
       }
@@ -128,6 +132,44 @@ const simulationProfileSlice = createSlice({
       if (status.state !== 'error') {
         state.simulationErrors[profileId] = null;
       }
+    },
+    // Simulation log reducers
+    addSimulationLog(
+      state,
+      action: PayloadAction<{
+        profileId: string;
+        log: SimulationLogEntry;
+      }>
+    ) {
+      const { profileId, log } = action.payload;
+      if (!state.simulationLogs[profileId]) {
+        state.simulationLogs[profileId] = [];
+      }
+      state.simulationLogs[profileId].push(log);
+      if (state.simulationLogs[profileId].length > 500) {
+        state.simulationLogs[profileId] =
+          state.simulationLogs[profileId].slice(-500);
+      }
+    },
+    addSimulationLogs(
+      state,
+      action: PayloadAction<{
+        profileId: string;
+        logs: SimulationLogEntry[];
+      }>
+    ) {
+      const { profileId, logs } = action.payload;
+      if (!state.simulationLogs[profileId]) {
+        state.simulationLogs[profileId] = [];
+      }
+      state.simulationLogs[profileId].push(...logs);
+      if (state.simulationLogs[profileId].length > 500) {
+        state.simulationLogs[profileId] =
+          state.simulationLogs[profileId].slice(-500);
+      }
+    },
+    clearSimulationLogs(state, action: PayloadAction<string>) {
+      state.simulationLogs[action.payload] = [];
     },
   },
   extraReducers: (builder) => {
@@ -203,6 +245,7 @@ const simulationProfileSlice = createSlice({
         delete state.simulationErrors[profileId];
         delete state.simulationLoading[profileId];
         delete state.simulationStatus[profileId];
+        delete state.simulationLogs[profileId];
       })
       .addCase(deleteSimulationProfileAsync.rejected, (state, action) => {
         state.loading = false;
@@ -291,10 +334,24 @@ const simulationProfileSlice = createSlice({
         const { profileId, status } = action.payload;
         state.simulationStates[profileId] = status.state;
         state.simulationStatus[profileId] = status;
+      })
+      // Fetch simulation logs (polling fallback)
+      .addCase(fetchSimulationLogsAsync.fulfilled, (state, action) => {
+        const { profileId, logs } = action.payload;
+        if (!state.simulationLogs[profileId]) {
+          state.simulationLogs[profileId] = [];
+        }
+        // Merge new logs (avoid duplicates by timestamp)
+        const existing = new Set(
+          state.simulationLogs[profileId].map((l) => l.timestamp)
+        );
+        const newLogs = logs.filter((l) => !existing.has(l.timestamp));
+        state.simulationLogs[profileId].push(...newLogs);
+        if (state.simulationLogs[profileId].length > 500) {
+          state.simulationLogs[profileId] =
+            state.simulationLogs[profileId].slice(-500);
+        }
       });
-    // .addCase(getSimulationStatusAsync.rejected, (state, action) => {
-    //   // Optionally log or handle polling errors
-    // });
   },
 });
 
@@ -309,7 +366,10 @@ export const {
   setSimulationState,
   setSimulationLoading,
   setSimulationError,
-  updateSimulationStatus, // <-- Export this
+  updateSimulationStatus,
+  addSimulationLog,
+  addSimulationLogs,
+  clearSimulationLogs,
 } = simulationProfileSlice.actions;
 
 export const selectSelectedProfileId = (state: RootState) =>

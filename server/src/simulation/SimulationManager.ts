@@ -4,7 +4,7 @@ import { ISimulationProfile } from '../graphql/models/SimulationProfile';
 import SimulationProfile from '../graphql/models/SimulationProfile';
 import mqttBackbone from '../mqtt/MqttBackboneService';
 
-import { SimulationEngine } from './SimulationEngine';
+import { SimulationEngine, SimulationLogEntry } from './SimulationEngine';
 
 export class SimulationManager {
   private engines: Map<string, SimulationEngine> = new Map();
@@ -59,12 +59,21 @@ export class SimulationManager {
       });
     });
 
+    engine.on('statusUpdate', () => {
+      mqttBackbone.publishSimulationStatus(profileId, engine.getStatus());
+    });
+
     engine.on('startError', (data: { error: string }) => {
       mqttBackbone.publishSimulationEvent('error', {
         profileId,
         name: profile.name,
         error: data.error,
       });
+    });
+
+    // Forward all log entries to MQTT backbone
+    engine.on('log', (entry: SimulationLogEntry) => {
+      mqttBackbone.publishSimulationLog(profileId, { ...entry });
     });
 
     this.engines.set(profileId, engine);
@@ -136,6 +145,11 @@ export class SimulationManager {
       });
     });
     return result;
+  }
+
+  getSimulationLogs(profileId: string, since?: number): SimulationLogEntry[] {
+    const engine = this.engines.get(profileId);
+    return engine ? engine.getLogs(since) : [];
   }
 
   isRunning(profileId: string): boolean {

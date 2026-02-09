@@ -64,8 +64,13 @@ services:
       - ENABLE_RATE_LIMIT=${ENABLE_RATE_LIMIT:-false}
       - MQTT_HOST=${MQTT_HOST:-mqtt}
       - MQTT_PORT=${MQTT_PORT:-1883}
+      - MQTT_WS_PORT=${MQTT_WS_PORT:-9001}
       - MQTT_BACKBONE_USERNAME=${MQTT_BACKBONE_USERNAME:-uns-backend}
       - MQTT_BACKBONE_PASSWORD=${MQTT_BACKBONE_PASSWORD:-uns-backend-dev}
+      - MQTT_CLIENT_USERNAME=${MQTT_CLIENT_USERNAME:-uns-client}
+      - MQTT_CLIENT_PASSWORD=${MQTT_CLIENT_PASSWORD:-uns-client-dev}
+      - MQTT_SIM_USERNAME=${MQTT_SIM_USERNAME:-uns-sim}
+      - MQTT_SIM_PASSWORD=${MQTT_SIM_PASSWORD:-uns-sim-dev}
     depends_on:
       mongo:
         condition: service_healthy

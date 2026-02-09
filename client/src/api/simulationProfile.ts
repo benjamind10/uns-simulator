@@ -18,7 +18,8 @@ import {
 import {
   GET_SIMULATION_PROFILES,
   GET_SIMULATION_PROFILE,
-  GET_SIMULATION_STATUS, // Add this import
+  GET_SIMULATION_STATUS,
+  GET_SIMULATION_LOGS,
 } from './queries/simulationProfile.queries';
 
 const apiPath = import.meta.env.VITE_API_URL || '/graphql';
@@ -90,6 +91,18 @@ type TestPublishNodeResponse = {
     payload: any;
     error: string | null;
   };
+};
+
+export type SimulationLogEntry = {
+  timestamp: number;
+  level: 'info' | 'warn' | 'error';
+  message: string;
+  topic?: string;
+  nodeId?: string;
+};
+
+type SimulationLogsResponse = {
+  simulationLogs: SimulationLogEntry[];
 };
 
 // Add Simulation Status Response Type
@@ -195,6 +208,21 @@ export async function getSimulationStatus(
     variables
   );
   return data.simulationStatus;
+}
+
+// Get simulation logs (polling fallback)
+export async function getSimulationLogs(
+  profileId: string,
+  since?: number,
+  limit?: number
+): Promise<SimulationLogEntry[]> {
+  const client = getClient();
+  const variables = { profileId, since, limit };
+  const data: SimulationLogsResponse = await client.request(
+    GET_SIMULATION_LOGS,
+    variables
+  );
+  return data.simulationLogs;
 }
 
 // Create a new simulation profile
