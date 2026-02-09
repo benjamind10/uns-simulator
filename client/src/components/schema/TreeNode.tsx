@@ -28,6 +28,7 @@ interface TreeNodeProps {
   onToggleExpand: (nodeId: string) => void;
   onRename: (nodeId: string, newName: string) => void;
   dragOverId?: string | null;
+  onContextMenu?: (node: ISchemaNode) => void;
 }
 
 export default function TreeNode({
@@ -40,6 +41,7 @@ export default function TreeNode({
   onToggleExpand,
   onRename,
   dragOverId,
+  onContextMenu,
 }: TreeNodeProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(node.name);
@@ -108,6 +110,12 @@ export default function TreeNode({
     if (e.key === 'Escape') handleEditCancel();
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onContextMenu?.(node);
+  };
+
   return (
     <div ref={setNodeRef} style={{ opacity: isDragging ? 0.35 : 1 }}>
       {/* Node row */}
@@ -120,6 +128,7 @@ export default function TreeNode({
         `}
         style={{ paddingLeft: `${Math.min(depth * 20 + 8, 120)}px` }}
         onClick={() => onSelect(node)}
+        onContextMenu={handleContextMenu}
       >
         {/* Drag handle */}
         <span
@@ -251,6 +260,7 @@ export default function TreeNode({
               onToggleExpand={onToggleExpand}
               onRename={onRename}
               dragOverId={dragOverId}
+              onContextMenu={onContextMenu}
             />
           ))}
         </div>

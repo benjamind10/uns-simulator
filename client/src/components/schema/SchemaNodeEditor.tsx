@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   DndContext,
   DragOverlay,
-  pointerWithin,
+  closestCenter,
   PointerSensor,
   useSensor,
   useSensors,
@@ -34,6 +34,7 @@ import ConfirmDialog from '../global/ConfirmDialog';
 
 import TreeNode from './TreeNode';
 import FileUpload from './FileUpload';
+import MovePickerModal from './MovePickerModal';
 
 interface SchemaNodeEditorProps {
   schemaId: string;
@@ -50,6 +51,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [movePickerNode, setMovePickerNode] = useState<ISchemaNode | null>(null);
 
   // 'add' = adding a child under selectedNode; 'edit' = editing selectedNode's properties
   const [mode, setMode] = useState<'add' | 'edit'>('add');
@@ -381,6 +383,60 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     });
   };
 
+  const handleMoveNode = (nodeId: string, targetParentId: string | null) => {
+    const draggedNode = allNodes.find((n) => n.id === nodeId);
+    if (!draggedNode) return;
+
+    // No-op if already in that parent
+    if (draggedNode.parent === targetParentId) {
+      toast.error('Node is already in that location');
+      return;
+    }
+
+    // Don't allow moving to descendant
+    const isDescendant = (parentId: string, childId: string): boolean => {
+      const children = allNodes.filter((n) => n.parent === parentId);
+      return children.some(
+        (c) => c.id === childId || isDescendant(c.id, childId)
+      );
+    };
+    if (targetParentId && isDescendant(nodeId, targetParentId)) {
+      toast.error('Cannot move into a descendant');
+      return;
+    }
+
+    const updated = recomputePaths(allNodes, nodeId, targetParentId);
+    const newTempNodes: ISchemaNode[] = [];
+    for (const node of updated) {
+      const savedVersion = savedNodes.find((s) => s.id === node.id);
+      if (savedVersion) {
+        const changed =
+          savedVersion.parent !== node.parent ||
+          savedVersion.path !== node.path ||
+          savedVersion.name !== node.name ||
+          savedVersion.dataType !== node.dataType ||
+          savedVersion.unit !== node.unit;
+        if (changed) {
+          newTempNodes.push({ ...node, isTemporary: true });
+        }
+      } else {
+        newTempNodes.push({ ...node, isTemporary: true });
+      }
+    }
+    setTempNodes(newTempNodes);
+
+    if (targetParentId) {
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        next.add(targetParentId);
+        return next;
+      });
+    }
+
+    setMovePickerNode(null);
+    toast.success('Node moved');
+  };
+
   const handleClearSelection = () => {
     setSelectedNode(null);
     setMode('add');
@@ -606,7 +662,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
           {tree.length > 0 ? (
             <DndContext
               sensors={sensors}
-              collisionDetection={pointerWithin}
+              collisionDetection={closestCenter}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
@@ -622,6 +678,9 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                     onToggleExpand={handleToggleExpand}
                     onRename={handleRename}
                     dragOverId={dragOverId}
+                    onContextMenu={(node) => {
+                      setMovePickerNode(node);
+                    }}
                   />
                 ))}
               <DragOverlay>
@@ -880,6 +939,19 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
         title="Remove ALL saved nodes"
         message="This will delete every node currently stored for this schema. This cannot be undone."
       />
+
+      {/* Move picker modal */}
+      {movePickerNode && (
+        <MovePickerModal
+          node={movePickerNode}
+          allNodes={allNodes}
+          isOpen={!!movePickerNode}
+          onClose={() => {
+            setMovePickerNode(null);
+          }}
+          onMove={handleMoveNode}
+        />
+      )}
     </div>
   );
 }
