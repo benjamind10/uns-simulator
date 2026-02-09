@@ -4,7 +4,10 @@ import type { IBroker } from '../../types';
 import type { RootState } from '../store';
 import { MQTT_ACTIONS } from '../constants';
 
-import { connectBroker, disconnectBroker } from './mqttClientManager';
+import {
+  connectBroker,
+  disconnectBroker,
+} from './mqttClientManager';
 import { setConnectionStatus, removeConnection } from './mqttSlice';
 
 // Connect to a single broker and manage its status in Redux
@@ -25,15 +28,19 @@ export const connectToBrokerAsync = createAsyncThunk(
       let timeoutId: NodeJS.Timeout | null = null;
 
       connectBroker(broker, (status, error) => {
+        // Ignore callbacks after the promise has settled (e.g. auto-reconnect events)
+        if (isSettled) return;
+
         dispatch(setConnectionStatus({ brokerId: broker.id, status, error }));
 
-        if (status === 'connected' && !isSettled) {
+        if (status === 'connected') {
           isSettled = true;
           if (timeoutId) clearTimeout(timeoutId);
           resolve(broker.id);
-        } else if (status === 'error' && !isSettled) {
+        } else if (status === 'error') {
           isSettled = true;
           if (timeoutId) clearTimeout(timeoutId);
+          disconnectBroker(broker.id);
           reject(rejectWithValue(error || 'Failed to connect to broker'));
         }
       });
@@ -42,11 +49,15 @@ export const connectToBrokerAsync = createAsyncThunk(
       timeoutId = setTimeout(() => {
         if (!isSettled) {
           isSettled = true;
-          const currentState = getState() as RootState;
-          const connection = currentState.mqtt.connections[broker.id];
-          if (connection?.status !== 'connected') {
-            reject(rejectWithValue('Connection timeout'));
-          }
+          disconnectBroker(broker.id);
+          dispatch(
+            setConnectionStatus({
+              brokerId: broker.id,
+              status: 'error',
+              error: 'Connection timeout',
+            })
+          );
+          reject(rejectWithValue('Connection timeout'));
         }
       }, 15000);
     });
