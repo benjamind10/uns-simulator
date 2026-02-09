@@ -38,7 +38,7 @@ services:
       test:
         [
           'CMD-SHELL',
-          'mosquitto_pub -t "$$SYS/health" -m "check" -i healthcheck -u uns-sim -P uns-sim-dev || exit 1'
+          'mosquitto_pub -t "uns-simulator/_sys/healthcheck" -m "check" -i healthcheck -u uns-sim -P uns-sim-dev || exit 1'
         ]
       interval: 10s
       timeout: 5s
