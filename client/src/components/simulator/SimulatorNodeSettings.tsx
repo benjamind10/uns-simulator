@@ -309,13 +309,22 @@ export default function SimulatorNodeSettings({
 
             {/* Payload Editor */}
             {expandedPayloads.has(node.id) && (
-              <NodePayloadEditor
-                dataType={node.dataType}
-                payload={settings[node.id]?.payload || {}}
-                onChange={(newPayload) =>
-                  handlePayloadChange(node.id, newPayload)
-                }
-              />
+              <>
+                <NodePayloadEditor
+                  dataType={node.dataType}
+                  payload={settings[node.id]?.payload || {}}
+                  onChange={(newPayload) =>
+                    handlePayloadChange(node.id, newPayload)
+                  }
+                />
+                <button
+                  type="button"
+                  onClick={() => onSave(settings)}
+                  className="w-full px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  Save Node Settings
+                </button>
+              </>
             )}
           </div>
         </div>
