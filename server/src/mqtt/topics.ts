@@ -15,6 +15,9 @@ export const TOPICS = {
   STATUS_BROKER: (id: string) => `${PREFIX}/status/brokers/${id}`,
   STATUS_BROKERS_INDEX: `${PREFIX}/status/brokers/_index`,
 
+  // ── Logs (non-retained) ──────────────────────────────────────
+  LOGS_SIMULATION: (id: string) => `${PREFIX}/logs/simulations/${id}`,
+
   // ── Events (non-retained) ─────────────────────────────────────
   EVENTS_SYSTEM: `${PREFIX}/events/system`,
   EVENTS_SIMULATION: `${PREFIX}/events/simulation`,

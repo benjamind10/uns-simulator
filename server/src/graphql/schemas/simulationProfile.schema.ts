@@ -99,6 +99,15 @@ export const simulationProfileTypeDefs = gql`
   union NodeBehavior = StaticBehavior | RandomBehavior | PatternBehavior
   # | DriftBehavior | ReplayBehavior | FormulaBehavior
 
+  # SIMULATION LOG ENTRY
+  type SimulationLog {
+    timestamp: Float!
+    level: String!
+    message: String!
+    topic: String
+    nodeId: String
+  }
+
   # SIMULATION STATUS TYPE
   type SimulationStatus {
     state: SimulationState!
@@ -249,6 +258,7 @@ export const simulationProfileTypeDefs = gql`
     simulationProfiles: [SimulationProfile!]!
     simulationProfile(id: ID!): SimulationProfile
     simulationStatus(profileId: ID!): SimulationStatus!
+    simulationLogs(profileId: ID!, since: Float, limit: Int): [SimulationLog!]!
   }
 
   type Mutation {

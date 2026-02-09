@@ -32,6 +32,7 @@ import {
 } from '../../store/mqtt/mqttThunk';
 import SimulatorCardContent from '../../components/simulator/SimulatorCardContent';
 import SimulationStatusPanel from '../../components/simulator/SimulationControls';
+import SimulationConsole from '../../components/simulator/SimulationConsole';
 import ConfirmDialog from '../../components/global/ConfirmDialog';
 import type {
   AppDispatch,
@@ -602,6 +603,9 @@ export default function SimulationPage() {
           </div>
         )}
       </div>
+
+      {/* Console logs */}
+      {selectedProfile && <SimulationConsole />}
 
       {/* Confirm delete dialog */}
       <ConfirmDialog

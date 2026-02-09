@@ -7,6 +7,7 @@ import type { AppDispatch, RootState, ISchema, IBroker } from '../../types';
 import { getSimulationStatusAsync } from '../../store/simulationProfile/simulationProfieThunk';
 import { selectSchemas } from '../../store/schema/schemaSlice';
 import { selectBrokers } from '../../store/brokers';
+import { selectSystemMqttConnected } from '../../store/mqtt/systemMqttSlice';
 
 const SimulationStatusPanel: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -28,6 +29,7 @@ const SimulationStatusPanel: React.FC = () => {
   );
   const schemas = useSelector(selectSchemas);
   const brokers = useSelector(selectBrokers);
+  const systemMqttConnected = useSelector(selectSystemMqttConnected);
 
   const currentState = profileId
     ? simulationStates[profileId] || 'idle'
@@ -36,6 +38,7 @@ const SimulationStatusPanel: React.FC = () => {
   const status = profileId ? simulationStatus[profileId] : undefined;
 
   // Fetch status on mount and poll every 10s while simulation is active
+  // BUT: Skip polling if MQTT is connected (real-time updates)
   useEffect(() => {
     if (!profileId) return;
 
@@ -47,14 +50,15 @@ const SimulationStatusPanel: React.FC = () => {
       currentState === 'paused' ||
       currentState === 'stopping';
 
-    if (!isActive) return;
+    // Only poll if MQTT is NOT connected
+    if (!isActive || systemMqttConnected) return;
 
     const interval = setInterval(() => {
       dispatch(getSimulationStatusAsync(profileId));
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [dispatch, profileId, currentState]);
+  }, [dispatch, profileId, currentState, systemMqttConnected]);
 
   if (!profileId || !selectedProfile) {
     return (
@@ -171,10 +175,19 @@ const SimulationStatusPanel: React.FC = () => {
 
         {/* Status */}
         <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-3 sm:px-6 py-3 sm:py-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
               Simulation Status
             </h4>
+            <span
+              className={`text-xs px-2 py-1 rounded-full ${
+                systemMqttConnected
+                  ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+              }`}
+            >
+              {systemMqttConnected ? '⚡ Real-time' : '🔄 Polling'}
+            </span>
           </div>
           <div className="px-3 sm:px-6 py-3 sm:py-4 space-y-4">
             <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 xs:gap-3">

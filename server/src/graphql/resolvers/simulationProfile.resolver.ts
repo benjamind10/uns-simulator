@@ -91,6 +91,31 @@ export const simulationProfileResolvers = {
       console.log('📊 Returning DB status:', JSON.stringify(profile.status, null, 2));
       return profile.status;
     },
+    simulationLogs: async (
+      _: {},
+      {
+        profileId,
+        since,
+        limit,
+      }: { profileId: string; since?: number; limit?: number },
+      ctx: Context
+    ) => {
+      requireAuth(ctx);
+      const profile = await SimulationProfile.findOne({
+        _id: profileId,
+        userId: ctx.user!._id,
+      });
+      if (!profile) throw new Error('Profile not found');
+
+      let logs = simulationManager.getSimulationLogs(
+        profileId,
+        since ?? undefined
+      );
+      if (limit && limit > 0) {
+        logs = logs.slice(-limit);
+      }
+      return logs;
+    },
   },
 
   Mutation: {

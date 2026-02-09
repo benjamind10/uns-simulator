@@ -179,6 +179,49 @@ app.use(
   })
 );
 
+// MQTT config endpoint (JWT-protected, after CORS)
+app.get('/api/mqtt-config', async (req, res) => {
+  try {
+    // Extract JWT token from Authorization header
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET!
+    ) as jwt.JwtPayload;
+    const user = await User.findById(decoded.userId);
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    // Return MQTT client configuration
+    // Use MQTT_PUBLIC_HOST for browser-accessible hostname (MQTT_HOST is Docker-internal)
+    const frontendUrl = process.env.FRONTEND_PUBLIC_URL || 'http://localhost';
+    const publicHost =
+      process.env.MQTT_PUBLIC_HOST ||
+      new URL(frontendUrl).hostname ||
+      'localhost';
+    const config = {
+      host: publicHost,
+      wsPort: parseInt(process.env.MQTT_WS_PORT || '9001'),
+      username: process.env.MQTT_CLIENT_USERNAME || 'uns-client',
+      password: process.env.MQTT_CLIENT_PASSWORD || 'uns-client-dev',
+    };
+
+    res.json(config);
+  } catch (err) {
+    console.error('❌ MQTT config error:', (err as Error).message);
+    res.status(401).json({ error: 'Unauthorized' });
+  }
+});
+
 // Create Apollo Server instance
 const server = new ApolloServer({
   typeDefs,

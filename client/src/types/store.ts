@@ -26,6 +26,14 @@ export interface SimulationStatus {
   error?: string;
 }
 
+export interface SimulationLogEntry {
+  timestamp: number;
+  level: 'info' | 'warn' | 'error';
+  message: string;
+  topic?: string;
+  nodeId?: string;
+}
+
 export interface SimulationProfileState {
   profiles: Record<string, ISimulationProfile>;
   selectedProfileId: string | null;
@@ -36,4 +44,5 @@ export interface SimulationProfileState {
   simulationLoading: Record<string, boolean>; // profileId -> loading
   simulationErrors: Record<string, string | null>; // profileId -> error
   simulationStatus: Record<string, SimulationStatus>; // profileId -> status
+  simulationLogs: Record<string, SimulationLogEntry[]>; // profileId -> logs
 }

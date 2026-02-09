@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 
 import authReducer from './auth/authSlice';
 import mqttReducer from './mqtt';
+import systemMqttReducer from './mqtt/systemMqttSlice';
 import { brokersReducer } from './brokers';
 import { schemaReducer } from './schema/schemaSlice';
 import simulationProfileReducer from './simulationProfile/simulationProfileSlice';
@@ -12,6 +13,7 @@ export const store = configureStore({
     brokers: brokersReducer,
     schema: schemaReducer,
     mqtt: mqttReducer,
+    systemMqtt: systemMqttReducer,
     simulationProfile: simulationProfileReducer,
   },
   middleware: (getDefaultMiddleware) =>

@@ -24,6 +24,10 @@ import clsx from 'clsx';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { logoutAsync, selectUser, selectIsAuthenticated } from '../store/auth';
 import type { AppDispatch } from '../store/store';
+import {
+  connectSystemMqtt,
+  disconnectSystemMqtt,
+} from '../store/mqtt/systemMqttThunk';
 import Toast from '../components/global/Toast';
 import { Avatar } from '../components/ui/Avatar';
 import { Tooltip } from '../components/ui/Tooltip';
@@ -85,6 +89,17 @@ export default function AppShell() {
     }
   }, [isAuthenticated, location.pathname, navigate, location]);
 
+  // Connect to system MQTT on mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(connectSystemMqtt());
+    }
+
+    return () => {
+      dispatch(disconnectSystemMqtt());
+    };
+  }, [dispatch, isAuthenticated]);
+
   const toggleSidebar = useCallback(() => {
     setCollapsed((prev) => {
       const next = !prev;
@@ -95,6 +110,7 @@ export default function AppShell() {
 
   const handleLogout = useCallback(async () => {
     try {
+      await dispatch(disconnectSystemMqtt()).unwrap();
       await dispatch(logoutAsync()).unwrap();
       navigate('/login');
     } catch (error) {
