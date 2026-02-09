@@ -211,8 +211,12 @@ export const simulationProfileResolvers = {
         userId: ctx.user!._id,
       });
       if (!profile) throw new Error('Profile not found');
-      if (profile.nodeSettings && profile.nodeSettings[nodeId]) {
-        delete profile.nodeSettings[nodeId];
+      if (profile.nodeSettings) {
+        if (profile.nodeSettings instanceof Map) {
+          profile.nodeSettings.delete(nodeId);
+        } else {
+          delete (profile.nodeSettings as any)[nodeId];
+        }
         await profile.save();
       }
       return true;
@@ -235,27 +239,15 @@ export const simulationProfileResolvers = {
       // Helper to check if payload has meaningful non-default values
       const hasNonDefaultPayload = (payload: any) => {
         if (!payload) return false;
-
-        const { quality, timestampMode, value, valueMode, customFields, ...rest } = payload;
-
-        // If there are custom fields, that's a customization
-        if (customFields && customFields.length > 0) return true;
-
-        // If there are any extra fields beyond defaults, that's a customization
-        if (Object.keys(rest).length > 0) return true;
-
-        // If quality is not 'good', that's a customization
-        if (quality && quality !== 'good') return true;
-
-        // If timestampMode is not 'auto', that's a customization
-        if (timestampMode && timestampMode !== 'auto') return true;
-
-        // If valueMode is not 'random', that's a customization
-        if (valueMode && valueMode !== 'random') return true;
-
-        // If value is set and not 0, that's a customization
-        if (value !== undefined && value !== null && value !== 0 && value !== '') return true;
-
+        if (payload.customFields && payload.customFields.length > 0) return true;
+        if (payload.quality && payload.quality !== 'good') return true;
+        if (payload.timestampMode && payload.timestampMode !== 'auto') return true;
+        if (payload.valueMode && payload.valueMode !== 'random') return true;
+        if (payload.value !== undefined && payload.value !== null && payload.value !== 0 && payload.value !== '') return true;
+        if (payload.minValue != null || payload.maxValue != null) return true;
+        if (payload.step != null) return true;
+        if (payload.precision != null) return true;
+        if (payload.fixedTimestamp != null) return true;
         return false;
       };
 

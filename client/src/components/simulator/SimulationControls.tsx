@@ -264,45 +264,26 @@ const SimulationStatusPanel: React.FC = () => {
         {/* Node settings summary */}
         {selectedProfile.nodeSettings &&
           selectedProfile.nodeSettings.length > 0 && (() => {
+            // Helper to check if payload has non-default values
+            const hasNonDefaultPayload = (payload: any) => {
+              if (!payload) return false;
+              if (payload.customFields && payload.customFields.length > 0) return true;
+              if (payload.quality && payload.quality !== 'good') return true;
+              if (payload.timestampMode && payload.timestampMode !== 'auto') return true;
+              if (payload.valueMode && payload.valueMode !== 'random') return true;
+              if (payload.value !== undefined && payload.value !== null && payload.value !== 0 && payload.value !== '') return true;
+              if (payload.minValue != null || payload.maxValue != null) return true;
+              if (payload.step != null) return true;
+              if (payload.precision != null) return true;
+              if (payload.fixedTimestamp != null) return true;
+              return false;
+            };
+
             // Helper to check if a node has meaningful overrides
             const hasOverrides = (ns: any) => {
-              // Check frequency (meaningful if not 0 or undefined)
               const hasFrequency = ns.frequency && ns.frequency !== 0;
-              
-              // Check failRate (meaningful if not 0 or undefined)
               const hasFailRate = ns.failRate && ns.failRate !== 0;
-              
-              // Check payload - must have non-default values
-              const hasPayload = ns.payload && (() => {
-                const keys = Object.keys(ns.payload);
-                if (keys.length === 0) return false;
-                
-                // Check if payload has any non-default values
-                // Default payload is: { quality: 'good', timestampMode: 'auto', value: 0, valueMode: 'random', customFields: [] }
-                const { quality, timestampMode, value, valueMode, customFields, ...rest } = ns.payload;
-                
-                // If there are custom fields, that's a customization
-                if (customFields && customFields.length > 0) return true;
-                
-                // If there are any extra fields beyond defaults, that's a customization
-                if (Object.keys(rest).length > 0) return true;
-                
-                // If quality is not 'good', that's a customization
-                if (quality && quality !== 'good') return true;
-                
-                // If timestampMode is not 'auto', that's a customization
-                if (timestampMode && timestampMode !== 'auto') return true;
-                
-                // If valueMode is not 'random', that's a customization
-                if (valueMode && valueMode !== 'random') return true;
-                
-                // If value is set and not 0, that's a customization
-                if (value !== undefined && value !== null && value !== 0 && value !== '') return true;
-                
-                return false;
-              })();
-              
-              return hasFrequency || hasFailRate || hasPayload;
+              return hasFrequency || hasFailRate || hasNonDefaultPayload(ns.payload);
             };
             
             const nodesWithOverrides = selectedProfile.nodeSettings.filter(hasOverrides);
@@ -343,8 +324,7 @@ const SimulationStatusPanel: React.FC = () => {
                                 {(Number(ns.failRate) * 100).toFixed(0)}% fail
                               </span>
                             ) : null}
-                            {ns.payload &&
-                            Object.keys(ns.payload).length > 0 ? (
+                            {hasNonDefaultPayload(ns.payload) ? (
                               <span className="text-blue-500 whitespace-nowrap">
                                 payload
                               </span>
