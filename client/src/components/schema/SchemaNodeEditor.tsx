@@ -64,6 +64,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     dataType: '' as '' | 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String',
     unit: '',
   });
+  const [rawPath, setRawPath] = useState('');
+  const [pathDirty, setPathDirty] = useState(false);
 
   // Refresh on schema change
   useEffect(() => {
@@ -77,6 +79,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     }
     setTempNodes([]);
     setSelectedNode(null);
+    setRawPath('');
+    setPathDirty(false);
   }, [dispatch, schemaId]); // Note: tempNodes intentionally omitted from deps to avoid infinite loop
 
   // Expand all nodes by default when schema loads
@@ -91,17 +95,9 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  if (!schema) {
-    return (
-      <div className="flex items-center justify-center h-64 text-gray-400">
-        Select a schema to start building.
-      </div>
-    );
-  }
-
   // Merge saved + temp nodes
   const savedNodes: ISchemaNode[] =
-    schema.nodes?.map((n) => ({
+    schema?.nodes?.map((n) => ({
       ...n,
       parent: !n.parent || n.parent === '' ? null : n.parent,
       isTemporary: false,
@@ -131,6 +127,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       setSelectedNode(null);
       setMode('add');
       setForm({ name: '', kind: 'group', dataType: '', unit: '' });
+      setRawPath('');
+      setPathDirty(false);
     } else {
       setSelectedNode(node);
       // Default to edit mode — populate form with node properties
@@ -141,12 +139,16 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
         dataType: (node.dataType as '' | 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String') || '',
         unit: node.unit || '',
       });
+      setRawPath(node.path ?? node.name);
+      setPathDirty(false);
     }
   };
 
   const handleSwitchToAdd = () => {
     setMode('add');
     setForm({ name: '', kind: 'group', dataType: '', unit: '' });
+    setRawPath('');
+    setPathDirty(false);
   };
 
   const handleSwitchToEdit = () => {
@@ -158,7 +160,20 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       dataType: (selectedNode.dataType as '' | 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String') || '',
       unit: selectedNode.unit || '',
     });
+    setRawPath(selectedNode.path ?? selectedNode.name);
+    setPathDirty(false);
   };
+
+  useEffect(() => {
+    if (mode !== 'edit' || !selectedNode || pathDirty) return;
+    const parentPath = selectedNode.parent
+      ? allNodes.find((n) => n.id === selectedNode.parent)?.path
+      : null;
+    const expectedPath = parentPath
+      ? `${parentPath}/${form.name.trim() || selectedNode.name}`
+      : form.name.trim() || selectedNode.name;
+    setRawPath(expectedPath);
+  }, [mode, selectedNode, form.name, pathDirty, allNodes]);
 
   const handleUpdateNode = () => {
     if (!selectedNode || !form.name.trim()) return;
@@ -170,42 +185,100 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       unit: form.unit,
     };
 
-    // Recompute path if name changed
-    let newPath = selectedNode.path;
-    if (form.name.trim() !== selectedNode.name) {
-      const parentPath = selectedNode.parent
-        ? allNodes.find((n) => n.id === selectedNode.parent)?.path
+    const applyUpdatedNodes = (updated: ISchemaNode[]) => {
+      const newTempNodes: ISchemaNode[] = [];
+      for (const node of updated) {
+        const wasSaved = savedNodes.some((s) => s.id === node.id);
+        const original = allNodes.find((n) => n.id === node.id);
+        const changed =
+          !original ||
+          original.parent !== node.parent ||
+          original.path !== node.path ||
+          original.name !== node.name ||
+          original.dataType !== node.dataType ||
+          original.unit !== node.unit;
+
+        if (wasSaved && changed) {
+          newTempNodes.push({ ...node, isTemporary: true });
+        } else if (!wasSaved) {
+          newTempNodes.push({ ...node, isTemporary: true });
+        }
+      }
+      setTempNodes(newTempNodes);
+    };
+
+    const isDescendant = (parentId: string, childId: string): boolean => {
+      const children = allNodes.filter((n) => n.parent === parentId);
+      return children.some(
+        (c) => c.id === childId || isDescendant(c.id, childId)
+      );
+    };
+
+    if (pathDirty) {
+      const manualPath = rawPath.trim().replace(/^\/+|\/+$/g, '');
+      if (!manualPath) {
+        toast.error('Path cannot be empty');
+        return;
+      }
+
+      const parts = manualPath.split('/').filter(Boolean);
+      const newName = parts[parts.length - 1];
+      const parentPath =
+        parts.length > 1 ? parts.slice(0, -1).join('/') : null;
+      const parentNode = parentPath
+        ? allNodes.find((n) => n.path === parentPath && n.kind === 'group')
         : null;
-      newPath = parentPath
-        ? `${parentPath}/${form.name.trim()}`
-        : form.name.trim();
+
+      if (parentPath && !parentNode) {
+        toast.error('Parent path not found');
+        return;
+      }
+
+      const newParentId = parentNode?.id ?? null;
+      if (newParentId && isDescendant(selectedNode.id, newParentId)) {
+        toast.error('Cannot move into a descendant');
+        return;
+      }
+
+      const baseNodes = allNodes.map((n) =>
+        n.id === selectedNode.id
+          ? { ...n, ...updatedFields, name: newName, parent: newParentId }
+          : n
+      );
+      const updated = recomputePaths(baseNodes, selectedNode.id, newParentId);
+
+      applyUpdatedNodes(updated);
+      const updatedNode = updated.find((n) => n.id === selectedNode.id) ?? null;
+      setSelectedNode(updatedNode);
+      setForm((f) => ({ ...f, name: newName }));
+      setRawPath(updatedNode?.path ?? manualPath);
+      setPathDirty(false);
+
+      if (newParentId) {
+        setExpandedIds((prev) => {
+          const next = new Set(prev);
+          next.add(newParentId);
+          return next;
+        });
+      }
+
+      toast.success('Node updated');
+      return;
     }
 
-    setTempNodes((prev) => {
-      const existing = prev.find((n) => n.id === selectedNode.id);
-      if (existing) {
-        return prev.map((n) =>
-          n.id === selectedNode.id
-            ? { ...n, ...updatedFields, path: newPath, isTemporary: true }
-            : n
-        );
-      }
-      // Saved node — convert to temp edit
-      const savedNode = savedNodes.find((n) => n.id === selectedNode.id);
-      if (savedNode) {
-        return [
-          ...prev,
-          { ...savedNode, ...updatedFields, path: newPath, isTemporary: true },
-        ];
-      }
-      return prev;
-    });
-
-    // Update selectedNode reference
-    setSelectedNode((prev) =>
-      prev ? { ...prev, ...updatedFields, path: newPath } : prev
+    const baseNodes = allNodes.map((n) =>
+      n.id === selectedNode.id ? { ...n, ...updatedFields } : n
     );
+    const updated =
+      form.name.trim() !== selectedNode.name
+        ? recomputePaths(baseNodes, selectedNode.id, selectedNode.parent ?? null)
+        : baseNodes;
 
+    applyUpdatedNodes(updated);
+    const updatedNode = updated.find((n) => n.id === selectedNode.id) ?? null;
+    setSelectedNode(updatedNode);
+    setRawPath(updatedNode?.path ?? rawPath);
+    setPathDirty(false);
     toast.success('Node updated');
   };
 
@@ -261,20 +334,38 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   };
 
   const handleRename = (nodeId: string, newName: string) => {
-    setTempNodes((prev) => {
-      const existing = prev.find((n) => n.id === nodeId);
-      if (existing) {
-        return prev.map((n) =>
-          n.id === nodeId ? { ...n, name: newName } : n
-        );
+    const baseNodes = allNodes.map((n) =>
+      n.id === nodeId ? { ...n, name: newName } : n
+    );
+    const node = baseNodes.find((n) => n.id === nodeId);
+    const updated = recomputePaths(baseNodes, nodeId, node?.parent ?? null);
+
+    const newTempNodes: ISchemaNode[] = [];
+    for (const item of updated) {
+      const wasSaved = savedNodes.some((s) => s.id === item.id);
+      const original = allNodes.find((n) => n.id === item.id);
+      const changed =
+        !original ||
+        original.parent !== item.parent ||
+        original.path !== item.path ||
+        original.name !== item.name ||
+        original.dataType !== item.dataType ||
+        original.unit !== item.unit;
+      if (wasSaved && changed) {
+        newTempNodes.push({ ...item, isTemporary: true });
+      } else if (!wasSaved) {
+        newTempNodes.push({ ...item, isTemporary: true });
       }
-      // If it's a saved node, convert it to a temp edit
-      const savedNode = savedNodes.find((n) => n.id === nodeId);
-      if (savedNode) {
-        return [...prev, { ...savedNode, name: newName, isTemporary: true }];
-      }
-      return prev;
-    });
+    }
+    setTempNodes(newTempNodes);
+
+    if (selectedNode?.id === nodeId) {
+      const updatedNode = updated.find((n) => n.id === nodeId) ?? null;
+      setSelectedNode(updatedNode);
+      setForm((f) => ({ ...f, name: newName }));
+      setRawPath(updatedNode?.path ?? rawPath);
+      setPathDirty(false);
+    }
   };
 
   const handleToggleExpand = (nodeId: string) => {
@@ -293,6 +384,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     setSelectedNode(null);
     setMode('add');
     setForm({ name: '', kind: 'group', dataType: '', unit: '' });
+    setRawPath('');
+    setPathDirty(false);
   };
 
   const handleClearAllTemp = () => {
@@ -372,14 +465,24 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
 
   const handleDragOver = (event: DragOverEvent) => {
     const overId = event.over?.id as string | undefined;
-    if (overId && overId !== activeId) {
-      const overNode = allNodes.find((n) => n.id === overId);
-      if (overNode?.kind === 'group') {
-        setDragOverId(overId);
-        return;
-      }
+    if (!overId || overId === activeId) {
+      setDragOverId(null);
+      return;
     }
-    setDragOverId(null);
+
+    const findGroupAncestorId = (nodeId: string): string | null => {
+      let current = allNodes.find((n) => n.id === nodeId) ?? null;
+      while (current) {
+        if (current.kind === 'group') return current.id;
+        const parentId = current.parent;
+        if (!parentId) return null;
+        current = allNodes.find((n) => n.id === parentId) ?? null;
+      }
+      return null;
+    };
+
+    const groupTargetId = findGroupAncestorId(overId);
+    setDragOverId(groupTargetId);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -390,11 +493,21 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     if (!over || active.id === over.id) return;
 
     const draggedId = active.id as string;
-    const targetId = over.id as string;
-    const targetNode = allNodes.find((n) => n.id === targetId);
+    const overId = over.id as string;
 
-    // Only allow dropping onto groups
-    if (!targetNode || targetNode.kind !== 'group') return;
+    const findGroupAncestorId = (nodeId: string): string | null => {
+      let current = allNodes.find((n) => n.id === nodeId) ?? null;
+      while (current) {
+        if (current.kind === 'group') return current.id;
+        const parentId = current.parent;
+        if (!parentId) return null;
+        current = allNodes.find((n) => n.id === parentId) ?? null;
+      }
+      return null;
+    };
+
+    const targetId = findGroupAncestorId(overId);
+    if (!targetId || targetId === draggedId) return;
 
     // Don't allow dropping a node onto its own descendant
     const isDescendant = (parentId: string, childId: string): boolean => {
@@ -408,14 +521,17 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     // Reparent the node
     const updated = recomputePaths(allNodes, draggedId, targetId);
 
-    // Split back into saved vs temp
     const newTempNodes: ISchemaNode[] = [];
     for (const node of updated) {
       const wasSaved = savedNodes.some((s) => s.id === node.id);
       const original = allNodes.find((n) => n.id === node.id);
       const changed =
-        original &&
-        (original.parent !== node.parent || original.path !== node.path);
+        !original ||
+        original.parent !== node.parent ||
+        original.path !== node.path ||
+        original.name !== node.name ||
+        original.dataType !== node.dataType ||
+        original.unit !== node.unit;
 
       if (wasSaved && changed) {
         newTempNodes.push({ ...node, isTemporary: true });
@@ -436,6 +552,14 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   };
 
   /* ── Render ── */
+  if (!schema) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-400">
+        Select a schema to start building.
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-6 h-full min-h-0 px-3 md:px-6 py-4">
       {/* ── LEFT: Unified Tree ── */}
@@ -691,7 +815,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
           )}
 
           {/* Path preview */}
-          {form.name.trim() && (
+          {form.name.trim() && (mode === 'add' || !pathDirty) && (
             <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2 font-mono">
               {mode === 'edit'
                 ? (() => {
@@ -705,6 +829,22 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                 : selectedNode
                   ? `${selectedNode.path}/${form.name.trim()}`
                   : form.name.trim()}
+            </div>
+          )}
+          {mode === 'edit' && selectedNode && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                Path (manual)
+              </label>
+              <input
+                className="w-full px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-700 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-400"
+                placeholder="e.g., Plant/Line_1/Temperature"
+                value={rawPath}
+                onChange={(e) => {
+                  setRawPath(e.target.value);
+                  setPathDirty(true);
+                }}
+              />
             </div>
           )}
 
