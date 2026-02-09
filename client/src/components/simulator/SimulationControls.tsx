@@ -110,11 +110,21 @@ const SimulationStatusPanel: React.FC = () => {
     return date ? date.toLocaleString() : '—';
   };
 
-  const formatDuration = (start?: string | number | Date) => {
-    const date = parseDate(start);
-    if (!date) return '—';
-    const startTime = date.getTime();
-    const diffMs = Math.max(0, Date.now() - startTime);
+  const formatDuration = (
+    start?: string | number | Date,
+    end?: string | number | Date
+  ) => {
+    const startDate = parseDate(start);
+    if (!startDate) return '—';
+    const startMs = startDate.getTime();
+    const isActive =
+      currentState === 'running' ||
+      currentState === 'starting' ||
+      currentState === 'paused';
+    const endMs = isActive
+      ? Date.now()
+      : (parseDate(end)?.getTime() ?? startMs);
+    const diffMs = Math.max(0, endMs - startMs);
     const seconds = Math.floor(diffMs / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
@@ -209,7 +219,7 @@ const SimulationStatusPanel: React.FC = () => {
               <MetricItem label="Overrides" value={nodeOverrides} />
               <MetricItem label="Reconnects" value={status?.reconnectAttempts ?? 0} />
               <MetricItem label="Started" value={formatDateTime(status?.startTime)} />
-              <MetricItem label="Uptime" value={formatDuration(status?.startTime)} />
+              <MetricItem label="Uptime" value={formatDuration(status?.startTime, status?.lastActivity)} />
               <MetricItem label="Last Activity" value={formatDateTime(status?.lastActivity)} />
               <MetricItem label="Time Scale" value={`${selectedProfile.globalSettings.timeScale ?? 1}x`} />
             </div>
