@@ -1,5 +1,24 @@
 import { gql } from 'graphql-request';
 
+const PAYLOAD_TEMPLATE_FIELDS = `
+  payloadTemplate {
+    quality
+    timestampMode
+    fixedTimestamp
+    value
+    valueMode
+    minValue
+    maxValue
+    step
+    precision
+    customFields {
+      key
+      value
+      type
+    }
+  }
+`;
+
 export const CREATE_SCHEMA = gql`
   mutation CreateSchema($input: SchemaInput!) {
     createSchema(input: $input) {
@@ -17,6 +36,7 @@ export const CREATE_SCHEMA = gql`
         unit
         engineering
         objectData
+        ${PAYLOAD_TEMPLATE_FIELDS}
       }
       brokerIds
       users
@@ -43,6 +63,7 @@ export const UPDATE_SCHEMA = gql`
         unit
         engineering
         objectData
+        ${PAYLOAD_TEMPLATE_FIELDS}
       }
       brokerIds
       users
@@ -75,6 +96,7 @@ export const SAVE_NODES_TO_SCHEMA = gql`
         unit
         engineering
         objectData
+        ${PAYLOAD_TEMPLATE_FIELDS}
       }
       brokerIds
       users
@@ -101,6 +123,7 @@ export const ADD_NODE_TO_SCHEMA = gql`
         unit
         engineering
         objectData
+        ${PAYLOAD_TEMPLATE_FIELDS}
       }
       brokerIds
       users
@@ -127,6 +150,7 @@ export const DELETE_NODE_FROM_SCHEMA = gql`
         unit
         engineering
         objectData
+        ${PAYLOAD_TEMPLATE_FIELDS}
       }
       brokerIds
       users
@@ -154,6 +178,7 @@ export const GET_SCHEMAS = gql`
         unit
         engineering
         objectData
+        ${PAYLOAD_TEMPLATE_FIELDS}
       }
       brokerIds
       users
@@ -180,6 +205,7 @@ export const GET_SCHEMA = gql`
         unit
         engineering
         objectData
+        ${PAYLOAD_TEMPLATE_FIELDS}
       }
       brokerIds
       users

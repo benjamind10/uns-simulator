@@ -81,35 +81,80 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
         ? undefined
         : Number(val);
 
-    // Helper to check if payload has meaningful non-default values
-    const hasNonDefaultPayload = (payload: any) => {
+    // Compare payload against the effective defaults to determine if user actually changed anything.
+    // effectiveDefaults includes schema-inherited + global default fields.
+    const hasPayloadOverride = (payload: any, effectiveDefaults: any) => {
       if (!payload) return false;
-      if (payload.customFields && payload.customFields.length > 0) return true;
-      if (payload.quality && payload.quality !== 'good') return true;
-      if (payload.timestampMode && payload.timestampMode !== 'auto') return true;
-      if (payload.valueMode && payload.valueMode !== 'random') return true;
-      if (
-        payload.value !== undefined &&
-        payload.value !== null &&
-        payload.value !== 0 &&
-        payload.value !== ''
-      )
-        return true;
-      if (payload.minValue != null || payload.maxValue != null) return true;
-      if (payload.step != null) return true;
-      if (payload.precision != null) return true;
-      if (payload.fixedTimestamp != null) return true;
+      const defaults = effectiveDefaults || {};
+
+      // Check core fields against effective defaults
+      if ((payload.quality || 'good') !== (defaults.quality || 'good')) return true;
+      if ((payload.timestampMode || 'auto') !== (defaults.timestampMode || 'auto')) return true;
+      if ((payload.valueMode || 'random') !== (defaults.valueMode || 'random')) return true;
+
+      // Check numeric value fields — only if they differ from defaults
+      const defaultValue = defaults.value ?? 0;
+      if (payload.value !== undefined && payload.value !== null && payload.value !== '' && payload.value !== defaultValue) return true;
+      if ((payload.minValue ?? null) !== (defaults.minValue ?? null)) return true;
+      if ((payload.maxValue ?? null) !== (defaults.maxValue ?? null)) return true;
+      if ((payload.step ?? null) !== (defaults.step ?? null)) return true;
+      if ((payload.precision ?? null) !== (defaults.precision ?? null)) return true;
+      if ((payload.fixedTimestamp ?? null) !== (defaults.fixedTimestamp ?? null)) return true;
+
+      // Compare custom fields — only count as override if they differ from inherited ones
+      const payloadCF = payload.customFields || [];
+      const defaultCF = defaults.customFields || [];
+      if (JSON.stringify(payloadCF) !== JSON.stringify(defaultCF)) return true;
+
       return false;
+    };
+
+    // Build effective defaults per node (schema + global)
+    const allNodes = selectedSchema?.nodes ?? [];
+    const globalPayload = selectedProfile?.globalSettings?.defaultPayload || {};
+
+    const getNodeEffectiveDefaults = (nodeId: string) => {
+      const schemaNode = allNodes.find((n) => n.id === nodeId);
+      if (!schemaNode) return { quality: 'good', timestampMode: 'auto', value: 0, valueMode: 'random', customFields: [] };
+
+      // Walk up parent chain for schema payload
+      let ancestorPayload: any = {};
+      let parentId = schemaNode.parent;
+      while (parentId) {
+        const parent = allNodes.find((n) => n.id === parentId);
+        if (!parent) break;
+        if (parent.kind === 'group' && parent.payloadTemplate) {
+          ancestorPayload = { ...parent.payloadTemplate };
+          break;
+        }
+        parentId = parent.parent;
+      }
+      const metricPayload = schemaNode.payloadTemplate ? { ...schemaNode.payloadTemplate } : {};
+      const ancestorCF = ancestorPayload.customFields?.length ? ancestorPayload.customFields : [];
+      const metricCF = metricPayload.customFields?.length ? metricPayload.customFields : [];
+      const schemaPayload = { ...ancestorPayload, ...metricPayload, customFields: [...ancestorCF, ...metricCF] };
+
+      // Merge: hardcoded < schema < global
+      const schemaCF = schemaPayload.customFields?.length ? schemaPayload.customFields : [];
+      const globalCF = (globalPayload as any).customFields?.length ? (globalPayload as any).customFields : [];
+      return {
+        quality: 'good',
+        timestampMode: 'auto',
+        value: 0,
+        valueMode: 'random',
+        ...schemaPayload,
+        ...globalPayload,
+        customFields: [...schemaCF, ...globalCF],
+      };
     };
 
     const sanitized: Record<string, NodeSettings> = {};
     for (const [nodeId, nodeSetting] of Object.entries(settings)) {
-      // Only include nodes with actual overrides (non-default values)
       const hasFrequency = nodeSetting.frequency && nodeSetting.frequency !== 0;
       const hasFailRate = nodeSetting.failRate && nodeSetting.failRate !== 0;
-      const hasPayload = hasNonDefaultPayload(nodeSetting.payload);
+      const effectiveDefaults = getNodeEffectiveDefaults(nodeId);
+      const hasPayload = hasPayloadOverride(nodeSetting.payload, effectiveDefaults);
 
-      // Only add to sanitized if it has actual customizations
       if (hasFrequency || hasFailRate || hasPayload) {
         sanitized[nodeId] = {
           ...nodeSetting,
@@ -245,6 +290,8 @@ const SimulatorCardContent: React.FC<SimulatorCardContentProps> = ({
                   )
                 : {}
             }
+            globalDefaultPayload={selectedProfile?.globalSettings?.defaultPayload}
+            allSchemaNodes={selectedSchema?.nodes ?? []}
             profileId={selectedProfile.id}
           />
         )}

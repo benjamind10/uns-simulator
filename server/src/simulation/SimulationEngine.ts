@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 import * as mqtt from 'mqtt';
 
 import { ISimulationProfile } from '../graphql/models/SimulationProfile';
-import { ISchema } from '../graphql/models/Schema';
+import { ISchema, ISchemaNode } from '../graphql/models/Schema';
 import { IBroker } from '../graphql/models/Broker';
 import SimulationProfile from '../graphql/models/SimulationProfile';
 import { MQTT_CONFIG } from '../config/constants';
@@ -128,23 +128,101 @@ export class SimulationEngine extends EventEmitter {
       //   globalSettings.defaultUpdateFrequency
       // );
 
-      // Merge payloads with priority: per-node > global defaults > hardcoded defaults
-      const globalDefaults = this.profile.globalSettings?.defaultPayload || {};
-      const nodePayloadConfig = nodeSettings?.payload || {};
+      // Merge payloads with priority: per-node > global defaults > schema templates > hardcoded defaults
+      const schemaPayload = this.resolveSchemaPayload(schemaNode);
+      const globalDefaults = this.toPlainObject(this.profile.globalSettings?.defaultPayload);
+      const nodePayloadConfig = this.toPlainObject(nodeSettings?.payload);
+
+      // Deep merge with customFields concatenation
+      const mergedPayload = {
+        ...schemaPayload,     // schema-level templates (lowest explicit tier)
+        ...globalDefaults,    // global sim defaults override schema
+        ...nodePayloadConfig, // per-node sim overrides win
+        // Concatenate customFields from all tiers (schema + global + node)
+        customFields: [
+          ...(schemaPayload.customFields || []),
+          ...(globalDefaults.customFields || []),
+          ...(nodePayloadConfig.customFields || []),
+        ],
+      };
+
+      console.log(
+        `[InitNode] ${schemaNode.path} payload merge:\n` +
+        `  Schema: ${JSON.stringify(schemaPayload)}\n` +
+        `  Global: ${JSON.stringify(globalDefaults)}\n` +
+        `  Node:   ${JSON.stringify(nodePayloadConfig)}\n` +
+        `  Final:  ${JSON.stringify(mergedPayload)}`
+      );
 
       const node: SimulationNode = {
         id: schemaNode.id,
         path: schemaNode.path,
         frequency,
         failRate: nodeSettings?.failRate ?? 0,
-        payload: {
-          ...globalDefaults,    // global defaults first
-          ...nodePayloadConfig, // per-node overrides win
-        },
+        payload: mergedPayload,
       };
 
       this.nodes.set(schemaNode.id, node);
     });
+  }
+
+  // Convert a Mongoose subdocument (or plain object) to a plain JS object
+  private toPlainObject(doc: any): Record<string, any> {
+    if (!doc) return {};
+    if (typeof doc.toObject === 'function') return doc.toObject();
+    if (typeof doc.toJSON === 'function') return doc.toJSON();
+    return JSON.parse(JSON.stringify(doc));
+  }
+
+  private resolveSchemaPayload(schemaNode: ISchemaNode): Record<string, any> {
+    // Walk up the parent chain to find the nearest ancestor group with a payloadTemplate
+    let ancestorPayload: Record<string, any> = {};
+    let currentParentId = schemaNode.parent;
+    while (currentParentId) {
+      const parent = this.schema.nodes.find(
+        (n) => String(n.id ?? n._id) === String(currentParentId)
+      );
+      if (!parent) break;
+      if (parent.kind === 'group' && parent.payloadTemplate) {
+        ancestorPayload = this.toPlainObject(parent.payloadTemplate);
+        console.log(
+          `[SchemaPayload] Node ${schemaNode.path} inheriting from group "${parent.name}":`,
+          JSON.stringify(ancestorPayload)
+        );
+        break; // Use nearest ancestor only
+      }
+      currentParentId = parent.parent;
+    }
+
+    // Metric's own payloadTemplate overrides ancestor group's
+    const metricPayload = schemaNode.payloadTemplate
+      ? this.toPlainObject(schemaNode.payloadTemplate)
+      : {};
+
+    if (Object.keys(metricPayload).length > 0) {
+      console.log(
+        `[SchemaPayload] Node ${schemaNode.path} has own template:`,
+        JSON.stringify(metricPayload)
+      );
+    }
+
+    // Merge with customFields concatenation (don't let empty arrays overwrite)
+    const ancestorCustomFields = ancestorPayload.customFields?.length ? ancestorPayload.customFields : [];
+    const metricCustomFields = metricPayload.customFields?.length ? metricPayload.customFields : [];
+    const resolved = {
+      ...ancestorPayload,
+      ...metricPayload,
+      customFields: [...ancestorCustomFields, ...metricCustomFields],
+    };
+
+    if (Object.keys(resolved).length > 0) {
+      console.log(
+        `[SchemaPayload] Node ${schemaNode.path} resolved template:`,
+        JSON.stringify(resolved)
+      );
+    }
+
+    return resolved;
   }
 
   private async connectToBroker(): Promise<void> {

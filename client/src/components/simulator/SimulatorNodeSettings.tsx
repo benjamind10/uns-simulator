@@ -13,20 +13,75 @@ interface NodeSettingsTabProps {
   nodeIds: string[];
   fetchNodesByIds?: (ids: string[]) => Promise<ISchemaNode[]>;
   nodeSettings?: Record<string, NodeSettings>;
+  globalDefaultPayload?: NodeSettings['payload'];
+  allSchemaNodes?: ISchemaNode[];
   profileId?: string;
 }
 
-const createDefaultSettings = (nodeId: string): NodeSettings => ({
+const HARDCODED_DEFAULTS: NonNullable<NodeSettings['payload']> = {
+  quality: 'good',
+  timestampMode: 'auto',
+  value: 0,
+  valueMode: 'random',
+  customFields: [],
+};
+
+// Resolve schema-level payload: walk up parent groups to inherit payloadTemplate
+function resolveSchemaPayload(
+  node: ISchemaNode,
+  allNodes: ISchemaNode[]
+): NonNullable<NodeSettings['payload']> {
+  // Walk up to find nearest ancestor group with a payloadTemplate
+  let ancestorPayload: NonNullable<NodeSettings['payload']> = {};
+  let currentParentId = node.parent;
+  while (currentParentId) {
+    const parent = allNodes.find((n) => n.id === currentParentId);
+    if (!parent) break;
+    if (parent.kind === 'group' && parent.payloadTemplate) {
+      ancestorPayload = { ...parent.payloadTemplate };
+      break;
+    }
+    currentParentId = parent.parent;
+  }
+
+  // Metric's own payloadTemplate overrides ancestor
+  const metricPayload = node.payloadTemplate ? { ...node.payloadTemplate } : {};
+
+  // Concatenate customFields instead of replacing
+  const ancestorCF = ancestorPayload.customFields?.length ? ancestorPayload.customFields : [];
+  const metricCF = metricPayload.customFields?.length ? metricPayload.customFields : [];
+
+  return {
+    ...ancestorPayload,
+    ...metricPayload,
+    customFields: [...ancestorCF, ...metricCF],
+  };
+}
+
+// Merge all payload tiers: schema > global > hardcoded defaults
+function mergeEffectivePayload(
+  schemaPayload: NonNullable<NodeSettings['payload']>,
+  globalDefaultPayload?: NodeSettings['payload']
+): NonNullable<NodeSettings['payload']> {
+  const schemaCF = schemaPayload.customFields?.length ? schemaPayload.customFields : [];
+  const globalCF = globalDefaultPayload?.customFields?.length ? globalDefaultPayload.customFields : [];
+
+  return {
+    ...HARDCODED_DEFAULTS,
+    ...schemaPayload,
+    ...globalDefaultPayload,
+    customFields: [...schemaCF, ...globalCF],
+  };
+}
+
+const createDefaultSettings = (
+  nodeId: string,
+  effectivePayload: NonNullable<NodeSettings['payload']>
+): NodeSettings => ({
   nodeId,
   frequency: 0,
   failRate: 0,
-  payload: {
-    quality: 'good',
-    timestampMode: 'auto',
-    value: 0,
-    valueMode: 'random',
-    customFields: [],
-  },
+  payload: effectivePayload,
 });
 
 export default function SimulatorNodeSettings({
@@ -35,6 +90,8 @@ export default function SimulatorNodeSettings({
   nodeIds,
   fetchNodesByIds,
   nodeSettings = {},
+  globalDefaultPayload,
+  allSchemaNodes = [],
   profileId,
 }: NodeSettingsTabProps) {
   const [nodes, setNodes] = useState<ISchemaNode[]>([]);
@@ -44,7 +101,9 @@ export default function SimulatorNodeSettings({
   );
   const [testingNodes, setTestingNodes] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
-  const didInit = useRef(false);
+  // Track which nodes the user has locally edited (dirty) so we don't
+  // overwrite their in-progress changes when props update after save/clear.
+  const dirtyNodes = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let isMounted = true;
@@ -72,20 +131,32 @@ export default function SimulatorNodeSettings({
     };
   }, [nodeIds, fetchNodesByIds]);
 
-  useEffect(() => {
-    if (nodes.length > 0 && !didInit.current) {
-      const metricNodes = nodes.filter((node) => node.kind === 'metric');
-      const merged = Object.fromEntries(
-        metricNodes.map((node) => [
-          node.id,
-          nodeSettings[node.id] ?? createDefaultSettings(node.id),
-        ])
-      );
+  // Build effective payload for a node (schema + global + hardcoded defaults)
+  const getEffectivePayload = (node: ISchemaNode) => {
+    const schemaPayload = resolveSchemaPayload(node, allSchemaNodes);
+    return mergeEffectivePayload(schemaPayload, globalDefaultPayload);
+  };
 
-      setSettings(merged);
-      didInit.current = true;
-    }
-  }, [nodes, nodeSettings]);
+  // Rebuild settings whenever nodes or nodeSettings prop changes (e.g. after save/clear).
+  // Only overwrite nodes that the user hasn't locally edited (dirty).
+  useEffect(() => {
+    if (nodes.length === 0) return;
+    const metricNodes = nodes.filter((node) => node.kind === 'metric');
+    setSettings((prev) => {
+      const next: Record<string, NodeSettings> = {};
+      for (const node of metricNodes) {
+        if (dirtyNodes.current.has(node.id) && prev[node.id]) {
+          // Keep the user's in-progress edits
+          next[node.id] = prev[node.id];
+        } else {
+          // Use saved override or compute effective defaults
+          next[node.id] = nodeSettings[node.id] ?? createDefaultSettings(node.id, getEffectivePayload(node));
+        }
+      }
+      return next;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, nodeSettings, globalDefaultPayload, allSchemaNodes]);
 
   const metricNodes = nodes.filter((node) => node.kind === 'metric');
 
@@ -102,6 +173,7 @@ export default function SimulatorNodeSettings({
     field: keyof NodeSettings,
     value: string | number
   ) => {
+    dirtyNodes.current.add(nodeId);
     setSettings((prev) => ({
       ...prev,
       [nodeId]: { ...prev[nodeId], [field]: value },
@@ -112,6 +184,7 @@ export default function SimulatorNodeSettings({
     nodeId: string,
     payload: NodeSettings['payload']
   ) => {
+    dirtyNodes.current.add(nodeId);
     setSettings((prev) => ({
       ...prev,
       [nodeId]: { ...prev[nodeId], payload },
@@ -131,8 +204,9 @@ export default function SimulatorNodeSettings({
   };
 
   const handleClear = () => {
+    dirtyNodes.current.clear();
     const cleared = Object.fromEntries(
-      metricNodes.map((node) => [node.id, createDefaultSettings(node.id)])
+      metricNodes.map((node) => [node.id, createDefaultSettings(node.id, getEffectivePayload(node))])
     );
     setSettings(cleared);
     setExpandedPayloads(new Set());
@@ -142,9 +216,12 @@ export default function SimulatorNodeSettings({
     if (!onClearOverride) return;
     try {
       await onClearOverride(nodeId);
+      dirtyNodes.current.delete(nodeId);
+      const node = nodes.find((n) => n.id === nodeId);
+      const effectivePayload = node ? getEffectivePayload(node) : mergeEffectivePayload({}, globalDefaultPayload);
       setSettings((prev) => ({
         ...prev,
-        [nodeId]: createDefaultSettings(nodeId),
+        [nodeId]: createDefaultSettings(nodeId, effectivePayload),
       }));
       setExpandedPayloads((prev) => {
         const next = new Set(prev);
@@ -258,6 +335,15 @@ export default function SimulatorNodeSettings({
                     {node.dataType}
                   </span>
                 )}
+                {nodeSettings[node.id] ? (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-medium">
+                    Overridden
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">
+                    Inherited
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 {nodeSettings[node.id] && onClearOverride && (
@@ -322,6 +408,41 @@ export default function SimulatorNodeSettings({
               </div>
             </div>
 
+            {/* Payload Summary */}
+            {settings[node.id]?.payload && !expandedPayloads.has(node.id) && (
+              <div className="flex flex-wrap gap-2 text-xs">
+                <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                  Mode: <span className="font-medium text-gray-800 dark:text-gray-200">{settings[node.id].payload?.valueMode || 'random'}</span>
+                </span>
+                <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                  Quality: <span className="font-medium text-gray-800 dark:text-gray-200">{settings[node.id].payload?.quality || 'good'}</span>
+                </span>
+                <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                  Timestamp: <span className="font-medium text-gray-800 dark:text-gray-200">{settings[node.id].payload?.timestampMode || 'auto'}</span>
+                </span>
+                {settings[node.id].payload?.valueMode === 'static' && settings[node.id].payload?.value !== undefined && (
+                  <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                    Value: <span className="font-medium text-gray-800 dark:text-gray-200">{String(settings[node.id].payload?.value)}</span>
+                  </span>
+                )}
+                {settings[node.id].payload?.valueMode === 'random' && (
+                  <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                    Range: <span className="font-medium text-gray-800 dark:text-gray-200">{settings[node.id].payload?.minValue ?? 0}–{settings[node.id].payload?.maxValue ?? 100}</span>
+                  </span>
+                )}
+                {settings[node.id].payload?.valueMode === 'increment' && (
+                  <span className="px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">
+                    Step: <span className="font-medium text-gray-800 dark:text-gray-200">{settings[node.id].payload?.step ?? 1}</span>
+                  </span>
+                )}
+                {(settings[node.id].payload?.customFields?.length ?? 0) > 0 && (
+                  <span className="px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
+                    +{settings[node.id].payload?.customFields?.length} custom field{(settings[node.id].payload?.customFields?.length ?? 0) > 1 ? 's' : ''}
+                  </span>
+                )}
+              </div>
+            )}
+
             {/* Configure Payload Toggle Button */}
             <button
               type="button"
@@ -353,7 +474,7 @@ export default function SimulatorNodeSettings({
                 />
                 <button
                   type="button"
-                  onClick={() => onSave(settings)}
+                  onClick={() => { dirtyNodes.current.clear(); onSave(settings); }}
                   className="w-full px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
                 >
                   Save Node Settings
@@ -375,7 +496,7 @@ export default function SimulatorNodeSettings({
         </button>
         <button
           className="flex-1 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors"
-          onClick={() => onSave(settings)}
+          onClick={() => { dirtyNodes.current.clear(); onSave(settings); }}
           type="button"
         >
           Save Node Settings

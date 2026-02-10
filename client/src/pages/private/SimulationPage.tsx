@@ -34,6 +34,7 @@ import SimulatorCardContent from '../../components/simulator/SimulatorCardConten
 import SimulationStatusPanel from '../../components/simulator/SimulationControls';
 import SimulationConsole from '../../components/simulator/SimulationConsole';
 import ConfirmDialog from '../../components/global/ConfirmDialog';
+import ChangeBrokerModal from '../../components/simulator/ChangeBrokerModal';
 import type {
   AppDispatch,
   IBroker,
@@ -57,6 +58,7 @@ export default function SimulationPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showEditOrphaned, setShowEditOrphaned] = useState(false);
+  const [showChangeBrokerModal, setShowChangeBrokerModal] = useState(false);
   const [editForm, setEditForm] = useState({ brokerId: '', schemaId: '' });
   const [mobileView, setMobileView] = useState<'settings' | 'status'>('settings');
   const [form, setForm] = useState({
@@ -119,6 +121,18 @@ export default function SimulationPage() {
       navigate('/app/simulator');
     }
   }, [profileId, profiles, selectedProfile, navigate]);
+
+  // Listen for change broker modal event
+  useEffect(() => {
+    const handleOpenChangeBrokerModal = () => {
+      setShowChangeBrokerModal(true);
+    };
+
+    window.addEventListener('openChangeBrokerModal', handleOpenChangeBrokerModal);
+    return () => {
+      window.removeEventListener('openChangeBrokerModal', handleOpenChangeBrokerModal);
+    };
+  }, []);
 
   const handleSelectProfile = useCallback(
     (id: string) => {
@@ -690,6 +704,19 @@ export default function SimulationPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Change Broker Modal */}
+      {selectedProfile && (
+        <ChangeBrokerModal
+          isOpen={showChangeBrokerModal}
+          onClose={() => setShowChangeBrokerModal(false)}
+          currentBrokerId={selectedProfile.brokerId}
+          profileId={selectedProfile.id}
+          profileName={selectedProfile.name}
+          isRunning={currentState === 'running' || currentState === 'starting' || currentState === 'paused' || currentState === 'stopping'}
+          brokers={brokers}
+        />
       )}
     </div>
   );

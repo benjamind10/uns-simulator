@@ -17,6 +17,7 @@ export default function BrokerForm({
     name: '',
     url: '',
     port: 1883,
+    wsPath: '',
     clientId: '',
     username: '',
     password: '',
@@ -29,6 +30,7 @@ export default function BrokerForm({
         name: initialData.name,
         url: initialData.url,
         port: initialData.port,
+        wsPath: initialData.wsPath || '',
         clientId: initialData.clientId,
         username: initialData.username || '',
         password: initialData.password || '',
@@ -57,6 +59,7 @@ export default function BrokerForm({
         name: '',
         url: '',
         port: 1883,
+        wsPath: '',
         clientId: '',
         username: '',
         password: '',
@@ -69,6 +72,7 @@ export default function BrokerForm({
       name: '',
       url: '',
       port: 1883,
+      wsPath: '',
       clientId: '',
       username: '',
       password: '',
@@ -139,15 +143,39 @@ export default function BrokerForm({
           onChange={(e) =>
             setFormData((prev) => ({ ...prev, port: Number(e.target.value) }))
           }
-          className="w-full px-4 py-2 rounded 
-                     bg-white dark:bg-gray-900 
-                     text-gray-800 dark:text-white 
-                     border border-gray-300 dark:border-gray-700 
-                     placeholder-gray-400 dark:placeholder-gray-500 
+          className="w-full px-4 py-2 rounded
+                     bg-white dark:bg-gray-900
+                     text-gray-800 dark:text-white
+                     border border-gray-300 dark:border-gray-700
+                     placeholder-gray-400 dark:placeholder-gray-500
                      focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           Use 1883 for standard MQTT (auto-converts to WebSocket 9001), or specify WebSocket port directly
+        </p>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          WebSocket Path (optional)
+        </label>
+        <input
+          name="wsPath"
+          type="text"
+          placeholder="/mqtt or /ws"
+          value={formData.wsPath}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, wsPath: e.target.value }))
+          }
+          className="w-full px-4 py-2 rounded
+                     bg-white dark:bg-gray-900
+                     text-gray-800 dark:text-white
+                     border border-gray-300 dark:border-gray-700
+                     placeholder-gray-400 dark:placeholder-gray-500
+                     focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          Some brokers require a path like /mqtt or /ws for WebSocket connections
         </p>
       </div>
 

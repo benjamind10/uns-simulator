@@ -1,5 +1,24 @@
 import { gql } from 'graphql-request';
 
+const PAYLOAD_TEMPLATE_FIELDS = `
+  payloadTemplate {
+    quality
+    timestampMode
+    fixedTimestamp
+    value
+    valueMode
+    minValue
+    maxValue
+    step
+    precision
+    customFields {
+      key
+      value
+      type
+    }
+  }
+`;
+
 export const GET_SCHEMAS = gql`
   query GetSchemas {
     schemas {
@@ -17,6 +36,7 @@ export const GET_SCHEMAS = gql`
         unit
         engineering
         objectData
+        ${PAYLOAD_TEMPLATE_FIELDS}
       }
       brokerIds
       users
@@ -43,6 +63,7 @@ export const GET_SCHEMA = gql`
         unit
         engineering
         objectData
+        ${PAYLOAD_TEMPLATE_FIELDS}
       }
       brokerIds
       users
@@ -65,6 +86,7 @@ export const GET_NODES = gql`
       unit
       engineering
       objectData
+      ${PAYLOAD_TEMPLATE_FIELDS}
     }
   }
 `;

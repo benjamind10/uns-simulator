@@ -6,6 +6,7 @@ export const brokerTypeDefs = gql`
     name: String!
     url: String!
     port: Int!
+    wsPath: String
     clientId: String!
     username: String
     password: String
@@ -22,6 +23,7 @@ export const brokerTypeDefs = gql`
     name: String!
     url: String!
     port: Int!
+    wsPath: String
     clientId: String!
     username: String
     password: String
@@ -31,6 +33,7 @@ export const brokerTypeDefs = gql`
     name: String
     url: String
     port: Int
+    wsPath: String
     clientId: String
     username: String
     password: String

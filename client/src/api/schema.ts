@@ -1,6 +1,6 @@
 import { GraphQLClient } from 'graphql-request';
 
-import type { ISchema, ISchemaNode } from '../types';
+import type { ISchema, ISchemaNode, IPayloadTemplate } from '../types';
 
 import {
   CREATE_SCHEMA,
@@ -55,7 +55,8 @@ export type SchemaNodeInput = {
   dataType?: 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String';
   unit?: string;
   engineering?: Record<string, unknown>;
-  objectData?: Record<string, unknown>; // <-- Support custom object data
+  objectData?: Record<string, unknown>;
+  payloadTemplate?: IPayloadTemplate;
 };
 
 export type SaveNodesToSchemaInput = SchemaNodeInput;

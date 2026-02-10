@@ -10,8 +10,7 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useDraggable, useDroppable } from '@dnd-kit/core';
 
 import type { ISchemaNode } from '../../types';
 
@@ -29,6 +28,7 @@ interface TreeNodeProps {
   onToggleExpand: (nodeId: string) => void;
   onRename: (nodeId: string, newName: string) => void;
   dragOverId?: string | null;
+  onContextMenu?: (node: ISchemaNode) => void;
 }
 
 export default function TreeNode({
@@ -41,6 +41,7 @@ export default function TreeNode({
   onToggleExpand,
   onRename,
   dragOverId,
+  onContextMenu,
 }: TreeNodeProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(node.name);
@@ -52,23 +53,33 @@ export default function TreeNode({
   const hasChildren = node.children.length > 0;
   const isDragOver = dragOverId === node.id;
 
+  // Draggable — every node can be dragged
   const {
     attributes,
     listeners,
-    setNodeRef,
-    transform,
-    transition,
+    setNodeRef: setDragRef,
     isDragging,
-  } = useSortable({
+  } = useDraggable({
     id: node.id,
     data: { node },
   });
 
-  const style = {
-    transform: CSS.Translate.toString(transform),
-    transition,
-    opacity: isDragging ? 0.4 : 1,
+  // Droppable — only groups accept drops
+  const { setNodeRef: setDropRef, isOver } = useDroppable({
+    id: node.id,
+    data: { node },
+    disabled: !isGroup,
+  });
+
+  // Combine refs: outer div is both drag source and drop target
+  const setNodeRef = (el: HTMLDivElement | null) => {
+    setDragRef(el);
+    if (isGroup) {
+      setDropRef(el);
+    }
   };
+
+  const showDropHighlight = isGroup && (isDragOver || isOver);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -101,27 +112,40 @@ export default function TreeNode({
     if (e.key === 'Escape') handleEditCancel();
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onContextMenu?.(node);
+  };
+
   return (
-    <div ref={setNodeRef} style={style}>
+    <div style={{ opacity: isDragging ? 0.4 : 1, transition: 'opacity 0.2s' }}>
       {/* Node row */}
       <div
+        ref={setNodeRef}
         className={`
-          group flex items-center gap-1.5 py-1.5 sm:py-1 px-2 rounded-md cursor-pointer min-h-[40px] sm:min-h-0
-          transition-colors duration-100
-          ${isSelected ? 'bg-blue-50 dark:bg-blue-900/30 ring-1 ring-blue-400/50' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}
-          ${isDragOver && isGroup ? 'ring-2 ring-blue-400 bg-blue-50/50 dark:bg-blue-900/20' : ''}
+          group flex items-center gap-1.5 py-2 px-2 rounded-md cursor-pointer
+          transition-all duration-200
+          ${isSelected ? 'bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-400' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'}
+          ${showDropHighlight ? 'ring-4 ring-green-500 bg-green-50 dark:bg-green-900/30 scale-[1.03] shadow-md' : ''}
+          ${isGroup && !isDragging ? 'border border-dashed border-transparent hover:border-gray-300 dark:hover:border-gray-600' : ''}
         `}
         style={{ paddingLeft: `${Math.min(depth * 20 + 8, 120)}px` }}
         onClick={() => onSelect(node)}
+        onContextMenu={handleContextMenu}
       >
         {/* Drag handle */}
-        <span
-          className="opacity-0 group-hover:opacity-40 hover:!opacity-100 cursor-grab active:cursor-grabbing transition-opacity flex-shrink-0"
+        <button
+          type="button"
+          className="opacity-30 group-hover:opacity-70 hover:!opacity-100 cursor-grab active:cursor-grabbing transition-opacity flex-shrink-0 p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
           {...attributes}
           {...listeners}
+          onClick={(e) => e.stopPropagation()}
+          aria-label="Drag to move node"
+          style={{ touchAction: 'none' }}
         >
-          <GripVertical className="w-3.5 h-3.5 text-gray-400" />
-        </span>
+          <GripVertical className="w-4 h-4 text-gray-500 pointer-events-none" />
+        </button>
 
         {/* Expand/collapse chevron */}
         {isGroup ? (
@@ -244,6 +268,7 @@ export default function TreeNode({
               onToggleExpand={onToggleExpand}
               onRename={onRename}
               dragOverId={dragOverId}
+              onContextMenu={onContextMenu}
             />
           ))}
         </div>

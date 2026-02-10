@@ -1,3 +1,20 @@
+export interface IPayloadTemplate {
+  quality?: string;
+  timestampMode?: 'auto' | 'fixed';
+  fixedTimestamp?: number;
+  value?: string | number | boolean;
+  valueMode?: 'static' | 'random' | 'increment';
+  minValue?: number;
+  maxValue?: number;
+  step?: number;
+  precision?: number;
+  customFields?: Array<{
+    key: string;
+    value: string | number | boolean;
+    type: 'string' | 'number' | 'boolean';
+  }>;
+}
+
 export interface ISchema {
   id: string;
   name: string;
@@ -35,7 +52,8 @@ export interface SchemaNodeInput {
   dataType?: 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String';
   unit?: string;
   engineering?: Record<string, unknown>;
-  objectData?: Record<string, unknown>; // Custom data for 'object' kind nodes
+  objectData?: Record<string, unknown>;
+  payloadTemplate?: IPayloadTemplate;
 }
 
 export interface ISchemaNode {
@@ -48,7 +66,8 @@ export interface ISchemaNode {
   dataType?: 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String';
   unit?: string;
   engineering?: Record<string, unknown>;
-  objectData?: Record<string, unknown>; // <-- Add objectData for returned nodes
+  objectData?: Record<string, unknown>;
+  payloadTemplate?: IPayloadTemplate;
   children?: ISchemaNode[];
   isTemporary?: boolean;
 }

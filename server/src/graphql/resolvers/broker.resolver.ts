@@ -1,5 +1,4 @@
 import { Types } from 'mongoose';
-import mongoose from 'mongoose';
 
 import User from '../models/User';
 import Broker, { IBroker } from '../models/Broker';
@@ -141,9 +140,26 @@ export const brokerResolvers = {
         throw new Error('Forbidden');
       }
 
+      // Build update object explicitly including empty strings
+      const updateFields: any = {};
+
+      // Always include these fields if provided (even if empty)
+      if ('name' in args.input) updateFields.name = args.input.name;
+      if ('url' in args.input) updateFields.url = args.input.url;
+      if ('port' in args.input) updateFields.port = args.input.port;
+      if ('clientId' in args.input) updateFields.clientId = args.input.clientId;
+
+      // Explicitly handle username and password to allow empty strings
+      if ('username' in args.input) {
+        updateFields.username = args.input.username || '';
+      }
+      if ('password' in args.input) {
+        updateFields.password = args.input.password || '';
+      }
+
       const updatedBroker = await Broker.findByIdAndUpdate(
         args.id,
-        { $set: args.input },
+        { $set: updateFields },
         { new: true }
       );
 

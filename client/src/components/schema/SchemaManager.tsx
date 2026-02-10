@@ -73,6 +73,27 @@ export default function SchemaManager({
       return;
     }
 
+    // Helper: resolve effective payload template for a metric by walking ancestors
+    const resolveEffectivePayload = (node: typeof selectedSchema.nodes[0]) => {
+      if (node.kind !== 'metric') return undefined;
+
+      let ancestorPayload: typeof node.payloadTemplate | undefined;
+      let currentParentId = node.parent;
+      const schemaNodes = selectedSchema.nodes ?? [];
+      while (currentParentId) {
+        const parent = schemaNodes.find((n) => n.id === currentParentId);
+        if (!parent) break;
+        if (parent.kind === 'group' && parent.payloadTemplate) {
+          ancestorPayload = parent.payloadTemplate;
+          break;
+        }
+        currentParentId = parent.parent;
+      }
+
+      if (!ancestorPayload && !node.payloadTemplate) return undefined;
+      return { ...ancestorPayload, ...node.payloadTemplate };
+    };
+
     const exportPayload = (selectedSchema.nodes ?? []).map((node) => ({
       id: node.id,
       name: node.name,
@@ -84,6 +105,8 @@ export default function SchemaManager({
       unit: node.unit,
       engineering: node.engineering,
       objectData: node.objectData,
+      payloadTemplate: node.payloadTemplate ?? undefined,
+      effectivePayload: resolveEffectivePayload(node),
     }));
 
     const safeName = selectedSchema.name

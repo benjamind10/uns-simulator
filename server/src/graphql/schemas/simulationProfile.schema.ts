@@ -186,6 +186,15 @@ export const simulationProfileTypeDefs = gql`
     defaultScenario: String
   }
 
+  input UpdateSimulationProfileInput {
+    name: String
+    description: String
+    schemaId: ID
+    brokerId: ID
+    globalSettings: GlobalSettingsInput
+    defaultScenario: String
+  }
+
   input StaticBehaviorInput {
     nodeId: ID!
     enabled: Boolean = true
@@ -265,7 +274,7 @@ export const simulationProfileTypeDefs = gql`
     createSimulationProfile(input: SimulationProfileInput!): SimulationProfile!
     updateSimulationProfile(
       id: ID!
-      input: SimulationProfileInput!
+      input: UpdateSimulationProfileInput!
     ): SimulationProfile!
     deleteSimulationProfile(id: ID!): Boolean!
 

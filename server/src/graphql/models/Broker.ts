@@ -6,6 +6,7 @@ export interface IBroker extends Document {
   name: string;
   url: string;
   port: number;
+  wsPath?: string;
   clientId: string;
   username?: string;
   password?: string;
@@ -19,6 +20,7 @@ const BrokerSchema: Schema = new Schema<IBroker>(
     name: { type: String, required: true },
     url: { type: String, required: true },
     port: { type: Number, required: true },
+    wsPath: { type: String },
     clientId: { type: String, required: true },
     username: { type: String },
     password: { type: String },

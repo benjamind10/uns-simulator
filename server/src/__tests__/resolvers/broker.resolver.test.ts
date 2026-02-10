@@ -206,11 +206,61 @@ describe('brokerResolvers', () => {
         )
       ).rejects.toThrow('Forbidden');
     });
-  });
 
-  describe('Broker.password', () => {
-    it('always returns null', () => {
-      expect(brokerResolvers.Broker.password()).toBeNull();
+    it('allows clearing username and password with empty strings', async () => {
+      const userId = new Types.ObjectId();
+      const context = createMockContext(userId.toString());
+      mockBrokerFindById.mockResolvedValue({
+        users: [userId],
+      });
+      mockBrokerFindByIdAndUpdate.mockResolvedValue({
+        _id: 'broker-1',
+        name: 'Test Broker',
+        username: '',
+        password: '',
+      });
+
+      const result = await brokerResolvers.Mutation.updateBroker(
+        {},
+        { id: 'broker-1', input: { username: '', password: '' } },
+        context
+      );
+
+      expect(mockBrokerFindByIdAndUpdate).toHaveBeenCalledWith(
+        'broker-1',
+        { $set: { username: '', password: '' } },
+        { new: true }
+      );
+      expect(result!.username).toBe('');
+      expect(result!.password).toBe('');
+    });
+
+    it('updates username and password to new values', async () => {
+      const userId = new Types.ObjectId();
+      const context = createMockContext(userId.toString());
+      mockBrokerFindById.mockResolvedValue({
+        users: [userId],
+      });
+      mockBrokerFindByIdAndUpdate.mockResolvedValue({
+        _id: 'broker-1',
+        name: 'Test Broker',
+        username: 'newuser',
+        password: 'newpass',
+      });
+
+      const result = await brokerResolvers.Mutation.updateBroker(
+        {},
+        { id: 'broker-1', input: { username: 'newuser', password: 'newpass' } },
+        context
+      );
+
+      expect(mockBrokerFindByIdAndUpdate).toHaveBeenCalledWith(
+        'broker-1',
+        { $set: { username: 'newuser', password: 'newpass' } },
+        { new: true }
+      );
+      expect(result!.username).toBe('newuser');
+      expect(result!.password).toBe('newpass');
     });
   });
 });

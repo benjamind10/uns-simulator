@@ -7,6 +7,7 @@ export const GET_BROKERS = gql`
       name
       url
       port
+      wsPath
       clientId
       username
       password
@@ -23,6 +24,7 @@ export const GET_BROKER = gql`
       name
       url
       port
+      wsPath
       clientId
       username
       password

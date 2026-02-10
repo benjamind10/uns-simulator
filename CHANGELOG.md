@@ -1,5 +1,100 @@
 # Changelog - UNS Simulator
 
+## MQTT Backbone System - February 10, 2025
+
+### Overview
+
+Implemented a comprehensive MQTT backbone system that provides centralized status publishing, event streaming, remote control capabilities, and structured logging via MQTT topics. The system connects to the local MQTT broker as the `uns-backend` system user and publishes all application state to well-known topics under the `uns-simulator/_sys/` prefix.
+
+### Changes
+
+**Core Components:**
+- **MqttBackboneService** (`server/src/mqtt/MqttBackboneService.ts`): Singleton service managing the system-wide MQTT connection
+  - Automatic connection on server startup with configurable retry logic
+  - Heartbeat mechanism publishing server status every 30 seconds
+  - Support for retained status messages and non-retained event streams
+  - Graceful shutdown with proper cleanup
+- **Command Handler** (`server/src/mqtt/commandHandler.ts`): Processes incoming MQTT commands
+  - Handles start/stop/pause/resume commands for simulations
+  - ACL-protected command topics (only `uns-client` can write)
+  - Skips UI-originated commands to avoid duplicate execution
+  - Publishes command responses with correlation IDs
+- **Topic Constants** (`server/src/mqtt/topics.ts`): Centralized topic definitions for system communication
+
+**Topic Hierarchy:**
+```
+uns-simulator/_sys/
+├── status/           # Retained status messages
+│   ├── server        # Server health & uptime
+│   ├── simulations/
+│   │   ├── _index   # Active simulation list
+│   │   └── {id}     # Per-simulation status
+├── logs/             # Non-retained log streams
+│   └── simulations/{id}
+├── events/           # Non-retained lifecycle events
+│   ├── system       # Server events
+│   └── simulation   # Simulation events
+├── cmd/              # Command topics
+│   └── simulation/  # start, stop, pause, resume
+└── cmd-response/     # Command responses
+    └── {correlationId}
+```
+
+**Published Information:**
+- **Server Status**: Health, uptime, database connection state (every 30s, retained)
+- **Simulation Status**: Real-time state, connection status, metrics (retained)
+- **Simulation Index**: List of all active simulations (retained)
+- **Simulation Logs**: Live stream of log entries per simulation (non-retained)
+- **System Events**: Server startup, shutdown events (non-retained)
+- **Simulation Events**: Started, stopped, paused, resumed events (non-retained)
+
+**Security & Authentication:**
+- Three MQTT users with distinct permissions via ACL:
+  - `uns-backend`: System backend (full _sys/ access)
+  - `uns-sim`: Simulation engines (write to data topics only)
+  - `uns-client`: Client applications (read status, write commands)
+- Credentials configured via environment variables:
+  - `MQTT_BACKBONE_USERNAME` / `MQTT_BACKBONE_PASSWORD`
+  - `MQTT_SIM_USERNAME` / `MQTT_SIM_PASSWORD`
+  - `MQTT_CLIENT_USERNAME` / `MQTT_CLIENT_PASSWORD`
+
+**Integration:**
+- SimulationManager forwards all engine lifecycle events to MQTT backbone
+- Server startup/shutdown publishes system events
+- Automatic status clearing on simulation stop
+- Non-fatal connection failure (server continues if MQTT unavailable)
+
+**Configuration:**
+```typescript
+MQTT_BACKBONE_CONFIG = {
+  CLIENT_ID: 'uns-backend-system',
+  HEARTBEAT_INTERVAL: 30000,  // 30s
+  CONNECT_TIMEOUT: 10000,     // 10s
+  RECONNECT_PERIOD: 5000,     // Auto-reconnect
+  QOS_STATUS: 1,              // At-least-once
+  QOS_EVENTS: 0,              // At-most-once
+}
+```
+
+**Documentation:**
+- Added comprehensive "MQTT Backbone System" section to CLAUDE.md
+- Updated README.md with:
+  - MQTT Backbone feature in capabilities list
+  - Updated system architecture diagram
+  - New "MQTT Backbone & Monitoring" usage section
+  - MQTT configuration examples
+  - Remote control examples
+- Updated .env.example with MQTT backbone credentials
+- Added environment variable documentation
+
+**Monitoring & Control:**
+- Subscribe to system topics with any MQTT client to monitor in real-time
+- Publish commands to control simulations remotely
+- View retained status messages immediately on connect
+- Stream live logs from active simulations
+
+---
+
 ## Documentation Cleanup - February 7, 2025
 
 - Removed stale implementation plan files (`PAYLOAD_CUSTOMIZATION_PLAN.md`, `UI_REDESIGN_PLAN.md`) — both features are fully implemented

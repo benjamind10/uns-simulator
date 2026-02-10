@@ -1,6 +1,6 @@
 import { Types } from 'mongoose';
 
-import Schema, { ISchema, ISchemaNode } from '../models/Schema';
+import Schema, { ISchema, ISchemaNode, IPayloadTemplate } from '../models/Schema';
 
 interface Context {
   user?: { _id: string };
@@ -24,7 +24,8 @@ interface SchemaNodeInput {
   dataType?: 'Int' | 'Float' | 'Bool' | 'String';
   unit?: string;
   engineering?: Record<string, unknown>;
-  objectData?: Record<string, unknown>; // <-- add this for custom JSON
+  objectData?: Record<string, unknown>;
+  payloadTemplate?: IPayloadTemplate;
 }
 
 function requireAuth(context: Context): void {
@@ -69,7 +70,8 @@ export const schemaResolvers = {
         description: args.input.description,
         nodes: (args.input.nodes || []).map((n) => ({
           ...n,
-          objectData: n.objectData ?? {}, // ensure objectData is present
+          objectData: n.objectData ?? {},
+          payloadTemplate: n.payloadTemplate,
         })),
         brokerIds: args.input.brokerIds || [],
         users:
@@ -150,7 +152,8 @@ export const schemaResolvers = {
         dataType: n.dataType,
         unit: n.unit,
         engineering: n.engineering ?? {},
-        objectData: n.objectData ?? {}, // <-- support objectData
+        objectData: n.objectData ?? {},
+        payloadTemplate: n.payloadTemplate,
       }));
 
       await Schema.findByIdAndUpdate(args.schemaId, { $set: { nodes: [] } });
@@ -176,9 +179,13 @@ export const schemaResolvers = {
         args.schemaId,
         {
           $push: {
-            nodes: { ...args.node, objectData: args.node.objectData ?? {} },
+            nodes: {
+              ...args.node,
+              objectData: args.node.objectData ?? {},
+              payloadTemplate: args.node.payloadTemplate,
+            },
           },
-        }, // <-- support objectData
+        },
         { new: true }
       );
 
@@ -196,9 +203,13 @@ export const schemaResolvers = {
         { _id: args.schemaId, 'nodes._id': args.nodeId },
         {
           $set: {
-            'nodes.$': { ...args.node, objectData: args.node.objectData ?? {} },
+            'nodes.$': {
+              ...args.node,
+              objectData: args.node.objectData ?? {},
+              payloadTemplate: args.node.payloadTemplate,
+            },
           },
-        }, // <-- support objectData
+        },
         { new: true }
       );
 
