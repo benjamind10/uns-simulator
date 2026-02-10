@@ -12,19 +12,20 @@ This file provides comprehensive guidance to Claude Code (claude.ai/code) when w
 4. [Architecture](#architecture)
 5. [File Structure](#file-structure)
 6. [Backend Deep Dive](#backend-deep-dive)
-7. [Frontend Deep Dive](#frontend-deep-dive)
-8. [GraphQL API Reference](#graphql-api-reference)
-9. [State Management](#state-management)
-10. [Component Architecture](#component-architecture)
-11. [Data Models and Types](#data-models-and-types)
-12. [Payload Configuration System](#payload-configuration-system)
-13. [Testing Strategy](#testing-strategy)
-14. [Development Workflow](#development-workflow)
-15. [Code Style](#code-style)
-16. [Environment Variables](#environment-variables)
-17. [Docker Services](#docker-services)
-18. [Common Patterns and Conventions](#common-patterns-and-conventions)
-19. [Troubleshooting](#troubleshooting)
+7. [MQTT Backbone System](#mqtt-backbone-system)
+8. [Frontend Deep Dive](#frontend-deep-dive)
+9. [GraphQL API Reference](#graphql-api-reference)
+10. [State Management](#state-management)
+11. [Component Architecture](#component-architecture)
+12. [Data Models and Types](#data-models-and-types)
+13. [Payload Configuration System](#payload-configuration-system)
+14. [Testing Strategy](#testing-strategy)
+15. [Development Workflow](#development-workflow)
+16. [Code Style](#code-style)
+17. [Environment Variables](#environment-variables)
+18. [Docker Services](#docker-services)
+19. [Common Patterns and Conventions](#common-patterns-and-conventions)
+20. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -41,12 +42,14 @@ This file provides comprehensive guidance to Claude Code (claude.ai/code) when w
 
 **Key Capabilities:**
 - Multi-broker MQTT connection management
+- System-wide MQTT backbone for status, events, and command/control
 - Hierarchical schema builder with drag-and-drop tree editing
 - Advanced simulation engine with three value generation modes (static, random, increment)
 - Per-node and global payload customization
-- Real-time simulation status monitoring
+- Real-time simulation status monitoring via MQTT topics
 - Client-side MQTT explorer for topic inspection
 - JWT-based authentication with user-scoped resources
+- MQTT-based remote control and monitoring
 
 ---
 
@@ -500,17 +503,363 @@ constructor(profile: ISimulationProfile, schema: ISchema, broker: IBroker)
 
 **Initialization:** On server startup, reset any orphaned profiles (left running from crash) to "stopped" state
 
-### MQTT Backbone Service (`server/src/mqtt/`)
+---
 
-**Purpose:** System-wide MQTT connection for control commands and monitoring
+## MQTT Backbone System
 
-**MqttBackboneService.ts:**
-- Connects to configured MQTT broker on startup
-- Subscribes to system topics (e.g., `system/commands/#`)
-- Publishes system events and metrics
-- Handles command messages via `commandHandler.ts`
+The MQTT Backbone is a system-wide MQTT connection that provides centralized monitoring, status publishing, and command/control capabilities. It connects to the local MQTT broker as the `uns-backend` system user and publishes application state to well-known topics under `uns-simulator/_sys/`.
 
-**topics.ts:** Defines MQTT topic constants for system communication
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    UNS Simulator Backend                     │
+│                                                               │
+│  ┌─────────────────┐          ┌─────────────────────────┐  │
+│  │   GraphQL API   │          │  MQTT Backbone Service  │  │
+│  │   (Commands)    │          │  (uns-backend user)     │  │
+│  └────────┬────────┘          └──────────┬──────────────┘  │
+│           │                              │                  │
+│           │  ┌──────────────────────┐   │                  │
+│           └─►│ SimulationManager    │◄──┘                  │
+│              │  ┌─────────────┐     │                      │
+│              │  │  Engine 1   │     │                      │
+│              │  ├─────────────┤     │                      │
+│              │  │  Engine 2   │     │                      │
+│              │  └─────────────┘     │                      │
+│              └──────────────────────┘                      │
+└───────────────────────┬────────────────────────────────────┘
+                        │
+                        ▼
+                ┌───────────────┐
+                │ MQTT Broker   │
+                │ (Mosquitto)   │
+                └───────┬───────┘
+                        │
+         ┌──────────────┼──────────────┐
+         ▼              ▼              ▼
+    System Topics  Simulation     Client Apps
+    (_sys/*)       Data Topics    (uns-client)
+```
+
+### Topic Hierarchy
+
+All system topics live under the `uns-simulator/_sys/` prefix to separate them from user-defined simulation data:
+
+```
+uns-simulator/_sys/
+├── status/                      # Retained status messages
+│   ├── server                   # Server health & uptime
+│   ├── simulations/
+│   │   ├── _index              # List of active simulations
+│   │   └── {profileId}         # Per-simulation status
+│   └── brokers/
+│       ├── _index              # Broker registry (future)
+│       └── {brokerId}          # Per-broker status (future)
+│
+├── logs/                        # Non-retained log streams
+│   └── simulations/
+│       └── {profileId}         # Per-simulation logs
+│
+├── events/                      # Non-retained events
+│   ├── system                  # Server lifecycle events
+│   └── simulation              # Simulation lifecycle events
+│
+├── cmd/                         # Command topics (write-only for uns-client)
+│   └── simulation/
+│       ├── start
+│       ├── stop
+│       ├── pause
+│       └── resume
+│
+└── cmd-response/                # Command responses
+    └── {correlationId}         # Response to specific command
+```
+
+### MqttBackboneService.ts
+
+**Singleton class** that manages the system MQTT connection.
+
+**Constructor:**
+```typescript
+constructor()
+```
+- Initializes command handler
+- Sets up event emitters
+
+**Key methods:**
+
+**Connection Management:**
+- `connect()`: Connect to MQTT broker with credentials from environment
+- `disconnect()`: Gracefully disconnect and stop heartbeat
+- `isConnected()`: Check connection status
+
+**Status Publishing (Retained):**
+- `publishServerStatus()`: Publish server health, uptime, database state
+- `publishSimulationStatus(profileId, status)`: Publish simulation state
+- `publishSimulationIndex(profileIds)`: Publish list of active simulations
+- `clearSimulationStatus(profileId)`: Clear retained status for stopped simulation
+
+**Log Publishing (Non-Retained):**
+- `publishSimulationLog(profileId, log)`: Stream simulation log entries
+
+**Event Publishing (Non-Retained):**
+- `publishSimulationEvent(event, data)`: Publish simulation lifecycle events
+- `publishSystemEvent(event, data)`: Publish system events (startup, shutdown)
+
+**Command Publishing:**
+- `publishCommand(topic, profileId, userId)`: Publish UI-originated commands
+- `publishCommandResponse(correlationId, response)`: Respond to commands
+
+**Configuration:**
+```typescript
+MQTT_BACKBONE_CONFIG = {
+  CLIENT_ID: 'uns-backend-system',
+  HEARTBEAT_INTERVAL: 30000,        // 30 seconds
+  CONNECT_TIMEOUT: 10000,           // 10 seconds
+  RECONNECT_PERIOD: 5000,           // Auto-reconnect every 5s
+  KEEPALIVE: 30,
+  QOS_STATUS: 1,                    // At-least-once for status
+  QOS_EVENTS: 0,                    // At-most-once for events
+}
+```
+
+**Lifecycle:**
+1. Server startup → `mqttBackbone.connect()`
+2. On connect → Subscribe to `uns-simulator/_sys/cmd/#`
+3. Start heartbeat → Publish server status every 30s
+4. On shutdown → `publishSystemEvent('shutdown')`, disconnect
+
+### Command Handler (commandHandler.ts)
+
+Handles incoming MQTT commands on `_sys/cmd/#` topics.
+
+**Security:**
+- Commands are ACL-protected at broker level
+- Only `uns-client` user can write to `cmd/` topics
+- UI-originated commands (origin='ui') are skipped (already executed by GraphQL)
+- External commands (e.g., from MQTT clients) are validated and executed
+
+**Command Flow:**
+```
+1. MQTT client publishes to uns-simulator/_sys/cmd/simulation/start
+   {
+     "profileId": "abc123",
+     "correlationId": "ext-12345",
+     "origin": "external"
+   }
+
+2. Command handler receives message
+   - Validates payload (JSON parse)
+   - Checks origin (skip if 'ui')
+   - Validates required fields (profileId)
+
+3. Execute command
+   - Load profile, schema, broker from database
+   - Call SimulationManager.startSimulation()
+
+4. Publish response
+   uns-simulator/_sys/cmd-response/ext-12345
+   {
+     "correlationId": "ext-12345",
+     "success": true,
+     "error": null,
+     "timestamp": 1738857600000
+   }
+```
+
+**Supported Commands:**
+- `CMD_SIMULATION_START`: Start simulation
+- `CMD_SIMULATION_STOP`: Stop simulation
+- `CMD_SIMULATION_PAUSE`: Pause simulation
+- `CMD_SIMULATION_RESUME`: Resume simulation
+
+**Error Handling:**
+- Invalid JSON → Log error, no response
+- Missing profileId → Publish error response
+- Command execution failure → Publish error response with message
+
+### Topic Constants (topics.ts)
+
+Centralized topic definitions:
+
+```typescript
+const PREFIX = 'uns-simulator/_sys';
+
+export const TOPICS = {
+  // Status (retained)
+  STATUS_SERVER: `${PREFIX}/status/server`,
+  STATUS_SIMULATION: (id: string) => `${PREFIX}/status/simulations/${id}`,
+  STATUS_SIMULATIONS_INDEX: `${PREFIX}/status/simulations/_index`,
+
+  // Logs (non-retained)
+  LOGS_SIMULATION: (id: string) => `${PREFIX}/logs/simulations/${id}`,
+
+  // Events (non-retained)
+  EVENTS_SYSTEM: `${PREFIX}/events/system`,
+  EVENTS_SIMULATION: `${PREFIX}/events/simulation`,
+
+  // Commands
+  CMD_SIMULATION_START: `${PREFIX}/cmd/simulation/start`,
+  CMD_SIMULATION_STOP: `${PREFIX}/cmd/simulation/stop`,
+  CMD_SIMULATION_PAUSE: `${PREFIX}/cmd/simulation/pause`,
+  CMD_SIMULATION_RESUME: `${PREFIX}/cmd/simulation/resume`,
+  CMD_WILDCARD: `${PREFIX}/cmd/#`,
+
+  // Command Responses
+  CMD_RESPONSE: (correlationId: string) =>
+    `${PREFIX}/cmd-response/${correlationId}`,
+} as const;
+```
+
+### Integration with SimulationManager
+
+The SimulationManager forwards all engine lifecycle events to the MQTT backbone:
+
+```typescript
+// Forward engine lifecycle events to MQTT backbone
+engine.on('started', () => {
+  mqttBackbone.publishSimulationStatus(profileId, engine.getStatus());
+  mqttBackbone.publishSimulationEvent('started', { profileId, name });
+});
+
+engine.on('stopped', () => {
+  mqttBackbone.clearSimulationStatus(profileId);
+  mqttBackbone.publishSimulationEvent('stopped', { profileId, name });
+});
+
+engine.on('paused', () => {
+  mqttBackbone.publishSimulationStatus(profileId, engine.getStatus());
+  mqttBackbone.publishSimulationEvent('paused', { profileId, name });
+});
+
+engine.on('resumed', () => {
+  mqttBackbone.publishSimulationStatus(profileId, engine.getStatus());
+  mqttBackbone.publishSimulationEvent('resumed', { profileId, name });
+});
+
+engine.on('statusUpdate', () => {
+  mqttBackbone.publishSimulationStatus(profileId, engine.getStatus());
+});
+
+// Forward all log entries to MQTT backbone
+engine.on('log', (entry: SimulationLogEntry) => {
+  mqttBackbone.publishSimulationLog(profileId, { ...entry });
+});
+```
+
+### Server Status Payload
+
+Published to `uns-simulator/_sys/status/server` every 30 seconds:
+
+```json
+{
+  "status": "ok",
+  "uptime": 3600,
+  "database": "connected",
+  "timestamp": 1738857600000
+}
+```
+
+### Simulation Status Payload
+
+Published to `uns-simulator/_sys/status/simulations/{profileId}`:
+
+```json
+{
+  "profileId": "abc123",
+  "state": "running",
+  "isRunning": true,
+  "isPaused": false,
+  "mqttConnected": true,
+  "startTime": 1738857000000,
+  "lastActivity": 1738857600000,
+  "nodeCount": 10,
+  "publishCount": 1234,
+  "timestamp": 1738857600000
+}
+```
+
+### Simulation Log Payload
+
+Published to `uns-simulator/_sys/logs/simulations/{profileId}`:
+
+```json
+{
+  "timestamp": 1738857600000,
+  "level": "info",
+  "message": "Published to enterprise/site1/area2/temperature",
+  "topic": "enterprise/site1/area2/temperature",
+  "nodeId": "temp_sensor_1"
+}
+```
+
+### Event Payloads
+
+**System Events** (`_sys/events/system`):
+```json
+{
+  "event": "started",
+  "environment": "production",
+  "timestamp": 1738857600000
+}
+```
+
+**Simulation Events** (`_sys/events/simulation`):
+```json
+{
+  "event": "started",
+  "profileId": "abc123",
+  "name": "Factory Floor Simulation",
+  "timestamp": 1738857600000
+}
+```
+
+### Authentication & Authorization
+
+**MQTT Users:**
+- `uns-backend` - System backend (write to all _sys/ topics)
+- `uns-sim` - Simulation engines (write to data topics)
+- `uns-client` - Client applications (read _sys/, write to _sys/cmd/)
+
+**ACL Configuration:**
+Defined in `mqtt-broker/acl`:
+```
+# uns-backend (system) - full access
+user uns-backend
+topic readwrite uns-simulator/_sys/#
+
+# uns-sim (simulations) - write to data topics only
+user uns-sim
+topic write #
+topic read uns-simulator/_sys/status/#
+
+# uns-client (UI/external) - read status, write commands
+user uns-client
+topic read uns-simulator/_sys/#
+topic write uns-simulator/_sys/cmd/#
+```
+
+### Monitoring with MQTT Explorer
+
+To monitor system status in real-time:
+
+1. Connect MQTT Explorer to broker (localhost:1883)
+2. Subscribe to `uns-simulator/_sys/#`
+3. View retained status messages immediately
+4. Watch live log streams and events
+5. Publish commands to control simulations
+
+**Example command:**
+```json
+Topic: uns-simulator/_sys/cmd/simulation/start
+Payload:
+{
+  "profileId": "abc123",
+  "correlationId": "external-cmd-001",
+  "origin": "external"
+}
+```
 
 ---
 
@@ -1687,6 +2036,14 @@ MQTT_HOST=mqtt                           # Docker: mqtt, Local: localhost
 MQTT_PORT=1883
 MQTT_WS_PORT=9001
 
+# MQTT Backbone Credentials (system users for ACL-protected topics)
+MQTT_BACKBONE_USERNAME=uns-backend       # System backend user
+MQTT_BACKBONE_PASSWORD=uns-backend-dev   # Change in production!
+MQTT_SIM_USERNAME=uns-sim                # Simulation engine user
+MQTT_SIM_PASSWORD=uns-sim-dev            # Change in production!
+MQTT_CLIENT_USERNAME=uns-client          # Client application user
+MQTT_CLIENT_PASSWORD=uns-client-dev      # Change in production!
+
 # Optional Features
 ENABLE_RATE_LIMIT=false                  # Set to "true" to enable
 
@@ -1708,6 +2065,12 @@ Accessed via `process.env.*`
 | `MQTT_HOST` | `localhost` | MQTT broker host |
 | `MQTT_PORT` | `1883` | MQTT broker TCP port |
 | `MQTT_WS_PORT` | `9001` | MQTT broker WebSocket port |
+| `MQTT_BACKBONE_USERNAME` | `uns-backend` | System backend MQTT user |
+| `MQTT_BACKBONE_PASSWORD` | _(required)_ | System backend MQTT password |
+| `MQTT_SIM_USERNAME` | `uns-sim` | Simulation engine MQTT user |
+| `MQTT_SIM_PASSWORD` | _(required)_ | Simulation engine MQTT password |
+| `MQTT_CLIENT_USERNAME` | `uns-client` | Client application MQTT user |
+| `MQTT_CLIENT_PASSWORD` | _(required)_ | Client application MQTT password |
 | `ENABLE_RATE_LIMIT` | `false` | Enable express-rate-limit |
 
 ### Client Environment Variables

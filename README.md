@@ -34,13 +34,19 @@ A production-ready, web-based MQTT simulation platform for testing Unified Names
 
 ### Core Capabilities
 
-- **🔐 Secure Authentication & Authorization**  
+- **🔐 Secure Authentication & Authorization**
   JWT-based authentication with secure session management
 - **📡 Advanced MQTT Broker Management**
   - Connect to multiple MQTT brokers simultaneously
   - Real-time connection status monitoring
   - Auto-reconnection with exponential backoff
   - WebSocket (WS/WSS) support
+- **🔌 MQTT Backbone System**
+  - System-wide MQTT connection for status and control
+  - Real-time server health and simulation status publishing
+  - MQTT-based command/control interface
+  - Centralized logging via MQTT topics
+  - Remote monitoring and control capabilities
 - **📊 Real-Time Simulation Engine**
   - Configure node-level publish frequencies
   - Simulate data with configurable failure rates
@@ -78,6 +84,7 @@ A production-ready, web-based MQTT simulation platform for testing Unified Names
 
 ### Recent Enhancements
 
+- ✅ **MQTT Backbone System** - System-wide MQTT connection for real-time status publishing, event streaming, remote control, and centralized logging
 - ✅ **Custom Payload Configuration** - Full control over published MQTT payloads with static/random/increment value modes, custom fields, and live preview
 - ✅ **UI Redesign** - Unified app shell with collapsible sidebar, redesigned dashboard, broker management with modals, and consistent design system
 - ✅ **Reusable UI Components** - Card, Badge, PageHeader, EmptyState, SlideOver, Avatar, Tooltip components
@@ -94,25 +101,43 @@ A production-ready, web-based MQTT simulation platform for testing Unified Names
 ### System Overview
 
 ```
-┌─────────────────┐      GraphQL/WebSocket       ┌─────────────────┐
+┌─────────────────┐      GraphQL/HTTP            ┌─────────────────┐
 │                 │◄────────────────────────────►│                 │
 │  React Client   │                              │  Node.js API    │
 │  (TypeScript)   │                              │  (TypeScript)   │
 │                 │                              │                 │
 └─────────────────┘                              └────────┬────────┘
          │                                                │
-         │ MQTT/WebSocket                                │
+         │ MQTT/WebSocket (uns-client)                   │ MQTT TCP (uns-backend)
+         │                                                │
          ▼                                                ▼
-┌─────────────────┐                              ┌─────────────────┐
-│  MQTT Brokers   │                              │    MongoDB      │
-│  (Mosquitto)    │                              │   (Database)    │
-└─────────────────┘                              └─────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                     MQTT Broker (Mosquitto)                      │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │  System Topics: uns-simulator/_sys/                        │  │
+│  │    • status/server (server health)                         │  │
+│  │    • status/simulations/* (simulation status)              │  │
+│  │    • logs/simulations/* (simulation logs)                  │  │
+│  │    • events/* (lifecycle events)                           │  │
+│  │    • cmd/* (remote control commands)                       │  │
+│  └────────────────────────────────────────────────────────────┘  │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │  Data Topics: user-defined simulation data                 │  │
+│  └────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                      ┌─────────────────┐
+                      │    MongoDB      │
+                      │   (Database)    │
+                      └─────────────────┘
 ```
 
 ### Key Components
 
 - **Simulation Engine** - Manages simulation lifecycle and MQTT publishing
 - **Simulation Manager** - Orchestrates multiple concurrent simulations
+- **MQTT Backbone** - System-wide MQTT connection for status, events, and control
 - **GraphQL API** - Type-safe API layer with Apollo Server
 - **Redux Store** - Centralized state management on client
 - **MQTT Client Manager** - Handles WebSocket connections to brokers
@@ -273,6 +298,19 @@ JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 PORT=4000
 NODE_ENV=development
 
+# MQTT Broker
+MQTT_HOST=localhost
+MQTT_PORT=1883
+MQTT_WS_PORT=9001
+
+# MQTT Backbone Credentials
+MQTT_BACKBONE_USERNAME=uns-backend
+MQTT_BACKBONE_PASSWORD=uns-backend-dev
+MQTT_SIM_USERNAME=uns-sim
+MQTT_SIM_PASSWORD=uns-sim-dev
+MQTT_CLIENT_USERNAME=uns-client
+MQTT_CLIENT_PASSWORD=uns-client-dev
+
 # CORS & Security
 CLIENT_URL=http://localhost:5173
 ENABLE_RATE_LIMIT=false
@@ -360,7 +398,39 @@ export const AUTH_CONFIG = {
   TOKEN_EXPIRATION: '1d', // 24 hours
   BCRYPT_SALT_ROUNDS: 10, // Password hashing
 };
+
+export const MQTT_BACKBONE_CONFIG = {
+  CLIENT_ID: 'uns-backend-system',
+  HEARTBEAT_INTERVAL: 30000, // 30 seconds
+  CONNECT_TIMEOUT: 10000, // 10 seconds
+  RECONNECT_PERIOD: 5000, // Auto-reconnect
+  KEEPALIVE: 30,
+  QOS_STATUS: 1, // At-least-once for status
+  QOS_EVENTS: 0, // At-most-once for events
+};
 ```
+
+### MQTT Backbone Configuration
+
+The MQTT backbone requires credentials configured in your `.env` file:
+
+```env
+# MQTT Backbone Credentials
+MQTT_BACKBONE_USERNAME=uns-backend
+MQTT_BACKBONE_PASSWORD=your-secure-password-change-in-production
+MQTT_SIM_USERNAME=uns-sim
+MQTT_SIM_PASSWORD=your-secure-password-change-in-production
+MQTT_CLIENT_USERNAME=uns-client
+MQTT_CLIENT_PASSWORD=your-secure-password-change-in-production
+```
+
+**Security Notes:**
+- Change default passwords in production
+- These credentials are used for ACL-protected MQTT topics
+- Each user has specific read/write permissions
+- `uns-backend` has full system access
+- `uns-client` can read status and issue commands
+- `uns-sim` can only write to data topics
 
 ### Database Indexes
 
@@ -435,6 +505,96 @@ Optimized indexes for performance:
 2. View live topic tree as messages arrive
 3. Click topics to filter message view
 4. Monitor message payload in real-time
+
+### MQTT Backbone & Monitoring
+
+The UNS Simulator includes a built-in MQTT backbone that publishes system status, simulation state, and logs to dedicated MQTT topics. This enables real-time monitoring and remote control.
+
+#### System Topics
+
+All system topics are under `uns-simulator/_sys/`:
+
+**Status Topics (Retained):**
+- `status/server` - Server health, uptime, database state (published every 30s)
+- `status/simulations/_index` - List of all active simulations
+- `status/simulations/{profileId}` - Real-time status for each simulation
+
+**Log Topics (Non-Retained):**
+- `logs/simulations/{profileId}` - Live stream of simulation logs
+
+**Event Topics (Non-Retained):**
+- `events/system` - Server lifecycle events (startup, shutdown)
+- `events/simulation` - Simulation lifecycle events (started, stopped, paused, resumed)
+
+**Command Topics:**
+- `cmd/simulation/start` - Start a simulation remotely
+- `cmd/simulation/stop` - Stop a simulation remotely
+- `cmd/simulation/pause` - Pause a simulation remotely
+- `cmd/simulation/resume` - Resume a simulation remotely
+
+#### Monitoring with MQTT Client
+
+You can monitor the system in real-time using any MQTT client (e.g., MQTT Explorer, mosquitto_sub):
+
+**View server status:**
+```bash
+mosquitto_sub -h localhost -t "uns-simulator/_sys/status/server" -v
+```
+
+**Monitor all active simulations:**
+```bash
+mosquitto_sub -h localhost -t "uns-simulator/_sys/status/simulations/#" -v
+```
+
+**Watch simulation logs:**
+```bash
+mosquitto_sub -h localhost -t "uns-simulator/_sys/logs/simulations/+" -v
+```
+
+**Monitor all system events:**
+```bash
+mosquitto_sub -h localhost -t "uns-simulator/_sys/events/#" -v
+```
+
+#### Remote Control via MQTT
+
+You can control simulations remotely by publishing commands to the command topics:
+
+**Start a simulation:**
+```bash
+mosquitto_pub -h localhost \
+  -u uns-client -P uns-client-dev \
+  -t "uns-simulator/_sys/cmd/simulation/start" \
+  -m '{"profileId":"your-profile-id","correlationId":"cmd-001","origin":"external"}'
+```
+
+**Stop a simulation:**
+```bash
+mosquitto_pub -h localhost \
+  -u uns-client -P uns-client-dev \
+  -t "uns-simulator/_sys/cmd/simulation/stop" \
+  -m '{"profileId":"your-profile-id","correlationId":"cmd-002","origin":"external"}'
+```
+
+**Note:** Command topics require authentication with the `uns-client` user. Responses are published to `cmd-response/{correlationId}`.
+
+#### MQTT User Roles
+
+The system uses three MQTT users with different permissions:
+
+- **uns-backend** - System backend (full access to _sys/ topics)
+- **uns-sim** - Simulation engines (write to data topics only)
+- **uns-client** - Client applications (read status, write commands)
+
+Configure credentials in `.env`:
+```env
+MQTT_BACKBONE_USERNAME=uns-backend
+MQTT_BACKBONE_PASSWORD=your-secure-password
+MQTT_SIM_USERNAME=uns-sim
+MQTT_SIM_PASSWORD=your-secure-password
+MQTT_CLIENT_USERNAME=uns-client
+MQTT_CLIENT_PASSWORD=your-secure-password
+```
 
 ---
 
