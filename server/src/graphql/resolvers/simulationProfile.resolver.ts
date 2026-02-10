@@ -138,6 +138,38 @@ export const simulationProfileResolvers = {
       ctx: Context
     ) => {
       requireAuth(ctx);
+
+      // Fetch existing profile with user ownership check
+      const profile = await SimulationProfile.findOne({
+        _id: id,
+        userId: ctx.user!._id,
+      });
+      if (!profile) throw new Error('Profile not found');
+
+      // Check if broker is being changed
+      if ('brokerId' in input && String(input.brokerId) !== String(profile.brokerId)) {
+        // Prevent broker change if simulation is active
+        const activeStates = ['running', 'starting', 'paused', 'stopping'];
+        if (activeStates.includes(profile.status.state)) {
+          throw new Error(
+            'Cannot change broker while simulation is active. Please stop the simulation first.'
+          );
+        }
+
+        // Validate new broker exists and user has access (if not null/undefined)
+        if (input.brokerId) {
+          const broker = await Broker.findOne({
+            _id: input.brokerId,
+            users: ctx.user!._id,
+          });
+          if (!broker) {
+            throw new Error('Broker not found or access denied');
+          }
+        }
+        // Allow setting brokerId to null/undefined (orphaned reference recovery)
+      }
+
+      // Proceed with update
       const updated = await SimulationProfile.findOneAndUpdate(
         { _id: id, userId: ctx.user!._id },
         { $set: input },

@@ -59,7 +59,7 @@ export const CREATE_SIMULATION_PROFILE = gql`
 
 // Update a simulation profile
 export const UPDATE_SIMULATION_PROFILE = gql`
-  mutation UpdateSimulationProfile($id: ID!, $input: SimulationProfileInput!) {
+  mutation UpdateSimulationProfile($id: ID!, $input: UpdateSimulationProfileInput!) {
     updateSimulationProfile(id: $id, input: $input) {
       id
       name

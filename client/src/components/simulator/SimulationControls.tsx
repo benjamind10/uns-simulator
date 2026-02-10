@@ -169,7 +169,29 @@ const SimulationStatusPanel: React.FC = () => {
           </div>
           <div className="divide-y divide-gray-100 dark:divide-gray-800">
             <InfoRow label="Schema" value={schema?.name ?? 'Unknown'} />
-            <InfoRow label="Broker" value={broker?.name ?? 'Unknown'} />
+
+            {/* Broker with Change button */}
+            <div className="px-3 sm:px-6 py-3 flex items-center justify-between gap-2">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                Broker
+              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-right truncate">
+                  {broker?.name ?? 'Unknown'}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const event = new CustomEvent('openChangeBrokerModal');
+                    window.dispatchEvent(event);
+                  }}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium whitespace-nowrap"
+                >
+                  Change
+                </button>
+              </div>
+            </div>
+
             <InfoRow
               label="Broker URL"
               value={
