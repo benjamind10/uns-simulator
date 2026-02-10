@@ -1,5 +1,4 @@
 import { Types } from 'mongoose';
-import mongoose from 'mongoose';
 
 import User from '../models/User';
 import Broker, { IBroker } from '../models/Broker';

@@ -11,6 +11,23 @@ import mongoose, {
 export type SchemaNodeKind = 'group' | 'metric' | 'object';
 export type SchemaNodeDataType = 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String';
 
+export interface IPayloadTemplate {
+  quality?: string;
+  timestampMode?: 'auto' | 'fixed';
+  fixedTimestamp?: number;
+  value?: string | number | boolean;
+  valueMode?: 'static' | 'random' | 'increment';
+  minValue?: number;
+  maxValue?: number;
+  step?: number;
+  precision?: number;
+  customFields?: Array<{
+    key: string;
+    value: string | number | boolean;
+    type: 'string' | 'number' | 'boolean';
+  }>;
+}
+
 export interface ISchemaNode {
   id: string;
   _id?: Types.ObjectId;
@@ -23,6 +40,7 @@ export interface ISchemaNode {
   unit?: string;
   engineering?: Record<string, unknown>;
   objectData?: Record<string, unknown>;
+  payloadTemplate?: IPayloadTemplate;
 }
 
 export interface ISchema extends Document {
@@ -49,6 +67,29 @@ const SchemaNodeSubSchema = new MongooseSchema<ISchemaNode>(
     unit: String,
     engineering: { type: Object, default: {} },
     objectData: { type: Object, default: {} },
+    payloadTemplate: {
+      quality: { type: String },
+      timestampMode: { type: String, enum: ['auto', 'fixed'] },
+      fixedTimestamp: { type: Number },
+      value: { type: MongooseSchema.Types.Mixed },
+      valueMode: { type: String, enum: ['static', 'random', 'increment'] },
+      minValue: { type: Number },
+      maxValue: { type: Number },
+      step: { type: Number },
+      precision: { type: Number },
+      customFields: [
+        {
+          key: { type: String, required: true },
+          value: { type: MongooseSchema.Types.Mixed, required: true },
+          type: {
+            type: String,
+            enum: ['string', 'number', 'boolean'],
+            required: true,
+          },
+          _id: false,
+        },
+      ],
+    },
   },
   { _id: true }
 );

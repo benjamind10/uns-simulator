@@ -290,6 +290,22 @@ export const simulationProfileResolvers = {
       if (!profile) throw new Error('Profile not found');
       const schema = await SchemaModel.findById(profile.schemaId);
       if (!schema) throw new Error('Schema not found');
+
+      // Debug: Check if schema has payloadTemplate data
+      const nodesWithTemplates = schema.nodes.filter(
+        (n) => n.payloadTemplate && Object.keys(n.payloadTemplate).length > 0
+      );
+      console.log(
+        `[StartSimulation] Schema "${schema.name}" has ${nodesWithTemplates.length} nodes with payloadTemplate`
+      );
+      if (nodesWithTemplates.length > 0) {
+        nodesWithTemplates.forEach((n) => {
+          console.log(
+            `  - ${n.path} (${n.kind}): ${JSON.stringify(n.payloadTemplate)}`
+          );
+        });
+      }
+
       const broker = await Broker.findById(profile.brokerId);
       if (!broker) throw new Error('Broker not found');
 
@@ -409,12 +425,52 @@ export const simulationProfileResolvers = {
           nodeSettings = raw?.toObject ? raw.toObject() : raw;
         }
 
-        // Build payload configuration
-        const globalDefaults = profile.globalSettings?.defaultPayload || {};
-        const nodePayloadConfig = nodeSettings?.payload || {};
-        const payloadConfig = {
-          ...globalDefaults,
-          ...nodePayloadConfig,
+        // Helper to convert Mongoose subdocuments to plain objects
+        const toPlain = (doc: any): Record<string, any> => {
+          if (!doc) return {};
+          if (typeof doc.toObject === 'function') return doc.toObject();
+          if (typeof doc.toJSON === 'function') return doc.toJSON();
+          return JSON.parse(JSON.stringify(doc));
+        };
+
+        // Resolve schema-level payload template (ancestor group + node's own)
+        let schemaPayload: Record<string, any> = {};
+        let currentParentId = schemaNode.parent;
+        while (currentParentId) {
+          const parent = schema.nodes.find(
+            (n) => String(n.id ?? n._id) === String(currentParentId)
+          );
+          if (!parent) break;
+          if (parent.kind === 'group' && parent.payloadTemplate) {
+            schemaPayload = toPlain(parent.payloadTemplate);
+            break; // Use nearest ancestor only
+          }
+          currentParentId = parent.parent;
+        }
+        if (schemaNode.payloadTemplate) {
+          const metricPayload = toPlain(schemaNode.payloadTemplate);
+          const ancestorCF = schemaPayload.customFields?.length ? schemaPayload.customFields : [];
+          const metricCF = metricPayload.customFields?.length ? metricPayload.customFields : [];
+          schemaPayload = {
+            ...schemaPayload,
+            ...metricPayload,
+            customFields: [...ancestorCF, ...metricCF],
+          };
+        }
+
+        // Build payload configuration with 4-tier merge
+        const globalDefaults = toPlain(profile.globalSettings?.defaultPayload);
+        const nodePayloadConfig = toPlain(nodeSettings?.payload);
+        const payloadConfig: Record<string, any> = {
+          ...schemaPayload,      // schema-level templates (lowest)
+          ...globalDefaults,     // global sim defaults
+          ...nodePayloadConfig,  // per-node sim overrides (highest)
+          // Concatenate customFields from all tiers
+          customFields: [
+            ...(schemaPayload.customFields || []),
+            ...(globalDefaults.customFields || []),
+            ...(nodePayloadConfig.customFields || []),
+          ],
         };
 
         console.log('🔍 testPublishNode debug:');

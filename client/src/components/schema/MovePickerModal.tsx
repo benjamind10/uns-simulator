@@ -1,5 +1,6 @@
-import type { ISchemaNode } from '../../types';
 import { X } from 'lucide-react';
+
+import type { ISchemaNode } from '../../types';
 
 interface MovePickerModalProps {
   node: ISchemaNode;

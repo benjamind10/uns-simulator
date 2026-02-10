@@ -7,6 +7,7 @@ interface NodePayloadEditorProps {
   dataType?: 'Int' | 'Float' | 'Bool' | 'Boolean' | 'String';
   payload: NodeSettings['payload'];
   onChange: (payload: NodeSettings['payload']) => void;
+  namePrefix?: string;
 }
 
 const DEFAULT_PAYLOAD: NonNullable<NodeSettings['payload']> = {
@@ -21,6 +22,7 @@ export default function NodePayloadEditor({
   dataType,
   payload,
   onChange,
+  namePrefix = '',
 }: NodePayloadEditorProps) {
   const [localPayload, setLocalPayload] = useState<
     NonNullable<NodeSettings['payload']>
@@ -212,7 +214,7 @@ export default function NodePayloadEditor({
               <label className="flex items-start gap-2 cursor-pointer">
                 <input
                   type="radio"
-                  name="valueMode"
+                  name={`${namePrefix}valueMode`}
                   value="static"
                   checked={currentValueMode === 'static'}
                   onChange={(e) => handleChange('valueMode', e.target.value)}
@@ -232,7 +234,7 @@ export default function NodePayloadEditor({
               <label className="flex items-start gap-2 cursor-pointer">
                 <input
                   type="radio"
-                  name="valueMode"
+                  name={`${namePrefix}valueMode`}
                   value="random"
                   checked={currentValueMode === 'random'}
                   onChange={(e) => handleChange('valueMode', e.target.value)}
@@ -252,7 +254,7 @@ export default function NodePayloadEditor({
               <label className="flex items-start gap-2 cursor-pointer">
                 <input
                   type="radio"
-                  name="valueMode"
+                  name={`${namePrefix}valueMode`}
                   value="increment"
                   checked={currentValueMode === 'increment'}
                   onChange={(e) => handleChange('valueMode', e.target.value)}
@@ -493,7 +495,7 @@ export default function NodePayloadEditor({
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
-                name="timestampMode"
+                name={`${namePrefix}timestampMode`}
                 value="auto"
                 checked={currentTimestampMode === 'auto'}
                 onChange={(e) => handleChange('timestampMode', e.target.value)}
@@ -506,7 +508,7 @@ export default function NodePayloadEditor({
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
-                name="timestampMode"
+                name={`${namePrefix}timestampMode`}
                 value="fixed"
                 checked={currentTimestampMode === 'fixed'}
                 onChange={(e) => handleChange('timestampMode', e.target.value)}

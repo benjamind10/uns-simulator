@@ -4,7 +4,7 @@ import type { AppDispatch, RootState } from '../store/store';
 
 import type { BrokerConnection, IBroker } from './broker';
 import type { MqttMessage } from './mqtt';
-import type { ISchema, ISchemaNode, SchemaInput } from './schema';
+import type { ISchema, ISchemaNode, SchemaInput, IPayloadTemplate } from './schema';
 import type {
   SimulationProfileState,
   SimulationStatus,
@@ -33,6 +33,7 @@ export type {
   BrokerConnection,
   ISchemaNode,
   ISchema,
+  IPayloadTemplate,
   MqttMessage,
   User,
   RootState,

@@ -27,7 +27,8 @@ import {
   fetchSchemasAsync,
 } from '../../store/schema/schemaThunk';
 import { selectSchemas } from '../../store/schema/schemaSlice';
-import type { ISchemaNode } from '../../types';
+import type { ISchemaNode, IPayloadTemplate } from '../../types';
+import NodePayloadEditor from '../simulator/NodePayloadEditor';
 import { buildTree, collectAllIds, recomputePaths } from '../../utils/tree';
 import { generateUUID } from '../../utils/uuid';
 import ConfirmDialog from '../global/ConfirmDialog';
@@ -64,6 +65,62 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
   });
   const [rawPath, setRawPath] = useState('');
   const [pathDirty, setPathDirty] = useState(false);
+
+  // Payload template state
+  const [payloadTemplate, setPayloadTemplate] = useState<IPayloadTemplate | undefined>(undefined);
+  const [showPayloadTemplate, setShowPayloadTemplate] = useState(false);
+
+  // Helper: Clean up payload template by removing null/undefined/empty fields
+  const cleanPayloadTemplate = (template: IPayloadTemplate | undefined): IPayloadTemplate | undefined => {
+    if (!template) return undefined;
+
+    const cleaned: any = {};
+    let hasAnyValue = false;
+
+    // Only include fields that have non-null/non-undefined values
+    if (template.quality != null && template.quality !== '') {
+      cleaned.quality = template.quality;
+      hasAnyValue = true;
+    }
+    if (template.timestampMode != null) {
+      cleaned.timestampMode = template.timestampMode;
+      hasAnyValue = true;
+    }
+    if (template.fixedTimestamp != null) {
+      cleaned.fixedTimestamp = template.fixedTimestamp;
+      hasAnyValue = true;
+    }
+    if (template.value != null && template.value !== '') {
+      cleaned.value = template.value;
+      hasAnyValue = true;
+    }
+    if (template.valueMode != null) {
+      cleaned.valueMode = template.valueMode;
+      hasAnyValue = true;
+    }
+    if (template.minValue != null) {
+      cleaned.minValue = template.minValue;
+      hasAnyValue = true;
+    }
+    if (template.maxValue != null) {
+      cleaned.maxValue = template.maxValue;
+      hasAnyValue = true;
+    }
+    if (template.step != null) {
+      cleaned.step = template.step;
+      hasAnyValue = true;
+    }
+    if (template.precision != null) {
+      cleaned.precision = template.precision;
+      hasAnyValue = true;
+    }
+    if (template.customFields && template.customFields.length > 0) {
+      cleaned.customFields = template.customFields;
+      hasAnyValue = true;
+    }
+
+    return hasAnyValue ? cleaned : undefined;
+  };
 
   // Refresh on schema change
   useEffect(() => {
@@ -120,6 +177,19 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     return parts;
   }, [selectedNode, allNodes]);
 
+  // Find nearest ancestor group with payloadTemplate for inheritance indicator
+  const inheritedFromGroup = useMemo(() => {
+    if (!selectedNode || mode !== 'edit') return null;
+    let currentParentId = selectedNode.parent;
+    while (currentParentId) {
+      const parent = allNodes.find((n) => n.id === currentParentId);
+      if (!parent) break;
+      if (parent.kind === 'group' && parent.payloadTemplate) return parent;
+      currentParentId = parent.parent;
+    }
+    return null;
+  }, [selectedNode, allNodes, mode]);
+
   /* ── Handlers ── */
 
   const handleSelect = (node: ISchemaNode) => {
@@ -130,6 +200,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       setForm({ name: '', kind: 'group', dataType: '', unit: '' });
       setRawPath('');
       setPathDirty(false);
+      setPayloadTemplate(undefined);
+      setShowPayloadTemplate(false);
     } else {
       setSelectedNode(node);
       // Default to edit mode — populate form with node properties
@@ -142,6 +214,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       });
       setRawPath(node.path ?? node.name);
       setPathDirty(false);
+      setPayloadTemplate(node.payloadTemplate);
+      setShowPayloadTemplate(!!node.payloadTemplate);
     }
   };
 
@@ -150,6 +224,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
     setForm({ name: '', kind: 'group', dataType: '', unit: '' });
     setRawPath('');
     setPathDirty(false);
+    setPayloadTemplate(undefined);
+    setShowPayloadTemplate(false);
   };
 
   const handleSwitchToEdit = () => {
@@ -184,6 +260,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
       kind: form.kind,
       dataType: form.kind === 'metric' ? form.dataType || 'Float' : undefined,
       unit: form.unit,
+      payloadTemplate: showPayloadTemplate ? cleanPayloadTemplate(payloadTemplate) : undefined,
     };
 
     const applyUpdatedNodes = (updated: ISchemaNode[]) => {
@@ -198,7 +275,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
             savedVersion.path !== node.path ||
             savedVersion.name !== node.name ||
             savedVersion.dataType !== node.dataType ||
-            savedVersion.unit !== node.unit;
+            savedVersion.unit !== node.unit ||
+            JSON.stringify(savedVersion.payloadTemplate) !== JSON.stringify(node.payloadTemplate);
           if (changed) {
             newTempNodes.push({ ...node, isTemporary: true });
           }
@@ -480,6 +558,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
           unit: n.unit ?? '',
           engineering: n.engineering ?? {},
           objectData: n.kind === 'metric' ? n.objectData ?? {} : undefined,
+          payloadTemplate: cleanPayloadTemplate(n.payloadTemplate),
         })
       );
 
@@ -496,6 +575,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
           unit: n.unit ?? '',
           engineering: n.engineering ?? {},
           objectData: n.kind === 'metric' ? n.objectData ?? {} : undefined,
+          payloadTemplate: cleanPayloadTemplate(n.payloadTemplate),
         })
       );
 
@@ -623,22 +703,27 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
           <div className="flex items-center gap-2">
             <FileUpload
               onImport={(nodes) => {
-                const normalized = nodes.map((n) => ({
-                  ...n,
-                  id: n.id ?? generateUUID(),
-                  name: n.name ?? '',
-                  kind: n.kind ?? 'group',
-                  parent: !n.parent || n.parent === '' ? null : n.parent,
-                  path: n.path ?? n.name,
-                  order: typeof n.order === 'number' ? n.order : 0,
-                  dataType:
-                    n.kind === 'metric' ? n.dataType ?? 'Float' : undefined,
-                  unit: n.unit ?? '',
-                  engineering: n.engineering ?? {},
-                  objectData:
-                    n.kind === 'metric' ? n.objectData ?? {} : undefined,
-                  isTemporary: true as const,
-                }));
+                const normalized = nodes.map((n) => {
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  const { effectivePayload, ...rest } = n as any; // Strip computed effectivePayload
+                  return {
+                    ...rest,
+                    id: rest.id ?? generateUUID(),
+                    name: rest.name ?? '',
+                    kind: rest.kind ?? 'group',
+                    parent: !rest.parent || rest.parent === '' ? null : rest.parent,
+                    path: rest.path ?? rest.name,
+                    order: typeof rest.order === 'number' ? rest.order : 0,
+                    dataType:
+                      rest.kind === 'metric' ? rest.dataType ?? 'Float' : undefined,
+                    unit: rest.unit ?? '',
+                    engineering: rest.engineering ?? {},
+                    objectData:
+                      rest.kind === 'metric' ? rest.objectData ?? {} : undefined,
+                    payloadTemplate: rest.payloadTemplate, // Preserve payload template
+                    isTemporary: true as const,
+                  };
+                });
                 setTempNodes((p) => [...p, ...normalized]);
                 setExpandedIds((prev) => {
                   const next = new Set(prev);
@@ -885,6 +970,39 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                   setPathDirty(true);
                 }}
               />
+            </div>
+          )}
+
+          {/* Payload Template Section (Edit Mode Only) */}
+          {mode === 'edit' && selectedNode && (
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => setShowPayloadTemplate(!showPayloadTemplate)}
+                className="w-full px-3 py-2 text-sm font-medium text-left text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                {showPayloadTemplate ? 'Remove' : 'Configure'} Payload Template
+              </button>
+              {showPayloadTemplate && (
+                <div className="space-y-2">
+                  {inheritedFromGroup && (
+                    <div className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">
+                      Inheriting from: <span className="font-semibold">{inheritedFromGroup.name}</span>
+                    </div>
+                  )}
+                  {selectedNode.kind === 'group' && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      This template will be inherited by all child metrics that do not define their own.
+                    </p>
+                  )}
+                  <NodePayloadEditor
+                    dataType={selectedNode.kind === 'metric' ? selectedNode.dataType : undefined}
+                    payload={payloadTemplate ?? {}}
+                    onChange={(newPayload) => setPayloadTemplate(newPayload as IPayloadTemplate)}
+                    namePrefix={`schema-${selectedNode.id}-`}
+                  />
+                </div>
+              )}
             </div>
           )}
 

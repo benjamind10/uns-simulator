@@ -17,6 +17,44 @@ export const schemaTypeDefs = gql`
 
   scalar JSON
 
+  type PayloadTemplateCustomField {
+    key: String!
+    value: JSON!
+    type: String!
+  }
+
+  type PayloadTemplate {
+    quality: String
+    timestampMode: String
+    fixedTimestamp: Float
+    value: JSON
+    valueMode: String
+    minValue: Float
+    maxValue: Float
+    step: Float
+    precision: Int
+    customFields: [PayloadTemplateCustomField!]
+  }
+
+  input PayloadTemplateCustomFieldInput {
+    key: String!
+    value: JSON!
+    type: String!
+  }
+
+  input PayloadTemplateInput {
+    quality: String
+    timestampMode: String
+    fixedTimestamp: Float
+    value: JSON
+    valueMode: String
+    minValue: Float
+    maxValue: Float
+    step: Float
+    precision: Int
+    customFields: [PayloadTemplateCustomFieldInput!]
+  }
+
   type SchemaNode {
     id: ID!
     name: String!
@@ -27,7 +65,8 @@ export const schemaTypeDefs = gql`
     dataType: SchemaNodeDataType
     unit: String
     engineering: JSON
-    objectData: JSON # <-- Add this field for custom object nodes
+    objectData: JSON
+    payloadTemplate: PayloadTemplate
   }
 
   input SchemaNodeInput {
@@ -40,7 +79,8 @@ export const schemaTypeDefs = gql`
     dataType: SchemaNodeDataType
     unit: String
     engineering: JSON
-    objectData: JSON # <-- Add this field for input
+    objectData: JSON
+    payloadTemplate: PayloadTemplateInput
   }
 
   type Schema {
