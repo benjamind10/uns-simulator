@@ -3,6 +3,7 @@ export interface IBroker {
   name: string;
   url: string;
   port: number;
+  wsPath?: string;
   clientId: string;
   username?: string;
   password?: string;
@@ -18,6 +19,7 @@ export type CreateBrokerInput = {
   name: string;
   url: string;
   port: number;
+  wsPath?: string;
   clientId: string;
   username?: string;
   password?: string;

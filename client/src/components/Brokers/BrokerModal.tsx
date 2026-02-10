@@ -10,6 +10,7 @@ interface BrokerModalProps {
     name: string;
     url: string;
     port: number;
+    wsPath?: string;
     clientId: string;
     username?: string;
     password?: string;
@@ -33,6 +34,7 @@ export default function BrokerModal({
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [port, setPort] = useState(1883);
+  const [wsPath, setWsPath] = useState('');
   const [clientId, setClientId] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -47,6 +49,7 @@ export default function BrokerModal({
         setName(initialData.name);
         setUrl(initialData.url);
         setPort(initialData.port);
+        setWsPath(initialData.wsPath || '');
         setClientId(initialData.clientId);
         setUsername(initialData.username || '');
         setPassword(initialData.password || '');
@@ -54,6 +57,7 @@ export default function BrokerModal({
         setName('');
         setUrl('');
         setPort(1883);
+        setWsPath('');
         setClientId('');
         setUsername('');
         setPassword('');
@@ -72,6 +76,7 @@ export default function BrokerModal({
         name: name.trim(),
         url: url.trim(),
         port,
+        ...(wsPath.trim() ? { wsPath: wsPath.trim() } : {}),
         clientId: resolvedClientId,
         ...(username.trim() ? { username: username.trim() } : {}),
         ...(password ? { password } : {}),
@@ -156,6 +161,27 @@ export default function BrokerModal({
               className={inputClasses}
               required
             />
+          </div>
+
+          {/* WebSocket Path */}
+          <div>
+            <label
+              htmlFor="broker-wspath"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              WebSocket Path
+            </label>
+            <input
+              id="broker-wspath"
+              type="text"
+              value={wsPath}
+              onChange={(e) => setWsPath(e.target.value)}
+              placeholder="/mqtt or /ws"
+              className={inputClasses}
+            />
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              Some brokers require a path like /mqtt or /ws for WebSocket connections.
+            </p>
           </div>
 
           {/* Client ID */}

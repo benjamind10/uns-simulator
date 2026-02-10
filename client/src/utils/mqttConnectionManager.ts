@@ -67,7 +67,8 @@ class MqttConnectionManager {
     // Map Docker service names to localhost since browser runs on host
     const browserUrl = getBrowserAccessibleUrl(broker.url);
     const wsPort = getWebSocketPort(broker.port);
-    const url = `ws://${browserUrl}:${wsPort}`;
+    const wsPath = broker.wsPath || '';
+    const url = `ws://${browserUrl}:${wsPort}${wsPath}`;
     const client = mqtt.connect(url, {
       clientId: broker.clientId,
       ...(broker.username ? { username: broker.username } : {}),

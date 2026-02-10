@@ -5,6 +5,8 @@ import {
   DndContext,
   DragOverlay,
   closestCenter,
+  pointerWithin,
+  rectIntersection,
   PointerSensor,
   useSensor,
   useSensors,
@@ -19,6 +21,7 @@ import {
   XCircle,
   Pencil,
   Plus,
+  GripVertical,
 } from 'lucide-react';
 
 import type { AppDispatch } from '../../store/store';
@@ -147,8 +150,32 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
 
   // DnD sensor with activation distance to avoid accidental drags
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Increased from 5 for better reliability
+        delay: 0,
+        tolerance: 5,
+      },
+    })
   );
+
+  // Custom collision detection: pointer > rect > closest center
+  const customCollisionDetection = useMemo(() => {
+    return (args: Parameters<typeof closestCenter>[0]) => {
+      // First try pointer detection for more precise control
+      const pointerCollisions = pointerWithin(args);
+      if (pointerCollisions.length > 0) {
+        return pointerCollisions;
+      }
+      // Fall back to rect intersection
+      const rectCollisions = rectIntersection(args);
+      if (rectCollisions.length > 0) {
+        return rectCollisions;
+      }
+      // Final fallback to closest center
+      return closestCenter(args);
+    };
+  }, []);
 
   // Merge saved + temp nodes (temp overrides saved when same ID exists)
   const savedNodes: ISchemaNode[] =
@@ -747,7 +774,7 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
           {tree.length > 0 ? (
             <DndContext
               sensors={sensors}
-              collisionDetection={closestCenter}
+              collisionDetection={customCollisionDetection}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
@@ -770,7 +797,8 @@ export default function SchemaNodeEditor({ schemaId }: SchemaNodeEditorProps) {
                 ))}
               <DragOverlay>
                 {activeId ? (
-                  <div className="px-3 py-1.5 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-blue-300 text-sm font-medium">
+                  <div className="px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border-2 border-blue-500 text-sm font-semibold flex items-center gap-2 min-w-[150px] cursor-grabbing">
+                    <GripVertical className="w-4 h-4 text-blue-500" />
                     {allNodes.find((n) => n.id === activeId)?.name ?? ''}
                   </div>
                 ) : null}
