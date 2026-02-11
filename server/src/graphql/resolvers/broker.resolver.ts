@@ -8,6 +8,7 @@ interface CreateBrokerInput {
   name: string;
   url: string;
   port: number;
+  wsPath?: string;
   clientId: string;
   username?: string;
   password?: string;
@@ -148,6 +149,11 @@ export const brokerResolvers = {
       if ('url' in args.input) updateFields.url = args.input.url;
       if ('port' in args.input) updateFields.port = args.input.port;
       if ('clientId' in args.input) updateFields.clientId = args.input.clientId;
+
+      // Explicitly handle wsPath (convert empty strings to null)
+      if ('wsPath' in args.input) {
+        updateFields.wsPath = args.input.wsPath?.trim() || null;
+      }
 
       // Explicitly handle username and password to allow empty strings
       if ('username' in args.input) {

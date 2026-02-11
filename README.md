@@ -1,7 +1,8 @@
 # UNS Simulator
 
-A production-ready, web-based MQTT simulation platform for testing Unified Namespace (UNS) architectures, development, and educational purposes. Built with enterprise-grade reliability, security, and performance.
+A **free, open source**, production-ready, web-based MQTT simulation platform for testing Unified Namespace (UNS) architectures, development, and educational purposes. Built with enterprise-grade reliability, security, and performance.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933.svg)](https://nodejs.org/)
@@ -958,7 +959,7 @@ We welcome contributions! Please follow these guidelines:
 
 ## License
 
-This project is licensed under the **MIT License**.
+This project is **free and open source** software licensed under the **MIT License**. You are free to use, modify, and distribute this software for any purpose, including commercial applications.
 
 ```
 MIT License
