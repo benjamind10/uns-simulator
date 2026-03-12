@@ -4,7 +4,7 @@ import mqtt, { type MqttClient } from 'mqtt';
 import type { AppDispatch, RootState } from '../store';
 import {
   updateSimulationStatus,
-  addSimulationLog,
+  addSimulationLogs,
 } from '../simulationProfile/simulationProfileSlice';
 
 import {
@@ -18,6 +18,10 @@ import {
 // Singleton client instance
 let systemClient: MqttClient | null = null;
 let reconnectTimer: NodeJS.Timeout | null = null;
+// Buffers for incoming logs to batch dispatches and avoid Redux churn
+const logBuffers: Map<string, any[]> = new Map();
+let logFlushTimer: NodeJS.Timeout | null = null;
+const LOG_FLUSH_INTERVAL_MS = 300; // flush every 300ms
 
 // Fetch MQTT configuration from backend
 async function fetchMqttConfig(token: string) {
@@ -137,7 +141,10 @@ export const connectSystemMqtt = createAsyncThunk<
         if (topic.includes('/_sys/logs/simulations/')) {
           const log = JSON.parse(raw);
           if (log.timestamp && log.level && log.message) {
-            dispatch(addSimulationLog({ profileId, log }));
+            // Buffer the log for the profile and flush periodically
+            const buf = logBuffers.get(profileId) || [];
+            buf.push(log);
+            logBuffers.set(profileId, buf);
           }
         } else if (topic.includes('/_sys/status/simulations/')) {
           const status = JSON.parse(raw);
@@ -151,6 +158,26 @@ export const connectSystemMqtt = createAsyncThunk<
         console.error('❌ Error processing MQTT message:', err);
       }
     });
+
+    // Start a periodic flush for buffered logs (if not already running)
+    if (!logFlushTimer) {
+      logFlushTimer = setInterval(() => {
+        try {
+          if (logBuffers.size === 0) return;
+          for (const [pid, logs] of Array.from(logBuffers.entries())) {
+            if (!logs || logs.length === 0) {
+              logBuffers.delete(pid);
+              continue;
+            }
+            // Dispatch batched logs and clear buffer
+            dispatch(addSimulationLogs({ profileId: pid, logs: logs.slice() }));
+            logBuffers.delete(pid);
+          }
+        } catch (err) {
+          console.error('❌ Error flushing log buffers:', err);
+        }
+      }, LOG_FLUSH_INTERVAL_MS) as unknown as NodeJS.Timeout;
+    }
 
     // Handle disconnection
     systemClient.on('close', () => {
@@ -202,6 +229,26 @@ export const disconnectSystemMqtt = createAsyncThunk(
     if (reconnectTimer) {
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
+    }
+
+    // Flush any buffered logs before disconnecting
+    try {
+      if (logBuffers.size > 0) {
+        for (const [pid, logs] of Array.from(logBuffers.entries())) {
+          if (logs && logs.length > 0) {
+            dispatch(addSimulationLogs({ profileId: pid, logs: logs.slice() }));
+          }
+        }
+        logBuffers.clear();
+      }
+    } catch (err) {
+      console.error('❌ Error flushing logs during disconnect:', err);
+    }
+
+    // Stop periodic flush
+    if (logFlushTimer) {
+      clearInterval(logFlushTimer);
+      logFlushTimer = null;
     }
 
     if (systemClient) {

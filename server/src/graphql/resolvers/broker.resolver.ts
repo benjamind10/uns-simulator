@@ -109,9 +109,6 @@ export const brokerResolvers = {
             { brokerId: args.id },
             { $unset: { brokerId: '' } }
           );
-          console.log(
-            `🗑️  Deleted broker and cleared reference from ${affectedProfiles} simulation profile(s)`
-          );
         }
 
         return true;

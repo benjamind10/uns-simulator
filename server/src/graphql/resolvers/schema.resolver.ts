@@ -114,9 +114,6 @@ export const schemaResolvers = {
             { schemaId: args.id },
             { $unset: { schemaId: '' } }
           );
-          console.log(
-            `🗑️  Deleted schema and cleared reference from ${affectedProfiles} simulation profile(s)`
-          );
         }
 
         return true;

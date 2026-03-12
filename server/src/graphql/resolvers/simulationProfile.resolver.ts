@@ -65,17 +65,13 @@ export const simulationProfileResolvers = {
       
       // Check if simulation is running in memory (most up-to-date status)
       const memoryStatus = simulationManager.getSimulationStatus(profileId);
-      console.log('🔍 simulationStatus resolver - memoryStatus:', JSON.stringify(memoryStatus, null, 2));
       if (memoryStatus) {
-        console.log('✅ Returning memory status');
         return memoryStatus;
       }
       
       // Fall back to database status
-      console.log('📊 Falling back to database status');
       if (!profile.status) {
         // Provide default values if status is missing
-        console.log('⚠️ No status in DB, returning default');
         return {
           state: 'idle',
           isRunning: false,
@@ -88,7 +84,6 @@ export const simulationProfileResolvers = {
           error: null,
         };
       }
-      console.log('📊 Returning DB status:', JSON.stringify(profile.status, null, 2));
       return profile.status;
     },
     simulationLogs: async (
