@@ -30,6 +30,8 @@ import {
 // Load environment variables
 dotenv.config();
 
+const graphqlBodyLimit = process.env.GRAPHQL_BODY_LIMIT || '15mb';
+
 // Validate critical environment variables at startup
 if (!process.env.JWT_SECRET) {
   console.error('❌ FATAL: JWT_SECRET is not defined in environment variables');
@@ -310,6 +312,9 @@ const startServer = async () => {
     server.applyMiddleware({
       app,
       cors: false, // We're handling CORS with the express middleware
+      bodyParserConfig: {
+        limit: graphqlBodyLimit,
+      },
     });
 
     const port = process.env.PORT || 4000;

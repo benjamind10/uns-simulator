@@ -1,0 +1,24 @@
+# Environment files (use docker-compose environment instead)
+.env
+.env.*
+
+# Node modules
+node_modules
+
+# Build artifacts
+dist
+
+# Tests
+**/*.test.ts
+**/__tests__
+
+# Development files
+*.log
+npm-debug.log*
+.DS_Store
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo

@@ -25,6 +25,13 @@ class MqttBackboneService extends EventEmitter {
   private heartbeatInterval?: NodeJS.Timeout;
   private startTimestamp?: number;
   private handleCommand: ReturnType<typeof createCommandHandler>;
+  private verboseLogs = process.env.MQTT_BACKBONE_VERBOSE_LOGS === 'true';
+
+  private verboseLog(message: string): void {
+    if (this.verboseLogs) {
+      console.log(message);
+    }
+  }
 
   constructor() {
     super();
@@ -61,14 +68,14 @@ class MqttBackboneService extends EventEmitter {
       if (username) options.username = username;
       if (password) options.password = password;
 
-      console.log(`🔗 MQTT Backbone connecting to ${url} as "${username}"...`);
+      this.verboseLog(`🔗 MQTT Backbone connecting to ${url} as "${username}"...`);
 
       this.client = mqtt.connect(url, options);
 
       this.client.on('connect', () => {
         this.connected = true;
         this.startTimestamp = Date.now();
-        console.log('✅ MQTT Backbone connected');
+        this.verboseLog('✅ MQTT Backbone connected');
         this.startHeartbeat();
         this.subscribeToCommands();
         if (!settled) {
@@ -84,7 +91,7 @@ class MqttBackboneService extends EventEmitter {
       });
 
       this.client.on('reconnect', () => {
-        console.log('🔄 MQTT Backbone reconnecting...');
+        console.warn('🔄 MQTT Backbone reconnecting...');
       });
 
       this.client.on('close', () => {
@@ -110,7 +117,7 @@ class MqttBackboneService extends EventEmitter {
       this.client!.end(false, {}, () => {
         this.client = undefined;
         this.connected = false;
-        console.log('🔌 MQTT Backbone disconnected');
+        this.verboseLog('🔌 MQTT Backbone disconnected');
         resolve();
       });
     });
@@ -175,12 +182,11 @@ class MqttBackboneService extends EventEmitter {
     profileId: string,
     log: Record<string, unknown>
   ): void {
+    // Only forward warning and error level logs to MQTT to avoid flooding clients
+    const level = (log && (log.level as string)) || 'info';
+    if (level === 'info') return;
+
     const topic = TOPICS.LOGS_SIMULATION(profileId);
-    console.log(`📤 Publishing simulation log to ${topic}:`, {
-      connected: this.connected,
-      clientExists: !!this.client,
-      logMessage: (log.message as string)?.substring(0, 50),
-    });
     this.publishEvent(topic, log);
   }
 
@@ -242,8 +248,6 @@ class MqttBackboneService extends EventEmitter {
       (err) => {
         if (err) {
           console.error('❌ Failed to subscribe to commands:', err.message);
-        } else {
-          console.log('📡 MQTT Backbone subscribed to command topics');
         }
       }
     );
@@ -283,8 +287,6 @@ class MqttBackboneService extends EventEmitter {
       (err) => {
         if (err) {
           console.error(`❌ Backbone event error on ${topic}:`, err.message);
-        } else {
-          console.log(`✅ Published to ${topic}`);
         }
       }
     );

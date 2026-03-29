@@ -34,6 +34,14 @@ export interface SimulationLogEntry {
 }
 
 const MAX_LOG_BUFFER_SIZE = 200;
+const LOG_LEVEL_PRIORITY: Record<SimulationLogEntry['level'], number> = {
+  info: 0,
+  warn: 1,
+  error: 2,
+};
+const SIMULATION_LOG_LEVEL =
+  (process.env.SIMULATION_LOG_LEVEL as SimulationLogEntry['level']) || 'warn';
+const SIMULATION_VERBOSE_LOGS = process.env.SIMULATION_VERBOSE_LOGS === 'true';
 
 export class SimulationEngine extends EventEmitter {
   private profile: ISimulationProfile;
@@ -52,6 +60,20 @@ export class SimulationEngine extends EventEmitter {
   private statusHeartbeatInterval?: NodeJS.Timeout;
   private logBuffer: SimulationLogEntry[] = [];
 
+  private shouldRecordLog(level: SimulationLogEntry['level']): boolean {
+    const minLevel =
+      LOG_LEVEL_PRIORITY[SIMULATION_LOG_LEVEL] !== undefined
+        ? SIMULATION_LOG_LEVEL
+        : 'warn';
+    return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[minLevel];
+  }
+
+  private verboseLog(message: string, ...meta: unknown[]): void {
+    if (SIMULATION_VERBOSE_LOGS) {
+      console.log(message, ...meta);
+    }
+  }
+
   constructor(profile: ISimulationProfile, schema: ISchema, broker: IBroker) {
     super();
     this.profile = profile;
@@ -65,6 +87,10 @@ export class SimulationEngine extends EventEmitter {
     message: string,
     extra?: { topic?: string; nodeId?: string }
   ): void {
+    if (!this.shouldRecordLog(level)) {
+      return;
+    }
+
     const entry: SimulationLogEntry = {
       timestamp: Date.now(),
       level,
@@ -90,7 +116,7 @@ export class SimulationEngine extends EventEmitter {
       (node) => node.kind === 'metric'
     );
 
-    console.log(
+    this.verboseLog(
       `🔧 Initializing ${metricNodes.length} nodes for simulation: ${this.profile.name}`
     );
 
@@ -146,7 +172,7 @@ export class SimulationEngine extends EventEmitter {
         ],
       };
 
-      console.log(
+      this.verboseLog(
         `[InitNode] ${schemaNode.path} payload merge:\n` +
         `  Schema: ${JSON.stringify(schemaPayload)}\n` +
         `  Global: ${JSON.stringify(globalDefaults)}\n` +
@@ -185,7 +211,7 @@ export class SimulationEngine extends EventEmitter {
       if (!parent) break;
       if (parent.kind === 'group' && parent.payloadTemplate) {
         ancestorPayload = this.toPlainObject(parent.payloadTemplate);
-        console.log(
+        this.verboseLog(
           `[SchemaPayload] Node ${schemaNode.path} inheriting from group "${parent.name}":`,
           JSON.stringify(ancestorPayload)
         );
@@ -200,7 +226,7 @@ export class SimulationEngine extends EventEmitter {
       : {};
 
     if (Object.keys(metricPayload).length > 0) {
-      console.log(
+      this.verboseLog(
         `[SchemaPayload] Node ${schemaNode.path} has own template:`,
         JSON.stringify(metricPayload)
       );
@@ -216,7 +242,7 @@ export class SimulationEngine extends EventEmitter {
     };
 
     if (Object.keys(resolved).length > 0) {
-      console.log(
+      this.verboseLog(
         `[SchemaPayload] Node ${schemaNode.path} resolved template:`,
         JSON.stringify(resolved)
       );
@@ -278,7 +304,7 @@ export class SimulationEngine extends EventEmitter {
           options.password = this.broker.password;
         }
 
-        console.log(`🔌 Connecting to ${this.broker.name} (${url})`);
+        this.verboseLog(`🔌 Connecting to ${this.broker.name} (${url})`);
         this.addLog('info', `Connecting to broker ${this.broker.name} (${url})`);
 
         this.mqttClient = mqtt.connect(url, options);
@@ -290,7 +316,7 @@ export class SimulationEngine extends EventEmitter {
           if (settled) return; // Prevent double settlement
           settled = true;
           clearTimeout(connectionTimeout);
-          console.log(`✅ Connected to MQTT broker: ${this.broker.name}`);
+          this.verboseLog(`✅ Connected to MQTT broker: ${this.broker.name}`);
           this.addLog('info', `Connected to MQTT broker: ${this.broker.name}`);
           this.reconnectAttempts = 0;
           resolve();
@@ -315,7 +341,7 @@ export class SimulationEngine extends EventEmitter {
             !this.isPaused &&
             this.reconnectAttempts < this.maxReconnectAttempts
           ) {
-            console.log(`⚠️ MQTT disconnected, attempting reconnection...`);
+            console.warn(`⚠️ MQTT disconnected, attempting reconnection...`);
             this.addLog('warn', 'MQTT disconnected, attempting reconnection...');
             this.handleDisconnection();
           }
@@ -365,7 +391,7 @@ export class SimulationEngine extends EventEmitter {
 
   private handleDisconnection() {
     this.reconnectAttempts++;
-    console.log(
+    console.warn(
       `🔄 Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`
     );
     this.addLog(
@@ -386,7 +412,7 @@ export class SimulationEngine extends EventEmitter {
     this.reconnectTimeout = setTimeout(async () => {
       try {
         await this.connectToBroker();
-        console.log(`✅ Reconnected to ${this.broker.name}`);
+        this.verboseLog(`✅ Reconnected to ${this.broker.name}`);
         this.addLog('info', `Reconnected to ${this.broker.name}`);
 
         // Update successful reconnection
@@ -463,13 +489,13 @@ export class SimulationEngine extends EventEmitter {
         this.profile.globalSettings.simulationLength > 0
       ) {
         this.simulationLengthTimeout = setTimeout(() => {
-          console.log(`⏰ Simulation time limit reached, stopping...`);
+          console.warn('⏰ Simulation time limit reached, stopping...');
           this.stop();
         }, this.profile.globalSettings.simulationLength * 1000);
       }
 
       simulationStartsTotal.inc();
-      console.log(
+      this.verboseLog(
         `🚀 Simulation started: ${this.profile.name} (${this.nodes.size} nodes)`
       );
       this.addLog(
@@ -730,7 +756,7 @@ export class SimulationEngine extends EventEmitter {
     });
 
     simulationStopsTotal.inc();
-    console.log(`🛑 Simulation stopped: ${this.profile.name}`);
+    this.verboseLog(`🛑 Simulation stopped: ${this.profile.name}`);
     this.addLog('info', `Simulation stopped: ${this.profile.name}`);
     this.emit('stopped', { profileId: this.profile.id });
   }
@@ -752,7 +778,7 @@ export class SimulationEngine extends EventEmitter {
       isPaused: true,
     });
 
-    console.log(`⏸️ Simulation paused: ${this.profile.name}`);
+    this.verboseLog(`⏸️ Simulation paused: ${this.profile.name}`);
     this.addLog('info', `Simulation paused: ${this.profile.name}`);
     this.emit('paused', { profileId: this.profile.id });
   }
@@ -771,7 +797,7 @@ export class SimulationEngine extends EventEmitter {
       isPaused: false,
     });
 
-    console.log(`▶️ Simulation resumed: ${this.profile.name}`);
+    this.verboseLog(`▶️ Simulation resumed: ${this.profile.name}`);
     this.addLog('info', `Simulation resumed: ${this.profile.name}`);
     this.emit('resumed', { profileId: this.profile.id });
   }
@@ -812,7 +838,7 @@ export class SimulationEngine extends EventEmitter {
         pausedCount++;
       }
     });
-    console.log(`⏸️ Paused ${pausedCount} publishing nodes`);
+    this.verboseLog(`⏸️ Paused ${pausedCount} publishing nodes`);
   }
 
   private resumePublishing() {
@@ -825,7 +851,7 @@ export class SimulationEngine extends EventEmitter {
       this.nodes.forEach((node) => {
         this.startNodePublishing(node);
       });
-      console.log(`▶️ Resumed ${this.nodes.size} publishing nodes`);
+      this.verboseLog(`▶️ Resumed ${this.nodes.size} publishing nodes`);
     }
   }
 }
